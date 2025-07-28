@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <PropertyGroup>
+    <!-- 
+        At some point we are going to move the code to https://github.com/dotnet/extensions
+        So to reduce the number of required changes, we use exact same settings:
+        https://github.com/dotnet/extensions/blob/7798311d745dd90ebb474bfa9886b186ab8a2c41/Directory.Build.props#L38-L51
+    -->
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <Deterministic>true</Deterministic>
+    <Features>debug-determinism</Features>
+
+    <EnableXlfLocalization>false</EnableXlfLocalization>
+    <UpdateXlfOnBuild>false</UpdateXlfOnBuild>
+  </PropertyGroup>
+
+</Project>
