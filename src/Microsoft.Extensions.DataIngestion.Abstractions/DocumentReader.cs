@@ -50,7 +50,12 @@ namespace Microsoft.Extensions.DataIngestion
             using HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            using Stream stream = await response.Content.ReadAsStreamAsync();
+            using Stream stream = await
+#if NET8_0_OR_GREATER
+                response.Content.ReadAsStreamAsync(cancellationToken);
+#else
+                response.Content.ReadAsStreamAsync();
+#endif
             return await ReadAsync(stream, cancellationToken);
         }
     }
