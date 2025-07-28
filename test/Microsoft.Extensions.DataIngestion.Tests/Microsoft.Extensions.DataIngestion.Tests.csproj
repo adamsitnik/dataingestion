@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
@@ -16,6 +17,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Microsoft.Extensions.DataIngestion\Microsoft.Extensions.DataIngestion.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Do not run the tests when AZURE_DOC_INT_KEY environment variable is not set -->
+    <Compile Remove="AzureDocInt\**\*Tests.cs" Condition="'$(AZURE_DOCUMENT_INT_KEY)' == ''" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Workaround https://github.com/dotnet/project-system/issues/935 -->
+    <None Include="**/*.cs" />
   </ItemGroup>
 
 </Project>
