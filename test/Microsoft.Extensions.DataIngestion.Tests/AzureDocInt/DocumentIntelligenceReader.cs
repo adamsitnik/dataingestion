@@ -4,6 +4,8 @@
 using Azure;
 using Azure.AI.DocumentIntelligence;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,9 +28,15 @@ namespace Microsoft.Extensions.DataIngestion.Tests
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Operation<AnalyzeResult> operation = await _client.AnalyzeDocumentAsync(WaitUntil.Completed, _modelName, uri, cancellationToken);
+            AnalyzeDocumentOptions options = new(_modelName, uri)
+            {
+                // In the future, we could consider using DocumentContentFormat.Markdown.
+                OutputContentFormat = DocumentContentFormat.Text
+            };
 
-            return Map(operation.Value);
+            Operation<AnalyzeResult> operation = await _client.AnalyzeDocumentAsync(WaitUntil.Completed, options, cancellationToken);
+
+            return MapToDocument(operation.Value);
         }
 
         public override async Task<Document> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
@@ -38,19 +46,137 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             BinaryData binaryData = await BinaryData.FromStreamAsync(stream, cancellationToken);
             Operation<AnalyzeResult> operation = await _client.AnalyzeDocumentAsync(WaitUntil.Completed, _modelName, binaryData, cancellationToken);
 
-            return Map(operation.Value);
+            return MapToDocument(operation.Value);
         }
 
-        private static Document Map(AnalyzeResult operation)
+        private static Document MapToDocument(AnalyzeResult parsed)
         {
-            Document result = new();
+            Document document = new();
 
-            foreach (var page in operation.Pages)
+#if DEBUG
+            HashSet<int> visitedSections = new() { 0 /* root section */ };
+#endif
+            var rootSection = parsed.Sections[0];
+            foreach (var element in rootSection.Elements)
             {
-                // TODO adsitnik: map everything, design the initial structure of the Document class
+                (string kind, int sectionIndex) = Parse(element);
+                Debug.Assert(kind == "section", "Root section should only contain other sections.");
+
+                Section section = new();
+                HandleSection(sectionIndex, section);
+                Debug.Assert(section.Elements.Count > 0, "Every section should contain at least one element.");
+                document.Sections.Add(section);
             }
 
-            return result;
+#if DEBUG
+            Debug.Assert(visitedSections.Count == parsed.Sections.Count, $"Visited {visitedSections.Count} out of {parsed.Sections.Count} sections.");
+#endif
+
+            return document;
+
+            void HandleSection(int sectionIndex, Section section)
+            {
+#if DEBUG
+                Debug.Assert(visitedSections.Add(sectionIndex), "Section should not be visited more than once.");
+#endif
+                var parsedSection = parsed.Sections[sectionIndex];
+                foreach (var element in parsedSection.Elements)
+                {
+                    (string kind, int index) = Parse(element);
+
+                    switch (kind)
+                    {
+                        case "section":
+                            Section subSection = new();
+                            section.Elements.Add(subSection);
+                            HandleSection(index, subSection);
+                            break;
+                        case "paragraph":
+                            var parsedParagraph = parsed.Paragraphs[index];
+                            var paragraph = MapToElement(parsedParagraph);
+                            paragraph.PageNumber = GetPageNumber(parsedParagraph.BoundingRegions);
+                            section.Elements.Add(paragraph);
+                            break;
+                        case "table":
+                            var parsedTable = parsed.Tables[index];
+                            // TODO adsitnik: handle tables and decide on design (list of rows vs list of cells).
+                            section.Elements.Add(new Table()
+                            {
+                                PageNumber = GetPageNumber(parsedTable.BoundingRegions)
+                            });
+                            break;
+                        case "figure":
+                            // TODO adsitnik: handle images and charts.
+                            break;
+                        default:
+                            throw new NotSupportedException($"Element kind '{kind}' is not supported.");
+                    }
+                }
+            }
         }
+
+        private static (string kind, int index) Parse(string element)
+        {
+            if (element.StartsWith("/sections/", StringComparison.Ordinal))
+            {
+                return ("section", ParseIndex(element, "/sections/"));
+            }
+            else if (element.StartsWith("/paragraphs/", StringComparison.Ordinal))
+            {
+                return ("paragraph", ParseIndex(element, "/paragraphs/"));
+            }
+            else if (element.StartsWith("/tables/", StringComparison.Ordinal))
+            {
+                return ("table", ParseIndex(element, "/tables/"));
+            }
+            else if (element.StartsWith("/figures/", StringComparison.Ordinal))
+            {
+                return ("figure", ParseIndex(element, "/figures/"));
+            }
+
+            throw new NotSupportedException($"'{element}' is not a supported element type.");
+
+            static int ParseIndex(string element, string prefix)
+            {
+#if NET8_0_OR_GREATER
+                return int.Parse(element.AsSpan(prefix.Length), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture);
+#else
+                return int.Parse(element.Substring(prefix.Length), System.Globalization.CultureInfo.InvariantCulture);
+#endif
+            }
+        }
+
+        private static Element MapToElement(DocumentParagraph parsedParagraph)
+        {
+            if (parsedParagraph.Role is null)
+            {
+                return new Paragraph
+                {
+                    Text = parsedParagraph.Content,
+                };
+            }
+            else if (parsedParagraph.Role.Equals(ParagraphRole.PageHeader)
+                || parsedParagraph.Role.Equals(ParagraphRole.SectionHeading) // If other parsers expose similar information, we could extend Section with Header property.
+                || parsedParagraph.Role.Equals(ParagraphRole.Title)) // Same as Header, but for Presentations.
+            {
+                return new Header()
+                {
+                    Text = parsedParagraph.Content,
+                };
+            }
+            else if (parsedParagraph.Role.Equals(ParagraphRole.PageFooter)
+                || parsedParagraph.Role.Equals(ParagraphRole.Footnote)) // Same as Footer, but for Presentations.
+            {
+                return new Footer()
+                {
+                    Text = parsedParagraph.Content,
+                };
+            }
+
+            throw new NotSupportedException($"Paragraph role '{parsedParagraph.Role}' is not supported.");
+        }
+
+        private static int? GetPageNumber(IReadOnlyList<BoundingRegion> boundingRegions)
+            => boundingRegions.Count != 1 ? null : boundingRegions[0].PageNumber;
     }
 }

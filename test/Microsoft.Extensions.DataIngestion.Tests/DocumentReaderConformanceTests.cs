@@ -17,6 +17,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             {
                 yield return new object[] { "https://winprotocoldocs-bhdugrdyduf5h2e4.b02.azurefd.net/MS-NRBF/%5bMS-NRBF%5d-190313.pdf" }; // PDF file
                 yield return new object[] { "https://winprotocoldocs-bhdugrdyduf5h2e4.b02.azurefd.net/MS-NRBF/%5bMS-NRBF%5d-190313.docx" }; // DOCX file
+                yield return new object[] { "https://www.bondcap.com/report/pdf/Trends_Artificial_Intelligence.pdf" }; // PDF file
             }
         }
 
