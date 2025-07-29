@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DataIngestion
     }
 
     /// <summary>
-    /// A section can be just a page a logical grouping of elements in a document.
+    /// A section can be just a page or a logical grouping of elements in a document.
     /// </summary>
     public sealed class Section : Element
     {
