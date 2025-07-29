@@ -8,10 +8,8 @@ using System;
 
 namespace Microsoft.Extensions.DataIngestion.Tests
 {
-    public abstract class DocumentIntelligenceReaderTests : DocumentReaderConformanceTests
+    public class DocumentIntelligenceReaderTests : DocumentReaderConformanceTests
     {
-        protected abstract string ModelName { get; }
-
         protected override DocumentReader CreateDocumentReader()
         {
             string key = Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_KEY")!;
@@ -20,23 +18,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             AzureKeyCredential credential = new(key);
             DocumentIntelligenceClient client = new(new Uri(endpoint), credential);
 
-            return new DocumentIntelligenceReader(client, ModelName);
+            return new DocumentIntelligenceReader(client);
         }
-    }
-
-    public sealed class DocumentIntelligenceReaderLayoutModel : DocumentIntelligenceReaderTests
-    {
-        /// <summary>
-        /// https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/overview?view=doc-intel-4.0.0#layout
-        /// </summary>
-        protected override string ModelName => "prebuilt-layout";
-    }
-
-    public sealed class DocumentIntelligenceReaderReadModel : DocumentIntelligenceReaderTests
-    {
-        /// <summary>
-        /// https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/overview?view=doc-intel-4.0.0#read
-        /// </summary>
-        protected override string ModelName => "prebuilt-read";
     }
 }
