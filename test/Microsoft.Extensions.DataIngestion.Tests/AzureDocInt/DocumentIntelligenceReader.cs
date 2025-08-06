@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -54,20 +55,20 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             Document document = new();
 
 #if DEBUG
-            HashSet<int> visitedSections = new() { 0 /* root section */ };
+            HashSet<int> visitedSections = new();
 #endif
-            var rootSection = parsed.Sections[0];
-            foreach (var element in rootSection.Elements)
+            Section rootSection = new();
+            HandleSection(sectionIndex: 0, rootSection);
+
+            // If the root section consists only of sections, add those sections directly to flatten the structure.
+            if (rootSection.Elements.All(element => element is Section))
             {
-                (string kind, int sectionIndex) = Parse(element);
-                Debug.Assert(kind == "section", "Root section should only contain other sections.");
-
-                Section section = new();
-                HandleSection(sectionIndex, section);
-                Debug.Assert(section.Elements.Count > 0, "Every section should contain at least one element.");
-                document.Sections.Add(section);
+                document.Sections.AddRange(rootSection.Elements.OfType<Section>());
             }
-
+            else
+            {
+                document.Sections.Add(rootSection);
+            }
 #if DEBUG
             Debug.Assert(visitedSections.Count == parsed.Sections.Count, $"Visited {visitedSections.Count} out of {parsed.Sections.Count} sections.");
 #endif
@@ -112,6 +113,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                             throw new NotSupportedException($"Element kind '{kind}' is not supported.");
                     }
                 }
+
+                Debug.Assert(section.Elements.Count > 0, "Every section should contain at least one element.");
             }
         }
 
