@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,19 +26,11 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             _modelName = string.IsNullOrEmpty(modelName) ? throw new ArgumentNullException(nameof(modelName)) : modelName;
         }
 
-        public override async Task<Document> ReadAsync(Uri uri, CancellationToken cancellationToken = default)
+        public override Task<Document> ReadAsync(Uri uri, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            AnalyzeDocumentOptions options = new(_modelName, uri)
-            {
-                // In the future, we could consider using DocumentContentFormat.Markdown.
-                OutputContentFormat = DocumentContentFormat.Text
-            };
-
-            Operation<AnalyzeResult> operation = await _client.AnalyzeDocumentAsync(WaitUntil.Completed, options, cancellationToken);
-
-            return MapToDocument(operation.Value);
+            return ReadAsync(new AnalyzeDocumentOptions(_modelName, uri), cancellationToken);
         }
 
         public override async Task<Document> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
@@ -45,20 +38,29 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             cancellationToken.ThrowIfCancellationRequested();
 
             BinaryData binaryData = await BinaryData.FromStreamAsync(stream, cancellationToken);
-            Operation<AnalyzeResult> operation = await _client.AnalyzeDocumentAsync(WaitUntil.Completed, _modelName, binaryData, cancellationToken);
+            return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), cancellationToken);
+        }
 
+        private async Task<Document> ReadAsync(AnalyzeDocumentOptions options, CancellationToken cancellationToken)
+        {
+            options.OutputContentFormat = DocumentContentFormat.Markdown;
+
+            Operation<AnalyzeResult> operation = await _client.AnalyzeDocumentAsync(WaitUntil.Completed, options, cancellationToken);
             return MapToDocument(operation.Value);
         }
 
         private static Document MapToDocument(AnalyzeResult parsed)
         {
-            Document document = new();
+            Document document = new()
+            {
+                Markdown = parsed.Content,
+            };
 
 #if DEBUG
             HashSet<int> visitedSections = new();
 #endif
             Section rootSection = new();
-            HandleSection(sectionIndex: 0, rootSection);
+            HandleSection(sectionIndex: 0, rootSection, parsed.Content);
 
             // If the root section consists only of sections, add those sections directly to flatten the structure.
             if (rootSection.Elements.All(element => element is Section))
@@ -75,7 +77,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
             return document;
 
-            void HandleSection(int sectionIndex, Section section)
+            void HandleSection(int sectionIndex, Section section, string entireContent)
             {
 #if DEBUG
                 Debug.Assert(visitedSections.Add(sectionIndex), "Section should not be visited more than once.");
@@ -90,11 +92,13 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                         case "section":
                             Section subSection = new();
                             section.Elements.Add(subSection);
-                            HandleSection(index, subSection);
+                            HandleSection(index, subSection, entireContent);
                             break;
                         case "paragraph":
                             var parsedParagraph = parsed.Paragraphs[index];
-                            var paragraph = MapToElement(parsedParagraph);
+                            var markdown = GetMarkdown(parsedParagraph.Spans, entireContent);
+                            var paragraph = MapToElement(parsedParagraph, markdown);
+                            paragraph.Markdown = markdown;
                             paragraph.PageNumber = GetPageNumber(parsedParagraph.BoundingRegions);
                             section.Elements.Add(paragraph);
                             break;
@@ -103,7 +107,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                             // TODO adsitnik: handle tables and decide on design (list of rows vs list of cells).
                             section.Elements.Add(new Table()
                             {
-                                PageNumber = GetPageNumber(parsedTable.BoundingRegions)
+                                PageNumber = GetPageNumber(parsedTable.BoundingRegions),
+                                Markdown = GetMarkdown(parsedTable.Spans, entireContent),
                             });
                             break;
                         case "figure":
@@ -149,7 +154,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             }
         }
 
-        private static Element MapToElement(DocumentParagraph parsedParagraph)
+        private static Element MapToElement(DocumentParagraph parsedParagraph, string markdown)
         {
             if (parsedParagraph.Role is null)
             {
@@ -165,6 +170,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                 return new Header()
                 {
                     Text = parsedParagraph.Content,
+                    Level = GetLevel(markdown)
                 };
             }
             else if (parsedParagraph.Role.Equals(ParagraphRole.PageFooter)
@@ -181,5 +187,45 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         private static int? GetPageNumber(IReadOnlyList<BoundingRegion> boundingRegions)
             => boundingRegions.Count != 1 ? null : boundingRegions[0].PageNumber;
+
+        private static string GetMarkdown(IReadOnlyList<DocumentSpan> spans, string entireContent)
+        {
+            Debug.Assert(spans.Count > 0, "Paragraph should have at least one span.");
+
+            return spans.Count switch
+            {
+                1 => entireContent.Substring(spans[0].Offset, spans[0].Length),
+                _ => Concat(), // Multiple spans, concatenate them.
+            };
+
+            string Concat()
+            {
+                int length = 0;
+                for (int i = 0; i < spans.Count; i++)
+                {
+                    length += spans[i].Length;
+                }
+
+                StringBuilder stringBuilder = new(length);
+                foreach (var span in spans)
+                {
+                    stringBuilder.Append(entireContent.AsSpan(span.Offset, span.Length));
+                }
+                return stringBuilder.ToString();
+            }
+        }
+
+        private static int? GetLevel(string markdown)
+        {
+            ReadOnlySpan<char> span = markdown.AsSpan().TrimStart();
+            for (int i = 0; i < span.Length; i++)
+            {
+                if (span[i] != '#')
+                {
+                    return i == 0 ? null : i;
+                }
+            }
+            return null;
+        }
     }
 }

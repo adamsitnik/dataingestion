@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -21,6 +22,19 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             }
         }
 
+        private static void SimpleAsserts(Document document)
+        {
+            Assert.NotNull(document);
+            Assert.NotEmpty(document.Sections);
+            Assert.NotEmpty(document.Markdown);
+
+            var elements = Flatten(document).ToArray();
+            Assert.Contains(elements, element => element is Header);
+            Assert.Contains(elements, element => element is Paragraph);
+            Assert.Contains(elements, element => element is Table);
+            Assert.All(elements, element => Assert.NotEmpty(element.Markdown));
+        }
+
         [Theory]
         [MemberData(nameof(Sources))]
         public async Task SupportsUris(string uri)
@@ -28,8 +42,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             var reader = CreateDocumentReader();
             var document = await reader.ReadAsync(new Uri(uri));
 
-            Assert.NotNull(document);
-            Assert.NotEmpty(document.Sections);
+            SimpleAsserts(document);
         }
 
         public static IEnumerable<object[]> Files
@@ -50,8 +63,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             var reader = CreateDocumentReader();
             var document = await reader.ReadAsync(filePath);
 
-            Assert.NotNull(document);
-            Assert.NotEmpty(document.Sections);
+            SimpleAsserts(document);
         }
 
         [Fact]
@@ -86,6 +98,26 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             finally
             {
                 File.Delete(filePath);
+            }
+        }
+
+        private static IEnumerable<Element> Flatten(Document document)
+        {
+            Queue<Section> sectionsQueue = new(document.Sections);
+            while (sectionsQueue.Count > 0)
+            {
+                Section section = sectionsQueue.Dequeue();
+                foreach (Element element in section.Elements)
+                {
+                    if (element is Section subSection)
+                    {
+                        sectionsQueue.Enqueue(subSection);
+                    }
+                    else
+                    {
+                        yield return element;
+                    }
+                }
             }
         }
     }
