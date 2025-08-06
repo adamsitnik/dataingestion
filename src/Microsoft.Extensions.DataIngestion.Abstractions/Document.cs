@@ -23,6 +23,8 @@ namespace Microsoft.Extensions.DataIngestion
             set => _text = value;
         }
 
+        public string? Markdown { get; set; }
+
         public int? PageNumber { get; set; }
 
         private protected virtual string GetDefaultText() => string.Empty;
@@ -47,6 +49,7 @@ namespace Microsoft.Extensions.DataIngestion
     // Should Header derive from Paragraph or Element?
     public sealed class Header : Element
     {
+        public int? Level { get; set; }
     }
 
     // Should Footer derive from Paragraph or Element?
