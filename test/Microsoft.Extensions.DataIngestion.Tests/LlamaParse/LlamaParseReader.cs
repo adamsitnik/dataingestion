@@ -170,7 +170,7 @@ public class LlamaParseReader : DocumentReader
                 {
                     // It's weird: Page Footer is exposed as Markdown, but not as Text.
                     Text = parsedPage.PageFooterMarkdown,
-                    Markdown = parsedPage.Markdown
+                    Markdown = parsedPage.PageFooterMarkdown
                 });
             }
 

@@ -29,6 +29,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             var document = await reader.ReadAsync(new Uri(uri));
 
             Assert.NotNull(document);
+            Assert.NotEmpty(document.Sections);
         }
 
         public static IEnumerable<object[]> Files
@@ -50,6 +51,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             var document = await reader.ReadAsync(filePath);
 
             Assert.NotNull(document);
+            Assert.NotEmpty(document.Sections);
         }
 
         [Fact]
