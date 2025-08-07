@@ -1,35 +1,35 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Extensions.DataIngestion
 {
     public sealed class Document
     {
+        private string? _markdown;
+
         public List<Section> Sections { get; } = [];
 
-        public override string ToString() => string.Join("-----", Sections);
+        public string Markdown
+        {
+            get => _markdown ??= string.Join("", Sections.Select(section => section.Markdown));
+            set => _markdown = value;
+        }
+
+        public override string ToString() => Markdown;
     }
 
     public abstract class Element
     {
-        private string? _text;
+        public string Text { get; set; } = string.Empty;
 
-        public string Text
-        {
-            get => _text ?? GetDefaultText();
-            set => _text = value;
-        }
-
-        public string? Markdown { get; set; }
+        public virtual string Markdown { get; set; } = string.Empty;
 
         public int? PageNumber { get; set; }
 
-        private protected virtual string GetDefaultText() => string.Empty;
-
-        public override string ToString() => $"{GetType().Name}: {Text}";
+        public override string ToString() => $"{GetType().Name}: {Markdown}";
     }
 
     /// <summary>
@@ -37,22 +37,26 @@ namespace Microsoft.Extensions.DataIngestion
     /// </summary>
     public sealed class Section : Element
     {
+        private string? _markdown;
+
         public List<Element> Elements { get; } = [];
 
-        private protected override string GetDefaultText() => string.Join(Environment.NewLine, Elements);
+        public override string Markdown
+        {
+            get => _markdown ??= string.Join("", Elements.Select(e => e.Markdown));
+            set => _markdown = value;
+        }
     }
 
     public sealed class Paragraph : Element
     {
     }
 
-    // Should Header derive from Paragraph or Element?
     public sealed class Header : Element
     {
         public int? Level { get; set; }
     }
 
-    // Should Footer derive from Paragraph or Element?
     public sealed class Footer : Element
     {
     }

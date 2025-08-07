@@ -135,7 +135,7 @@ public class LlamaParseReader : DocumentReader
                 page.Elements.Add(new Header()
                 {
                     // It's weird: Page Header is exposed as Markdown, but not as Text.
-                    Text = parsedPage.PageHeaderMarkdown,
+                    Text = RemoveHashtags(parsedPage.PageHeaderMarkdown),
                     Markdown = parsedPage.PageHeaderMarkdown
                 });
             }
@@ -155,6 +155,7 @@ public class LlamaParseReader : DocumentReader
                     },
                     TablePageItem table => new Table()
                     {
+                        Markdown = table.Markdown
                     },
                     _ => throw new InvalidOperationException()
                 };
@@ -169,12 +170,25 @@ public class LlamaParseReader : DocumentReader
                 page.Elements.Add(new Footer()
                 {
                     // It's weird: Page Footer is exposed as Markdown, but not as Text.
-                    Text = parsedPage.PageFooterMarkdown,
+                    Text = RemoveHashtags(parsedPage.PageFooterMarkdown),
                     Markdown = parsedPage.PageFooterMarkdown
                 });
             }
 
             yield return page;
         }
+    }
+
+    private string RemoveHashtags(string pageHeaderMarkdown)
+    {
+        for (int i = 0; i < pageHeaderMarkdown.Length; i++)
+        {
+            if (pageHeaderMarkdown[i] != '#')
+            {
+                return i == 0 ? pageHeaderMarkdown : pageHeaderMarkdown[i..];
+            }
+        }
+
+        return pageHeaderMarkdown;
     }
 }
