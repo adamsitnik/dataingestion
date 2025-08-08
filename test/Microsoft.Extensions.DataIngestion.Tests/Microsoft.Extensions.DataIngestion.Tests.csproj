@@ -14,6 +14,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="LlamaParse" Version="0.1.1" />
+    <PackageReference Include="Markdig" Version="0.41.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.0-preview.6.25358.103" />
     <PackageReference Include="xunit" Version="2.9.3" />
