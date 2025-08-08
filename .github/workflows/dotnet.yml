@@ -27,6 +27,12 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install markitdown
+        run: pip install 'markitdown[all]'
       - name: Restore dependencies
         run: dotnet restore
       - name: BuildLibs
