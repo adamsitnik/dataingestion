@@ -22,7 +22,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             }
         }
 
-        private static void SimpleAsserts(Document document)
+        protected virtual void SimpleAsserts(Document document, string source)
         {
             Assert.NotNull(document);
             Assert.NotEmpty(document.Sections);
@@ -42,7 +42,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             var reader = CreateDocumentReader();
             var document = await reader.ReadAsync(new Uri(uri));
 
-            SimpleAsserts(document);
+            SimpleAsserts(document, uri);
         }
 
         public static IEnumerable<object[]> Files
@@ -63,7 +63,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             var reader = CreateDocumentReader();
             var document = await reader.ReadAsync(filePath);
 
-            SimpleAsserts(document);
+            SimpleAsserts(document, filePath);
         }
 
         [Fact]
@@ -101,7 +101,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             }
         }
 
-        private static IEnumerable<Element> Flatten(Document document)
+        protected static IEnumerable<Element> Flatten(Document document)
         {
             Queue<Section> sectionsQueue = new(document.Sections);
             while (sectionsQueue.Count > 0)
@@ -109,6 +109,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                 Section section = sectionsQueue.Dequeue();
                 foreach (Element element in section.Elements)
                 {
+                    // Please keep in mind that we don't preserve the order!
                     if (element is Section subSection)
                     {
                         sectionsQueue.Enqueue(subSection);
