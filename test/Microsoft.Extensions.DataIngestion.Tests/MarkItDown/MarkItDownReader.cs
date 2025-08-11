@@ -90,7 +90,7 @@ public class MarkItDownReader : DocumentReader
         response.EnsureSuccessStatusCode();
 
         string inputFilePath = GetTempFilePath();
-        using (FileStream inputFile = OpenAsyncFile(inputFilePath))
+        using (FileStream inputFile = new(inputFilePath, FileMode.Open, FileAccess.Write, FileShare.None, bufferSize: 1, FileOptions.Asynchronous))
         {
             await response.Content.CopyToAsync(inputFile, cancellationToken);
         }
@@ -105,41 +105,11 @@ public class MarkItDownReader : DocumentReader
         }
     }
 
-    public override async Task<Document> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (stream is null)
-        {
-            throw new ArgumentNullException(nameof(stream));
-        }
-
-        // We don't specialize stream is FileStream, as it can be set to any position or simply not be allowed for sharing.
-
-        string inputFilePath = GetTempFilePath();
-        using (FileStream inputFile = OpenAsyncFile(inputFilePath))
-        {
-            await stream.CopyToAsync(inputFile, cancellationToken);
-        }
-
-        try
-        {
-            return await ReadAsync(inputFilePath, cancellationToken);
-        }
-        finally
-        {
-            File.Delete(inputFilePath);
-        }
-    }
-
     private static string GetTempFilePath() => Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-
-    private static FileStream OpenAsyncFile(string filePath)
-        => new(filePath, FileMode.Open, FileAccess.Write, FileShare.None, bufferSize: 1, FileOptions.Asynchronous); // async IO
 
     private Document Map(MarkdownDocument markdownDocument, string outputContent)
     {
-        Section rootSection = new Section
+        Section rootSection = new()
         {
             Markdown = outputContent
         };

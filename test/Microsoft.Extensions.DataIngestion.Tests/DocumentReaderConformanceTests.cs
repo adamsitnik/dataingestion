@@ -89,11 +89,6 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             try
             {
                 await Assert.ThrowsAsync<OperationCanceledException>(async () => await reader.ReadAsync(filePath, cts.Token)); // File path
-
-                using (FileStream stream = File.OpenRead(filePath))
-                {
-                    await Assert.ThrowsAsync<OperationCanceledException>(async () => await reader.ReadAsync(stream, cts.Token)); // Stream
-                }
             }
             finally
             {
