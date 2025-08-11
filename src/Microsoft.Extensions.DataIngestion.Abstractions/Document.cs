@@ -2,44 +2,43 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Microsoft.Extensions.DataIngestion
 {
+    [DebuggerDisplay("{Markdown}")]
     public sealed class Document
     {
         private string? _markdown;
 
-        public List<Section> Sections { get; } = [];
+        public List<DocumentSection> Sections { get; } = [];
 
         public string Markdown
         {
             get => _markdown ??= string.Join("", Sections.Select(section => section.Markdown));
             set => _markdown = value;
         }
-
-        public override string ToString() => Markdown;
     }
 
-    public abstract class Element
+    [DebuggerDisplay("{GetType().Name}: {Markdown}")]
+    public abstract class DocumentElement
     {
         public string Text { get; set; } = string.Empty;
 
         public virtual string Markdown { get; set; } = string.Empty;
 
         public int? PageNumber { get; set; }
-
-        public override string ToString() => $"{GetType().Name}: {Markdown}";
     }
 
     /// <summary>
     /// A section can be just a page or a logical grouping of elements in a document.
     /// </summary>
-    public sealed class Section : Element
+    public sealed class DocumentSection : DocumentElement
     {
         private string? _markdown;
 
-        public List<Element> Elements { get; } = [];
+        public List<DocumentElement> Elements { get; } = [];
 
         public override string Markdown
         {
@@ -48,20 +47,20 @@ namespace Microsoft.Extensions.DataIngestion
         }
     }
 
-    public sealed class Paragraph : Element
+    public sealed class DocumentParagraph : DocumentElement
     {
     }
 
-    public sealed class Header : Element
+    public sealed class DocumentHeader : DocumentElement
     {
         public int? Level { get; set; }
     }
 
-    public sealed class Footer : Element
+    public sealed class DocumentFooter : DocumentElement
     {
     }
 
-    public sealed class Table : Element
+    public sealed class DocumentTable : DocumentElement
     {
     }
 }

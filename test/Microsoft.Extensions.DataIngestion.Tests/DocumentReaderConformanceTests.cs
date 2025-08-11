@@ -10,6 +10,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 {
     public abstract class DocumentReaderConformanceTests
     {
+        private static readonly DocumentFlattener _documentFlattener = new();
+
         protected abstract DocumentReader CreateDocumentReader();
 
         public static IEnumerable<object[]> Sources
@@ -29,9 +31,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             Assert.NotEmpty(document.Markdown);
 
             var elements = Flatten(document).ToArray();
-            Assert.Contains(elements, element => element is Header);
-            Assert.Contains(elements, element => element is Paragraph);
-            Assert.Contains(elements, element => element is Table);
+            Assert.Contains(elements, element => element is DocumentHeader);
+            Assert.Contains(elements, element => element is DocumentParagraph);
+            Assert.Contains(elements, element => element is DocumentTable);
             Assert.All(elements, element => Assert.NotEmpty(element.Markdown));
         }
 
@@ -96,25 +98,16 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             }
         }
 
-        protected static IEnumerable<Element> Flatten(Document document)
+        protected static IEnumerable<DocumentElement> Flatten(Document document)
         {
-            Queue<Section> sectionsQueue = new(document.Sections);
-            while (sectionsQueue.Count > 0)
-            {
-                Section section = sectionsQueue.Dequeue();
-                foreach (Element element in section.Elements)
-                {
-                    // Please keep in mind that we don't preserve the order!
-                    if (element is Section subSection)
-                    {
-                        sectionsQueue.Enqueue(subSection);
-                    }
-                    else
-                    {
-                        yield return element;
-                    }
-                }
-            }
+            ValueTask<List<Document>> job = _documentFlattener.ProcessAsync([document]);
+
+            Assert.True(job.IsCompletedSuccessfully);
+            List<Document> flattenedDocuments = job.Result;
+            Assert.Single(flattenedDocuments); // We expect only one document to be returned
+            Assert.Single(flattenedDocuments[0].Sections); // We expect only one section in the flattened document
+
+            return flattenedDocuments.Single().Sections.Single().Elements;
         }
     }
 }
