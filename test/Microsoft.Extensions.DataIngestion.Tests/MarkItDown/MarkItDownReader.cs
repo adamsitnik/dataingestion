@@ -25,7 +25,7 @@ public class MarkItDownReader : DocumentReader
 
     public override async Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        ProcessStartInfo startInfo = new ProcessStartInfo
+        ProcessStartInfo startInfo = new()
         {
             FileName = _exePath,
             UseShellExecute = false,
@@ -86,7 +86,12 @@ public class MarkItDownReader : DocumentReader
         using HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        string inputFilePath = GetTempFilePath();
+        // Instead of creating a temporary file, we could write to the StandardInput of the process.
+        // MarkItDows says it supports reading from stdin, but it does not work as expected.
+        // Even the sample command line does not work with stdin: "cat example.pdf | markitdown"
+        // I can be doing something wrong, but for now, let's write to a temporary file.
+
+        string inputFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         using (FileStream inputFile = new(inputFilePath, FileMode.Open, FileAccess.Write, FileShare.None, bufferSize: 1, FileOptions.Asynchronous))
         {
             await response.Content.CopyToAsync(inputFile, cancellationToken);
@@ -102,9 +107,7 @@ public class MarkItDownReader : DocumentReader
         }
     }
 
-    private static string GetTempFilePath() => Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-
-    private Document Map(MarkdownDocument markdownDocument, string outputContent)
+    private static Document Map(MarkdownDocument markdownDocument, string outputContent)
     {
         Section rootSection = new()
         {
