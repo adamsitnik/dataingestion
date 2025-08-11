@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion
 {
     // Design notes: this class no longer exposes an overload that takes a Stream and a CancellationToken.
-    // The reason is that Stream does not provide the neccessary information like the MIME type or the file name.
+    // The reason is that Stream does not provide the necessary information like the MIME type or the file name.
     public abstract class DocumentReader
     {
         public abstract Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default);
