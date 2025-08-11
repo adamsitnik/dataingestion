@@ -25,39 +25,43 @@ public class MarkItDownReader : DocumentReader
 
     public override async Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        ProcessStartInfo startInfo = new ProcessStartInfo
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (string.IsNullOrEmpty(filePath))
+        {
+            throw new ArgumentNullException(nameof(filePath));
+        }
+
+        ProcessStartInfo startInfo = new()
         {
             FileName = _exePath,
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            StandardOutputEncoding = Encoding.UTF8,
         };
 
-        string outputPath = GetTempFilePath();
-        startInfo.ArgumentList.Add(filePath);
-        startInfo.ArgumentList.Add("-o");
-        startInfo.ArgumentList.Add(outputPath);
+        // Force UTF-8 encoding in the environment (will produce garbage otherwise).
+        startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
+        startInfo.Environment["LC_ALL"] = "C.UTF-8";
+        startInfo.Environment["LANG"] = "C.UTF-8";
 
+        startInfo.ArgumentList.Add(filePath);
 
         string outputContent = "";
-        try
+        using (Process process = new() { StartInfo = startInfo })
         {
-            using (var process = new Process { StartInfo = startInfo })
+            process.Start();
+
+            // Read standard output asynchronously
+            outputContent = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+
+            await process.WaitForExitAsync(cancellationToken);
+
+            if (process.ExitCode != 0)
             {
-                process.Start();
-
-                await process.WaitForExitAsync(cancellationToken);
-
-                if (process.ExitCode != 0)
-                {
-                    throw new InvalidOperationException($"MarkItDown process failed with exit code {process.ExitCode}.");
-                }
+                throw new InvalidOperationException($"MarkItDown process failed with exit code {process.ExitCode}.");
             }
-
-            outputContent = await File.ReadAllTextAsync(outputPath, cancellationToken);
-        }
-        finally
-        {
-            File.Delete(outputPath); // Clean up the temporary output file as soon as we are done with it.
         }
 
         // Markdig's "UseAdvancedExtensions" option includes many common extensions beyond
@@ -89,7 +93,12 @@ public class MarkItDownReader : DocumentReader
         using HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        string inputFilePath = GetTempFilePath();
+        // Instead of creating a temporary file, we could write to the StandardInput of the process.
+        // MarkItDown says it supports reading from stdin, but it does not work as expected.
+        // Even the sample command line does not work with stdin: "cat example.pdf | markitdown"
+        // I can be doing something wrong, but for now, let's write to a temporary file.
+
+        string inputFilePath = Path.GetTempFileName();
         using (FileStream inputFile = new(inputFilePath, FileMode.Open, FileAccess.Write, FileShare.None, bufferSize: 1, FileOptions.Asynchronous))
         {
             await response.Content.CopyToAsync(inputFile, cancellationToken);
@@ -105,9 +114,7 @@ public class MarkItDownReader : DocumentReader
         }
     }
 
-    private static string GetTempFilePath() => Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-
-    private Document Map(MarkdownDocument markdownDocument, string outputContent)
+    private static Document Map(MarkdownDocument markdownDocument, string outputContent)
     {
         Section rootSection = new()
         {
