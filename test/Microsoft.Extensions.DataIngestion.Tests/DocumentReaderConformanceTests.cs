@@ -98,23 +98,13 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         protected static IEnumerable<DocumentElement> Flatten(Document document)
         {
-            Queue<DocumentSection> sectionsQueue = new(document.Sections);
-            while (sectionsQueue.Count > 0)
-            {
-                DocumentSection section = sectionsQueue.Dequeue();
-                foreach (DocumentElement element in section.Elements)
-                {
-                    // Please keep in mind that we don't preserve the order!
-                    if (element is DocumentSection subSection)
-                    {
-                        sectionsQueue.Enqueue(subSection);
-                    }
-                    else
-                    {
-                        yield return element;
-                    }
-                }
-            }
+            DocumentFlattener documentFlattener = new();
+            ValueTask<List<Document>> job = documentFlattener.ProcessAsync(new List<Document> { document });
+            Assert.True(job.IsCompletedSuccessfully);
+            List<Document> flattenedDocuments = job.Result;
+            Assert.Single(flattenedDocuments); // We expect only one document to be returned
+            Assert.Single(flattenedDocuments[0].Sections); // We expect only one section in the flattened document
+            return flattenedDocuments.Single().Sections.Single().Elements;
         }
     }
 }
