@@ -10,6 +10,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 {
     public abstract class DocumentReaderConformanceTests
     {
+        private static readonly DocumentFlattener _documentFlattener = new();
+
         protected abstract DocumentReader CreateDocumentReader();
 
         public static IEnumerable<object[]> Sources
@@ -98,12 +100,13 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         protected static IEnumerable<DocumentElement> Flatten(Document document)
         {
-            DocumentFlattener documentFlattener = new();
-            ValueTask<List<Document>> job = documentFlattener.ProcessAsync(new List<Document> { document });
+            ValueTask<List<Document>> job = _documentFlattener.ProcessAsync([document]);
+
             Assert.True(job.IsCompletedSuccessfully);
             List<Document> flattenedDocuments = job.Result;
             Assert.Single(flattenedDocuments); // We expect only one document to be returned
             Assert.Single(flattenedDocuments[0].Sections); // We expect only one section in the flattened document
+
             return flattenedDocuments.Single().Sections.Single().Elements;
         }
     }
