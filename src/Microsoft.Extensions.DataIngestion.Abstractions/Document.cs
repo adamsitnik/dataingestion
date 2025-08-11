@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.DataIngestion
     {
         private string? _markdown;
 
-        public List<Section> Sections { get; } = [];
+        public List<DocumentSection> Sections { get; } = [];
 
         public string Markdown
         {
@@ -22,7 +22,7 @@ namespace Microsoft.Extensions.DataIngestion
     }
 
     [DebuggerDisplay("{GetType().Name}: {Markdown}")]
-    public abstract class Element
+    public abstract class DocumentElement
     {
         public string Text { get; set; } = string.Empty;
 
@@ -34,11 +34,11 @@ namespace Microsoft.Extensions.DataIngestion
     /// <summary>
     /// A section can be just a page or a logical grouping of elements in a document.
     /// </summary>
-    public sealed class Section : Element
+    public sealed class DocumentSection : DocumentElement
     {
         private string? _markdown;
 
-        public List<Element> Elements { get; } = [];
+        public List<DocumentElement> Elements { get; } = [];
 
         public override string Markdown
         {
@@ -47,20 +47,20 @@ namespace Microsoft.Extensions.DataIngestion
         }
     }
 
-    public sealed class Paragraph : Element
+    public sealed class DocumentParagraph : DocumentElement
     {
     }
 
-    public sealed class Header : Element
+    public sealed class DocumentHeader : DocumentElement
     {
         public int? Level { get; set; }
     }
 
-    public sealed class Footer : Element
+    public sealed class DocumentFooter : DocumentElement
     {
     }
 
-    public sealed class Table : Element
+    public sealed class DocumentTable : DocumentElement
     {
     }
 }

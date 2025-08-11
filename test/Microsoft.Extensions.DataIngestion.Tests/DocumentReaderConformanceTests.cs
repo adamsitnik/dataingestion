@@ -29,9 +29,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             Assert.NotEmpty(document.Markdown);
 
             var elements = Flatten(document).ToArray();
-            Assert.Contains(elements, element => element is Header);
-            Assert.Contains(elements, element => element is Paragraph);
-            Assert.Contains(elements, element => element is Table);
+            Assert.Contains(elements, element => element is DocumentHeader);
+            Assert.Contains(elements, element => element is DocumentParagraph);
+            Assert.Contains(elements, element => element is DocumentTable);
             Assert.All(elements, element => Assert.NotEmpty(element.Markdown));
         }
 
@@ -96,16 +96,16 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             }
         }
 
-        protected static IEnumerable<Element> Flatten(Document document)
+        protected static IEnumerable<DocumentElement> Flatten(Document document)
         {
-            Queue<Section> sectionsQueue = new(document.Sections);
+            Queue<DocumentSection> sectionsQueue = new(document.Sections);
             while (sectionsQueue.Count > 0)
             {
-                Section section = sectionsQueue.Dequeue();
-                foreach (Element element in section.Elements)
+                DocumentSection section = sectionsQueue.Dequeue();
+                foreach (DocumentElement element in section.Elements)
                 {
                     // Please keep in mind that we don't preserve the order!
-                    if (element is Section subSection)
+                    if (element is DocumentSection subSection)
                     {
                         sectionsQueue.Enqueue(subSection);
                     }

@@ -12,6 +12,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using AdiParagraph = Azure.AI.DocumentIntelligence.DocumentParagraph;
+
 namespace Microsoft.Extensions.DataIngestion.Tests
 {
     public sealed class DocumentIntelligenceReader : DocumentReader
@@ -73,13 +75,13 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 #if DEBUG
             HashSet<int> visitedSections = new();
 #endif
-            Section rootSection = new();
+            DocumentSection rootSection = new();
             HandleSection(sectionIndex: 0, rootSection, parsed.Content);
 
             // If the root section consists only of sections, add those sections directly to flatten the structure.
-            if (rootSection.Elements.All(element => element is Section))
+            if (rootSection.Elements.All(element => element is DocumentSection))
             {
-                document.Sections.AddRange(rootSection.Elements.OfType<Section>());
+                document.Sections.AddRange(rootSection.Elements.OfType<DocumentSection>());
             }
             else
             {
@@ -91,7 +93,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
             return document;
 
-            void HandleSection(int sectionIndex, Section section, string entireContent)
+            void HandleSection(int sectionIndex, DocumentSection section, string entireContent)
             {
 #if DEBUG
                 Debug.Assert(visitedSections.Add(sectionIndex), "Section should not be visited more than once.");
@@ -104,7 +106,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                     switch (kind)
                     {
                         case "section":
-                            Section subSection = new();
+                            DocumentSection subSection = new();
                             section.Elements.Add(subSection);
                             HandleSection(index, subSection, entireContent);
                             break;
@@ -119,7 +121,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                         case "table":
                             var parsedTable = parsed.Tables[index];
                             // TODO adsitnik: handle tables and decide on design (list of rows vs list of cells).
-                            section.Elements.Add(new Table()
+                            section.Elements.Add(new DocumentTable()
                             {
                                 PageNumber = GetPageNumber(parsedTable.BoundingRegions),
                                 Markdown = GetMarkdown(parsedTable.Spans, entireContent),
@@ -168,35 +170,35 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             }
         }
 
-        private static Element MapToElement(DocumentParagraph parsedParagraph, string markdown)
+        private static DocumentElement MapToElement(AdiParagraph parsedParagraph, string markdown)
         {
             if (parsedParagraph.Role is null)
             {
-                return new Paragraph
+                return new DocumentParagraph
                 {
                     Text = parsedParagraph.Content,
                 };
             }
             else if (parsedParagraph.Role.Equals(ParagraphRole.PageHeader)
-                || parsedParagraph.Role.Equals(ParagraphRole.SectionHeading) // If other parsers expose similar information, we could extend Section with Header property.
-                || parsedParagraph.Role.Equals(ParagraphRole.Title)) // Same as Header, but for Presentations.
+                || parsedParagraph.Role.Equals(ParagraphRole.SectionHeading) // If other parsers expose similar information, we could extend DocumentSection with DocumentHeader property.
+                || parsedParagraph.Role.Equals(ParagraphRole.Title)) // Same as DocumentHeader, but for Presentations.
             {
-                return new Header()
+                return new DocumentHeader()
                 {
                     Text = parsedParagraph.Content,
                     Level = GetLevel(markdown)
                 };
             }
             else if (parsedParagraph.Role.Equals(ParagraphRole.PageFooter)
-                || parsedParagraph.Role.Equals(ParagraphRole.Footnote)) // Same as Footer, but for Presentations.
+                || parsedParagraph.Role.Equals(ParagraphRole.Footnote)) // Same as DocumentFooter, but for Presentations.
             {
-                return new Footer()
+                return new DocumentFooter()
                 {
                     Text = parsedParagraph.Content,
                 };
             }
 
-            throw new NotSupportedException($"Paragraph role '{parsedParagraph.Role}' is not supported.");
+            throw new NotSupportedException($"DocumentParagraph role '{parsedParagraph.Role}' is not supported.");
         }
 
         private static int? GetPageNumber(IReadOnlyList<BoundingRegion> boundingRegions)
@@ -204,7 +206,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         private static string GetMarkdown(IReadOnlyList<DocumentSpan> spans, string entireContent)
         {
-            Debug.Assert(spans.Count > 0, "Paragraph should have at least one span.");
+            Debug.Assert(spans.Count > 0, "DocumentParagraph should have at least one span.");
 
             return spans.Count switch
             {

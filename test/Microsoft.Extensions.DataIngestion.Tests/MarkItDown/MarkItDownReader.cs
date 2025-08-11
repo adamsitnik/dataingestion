@@ -116,7 +116,7 @@ public class MarkItDownReader : DocumentReader
 
     private static Document Map(MarkdownDocument markdownDocument, string outputContent)
     {
-        Section rootSection = new()
+        DocumentSection rootSection = new()
         {
             Markdown = outputContent
         };
@@ -146,14 +146,14 @@ public class MarkItDownReader : DocumentReader
                 continue; // Block with no text. Sample: QuoteBlock the next block is a quote.
             }
 
-            Element? element = block switch
+            DocumentElement? element = block switch
             {
                 LeafBlock leafBlock => MapLeafBlockToElement(leafBlock, previousWasBreak),
                 ListBlock listBlock => MapListBlock(listBlock, previousWasBreak, outputContent),
                 QuoteBlock quoteBlock => MapQuoteBlock(quoteBlock, previousWasBreak, outputContent),
-                Markdig.Extensions.Tables.Table table => new Table()
+                Markdig.Extensions.Tables.Table table => new DocumentTable()
                 {
-                    // TODO: provide Table design and map all data
+                    // TODO: provide DocumentTable design and map all data
                 },
                 _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
             };
@@ -166,38 +166,38 @@ public class MarkItDownReader : DocumentReader
         return result;
     }
 
-    private static Element MapLeafBlockToElement(LeafBlock block, bool previousWasBreak)
+    private static DocumentElement MapLeafBlockToElement(LeafBlock block, bool previousWasBreak)
         => block switch
         {
-            HeadingBlock heading => new Header
+            HeadingBlock heading => new DocumentHeader
             {
                 Text = GetText(heading.Inline),
                 Level = heading.Level
             },
-            ParagraphBlock footer when previousWasBreak => new Footer
+            ParagraphBlock footer when previousWasBreak => new DocumentFooter
             {
                 Text = GetText(footer.Inline),
             },
-            ParagraphBlock paragraph => new Paragraph
+            ParagraphBlock paragraph => new DocumentParagraph
             {
                 Text = GetText(paragraph.Inline),
             },
-            CodeBlock codeBlock => new Paragraph
+            CodeBlock codeBlock => new DocumentParagraph
             {
                 Text = GetText(codeBlock.Inline),
             },
             _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
         };
 
-    private static Section MapListBlock(ListBlock listBlock, bool previousWasBreak, string outputContent)
+    private static DocumentSection MapListBlock(ListBlock listBlock, bool previousWasBreak, string outputContent)
     {
         // So far Sections were only pages (LP) or sections for ADI. Now they can also represent lists.
-        Section list = new();
+        DocumentSection list = new();
         foreach (ListItemBlock item in listBlock) // can this hard cast fail for quote of lists?
         {
             foreach (LeafBlock child in item)
             {
-                Element element = MapLeafBlockToElement(child, previousWasBreak);
+                DocumentElement element = MapLeafBlockToElement(child, previousWasBreak);
                 element.Markdown = outputContent.Substring(child.Span.Start, child.Span.Length);
                 list.Elements.Add(element);
             }
@@ -206,13 +206,13 @@ public class MarkItDownReader : DocumentReader
         return list;
     }
 
-    private static Section MapQuoteBlock(QuoteBlock quoteBlock, bool previousWasBreak, string outputContent)
+    private static DocumentSection MapQuoteBlock(QuoteBlock quoteBlock, bool previousWasBreak, string outputContent)
     {
         // So far Sections were only pages (LP) or sections for ADI. Now they can also represent quotes.
-        Section quote = new();
+        DocumentSection quote = new();
         foreach (LeafBlock child in quoteBlock)
         {
-            Element element = MapLeafBlockToElement(child, previousWasBreak);
+            DocumentElement element = MapLeafBlockToElement(child, previousWasBreak);
             element.Markdown = outputContent.Substring(child.Span.Start, child.Span.Length);
             quote.Elements.Add(element);
         }

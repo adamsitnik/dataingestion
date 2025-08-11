@@ -92,11 +92,11 @@ public class LlamaParseReader : DocumentReader
         return result;
     }
 
-    private IEnumerable<Section> Map(LlamaParseDocument document)
+    private IEnumerable<DocumentSection> Map(LlamaParseDocument document)
     {
         foreach (var parsedPage in document.Pages)
         {
-            Section page = new()
+            DocumentSection page = new()
             {
                 Text = parsedPage.Text,
                 Markdown = parsedPage.Markdown,
@@ -105,7 +105,7 @@ public class LlamaParseReader : DocumentReader
 
             if (!string.IsNullOrEmpty(parsedPage.PageHeaderMarkdown))
             {
-                page.Elements.Add(new Header()
+                page.Elements.Add(new DocumentHeader()
                 {
                     // It's weird: Page Header is exposed as Markdown, but not as Text.
                     Text = RemoveHashtags(parsedPage.PageHeaderMarkdown),
@@ -115,18 +115,18 @@ public class LlamaParseReader : DocumentReader
 
             foreach (var item in parsedPage.Items)
             {
-                Element element = item switch
+                DocumentElement element = item switch
                 {
-                    TextPageItem text => new Paragraph()
+                    TextPageItem text => new DocumentParagraph()
                     {
                         Text = text.Value,
                     },
-                    HeadingPageItem heading => new Header()
+                    HeadingPageItem heading => new DocumentHeader()
                     {
                         Text = heading.Value,
                         Level = heading.Level,
                     },
-                    TablePageItem table => new Table()
+                    TablePageItem table => new DocumentTable()
                     {
                         Markdown = table.Markdown
                     },
@@ -140,7 +140,7 @@ public class LlamaParseReader : DocumentReader
 
             if (!string.IsNullOrEmpty(parsedPage.PageFooterMarkdown))
             {
-                page.Elements.Add(new Footer()
+                page.Elements.Add(new DocumentFooter()
                 {
                     // It's weird: Page Footer is exposed as Markdown, but not as Text.
                     Text = RemoveHashtags(parsedPage.PageFooterMarkdown),

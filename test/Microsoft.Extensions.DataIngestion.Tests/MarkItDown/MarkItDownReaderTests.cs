@@ -23,11 +23,11 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
         if (!isPdf)
         {
             // MarkItDown does a bad job of recognizing Headers and Tables even for simple PDF files.
-            Assert.Contains(elements, element => element is Header);
-            Assert.Contains(elements, element => element is Table);
+            Assert.Contains(elements, element => element is DocumentHeader);
+            Assert.Contains(elements, element => element is DocumentTable);
         }
 
-        Assert.Contains(elements, element => element is Paragraph);
+        Assert.Contains(elements, element => element is DocumentParagraph);
         Assert.All(elements, element => Assert.NotEmpty(element.Markdown));
     }
 }
