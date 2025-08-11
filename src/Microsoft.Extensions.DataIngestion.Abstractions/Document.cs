@@ -17,19 +17,21 @@ namespace Microsoft.Extensions.DataIngestion
 
         public string Markdown
         {
-            get => _markdown ??= string.Join("", Sections.Select(section => section.Markdown));
+            get => _markdown ??= Utils.ConcatMarkdown(Sections);
             set => _markdown = value;
         }
     }
 
-    [DebuggerDisplay("{GetType().Name}: {Markdown}")]
-    public abstract class DocumentElement
+    [DebuggerDisplay("[{GetType().Name}] {Markdown}")]
+    public abstract class DocumentElement : IContentElement
     {
         public string Text { get; set; } = string.Empty;
 
         public virtual string Markdown { get; set; } = string.Empty;
 
         public int? PageNumber { get; set; }
+
+        public override string ToString() => $"[{GetType().Name}] {Markdown}";
     }
 
     /// <summary>
@@ -43,7 +45,7 @@ namespace Microsoft.Extensions.DataIngestion
 
         public override string Markdown
         {
-            get => _markdown ??= string.Join("", Elements.Select(e => e.Markdown));
+            get => _markdown ??= Utils.ConcatMarkdown(Elements);
             set => _markdown = value;
         }
     }
