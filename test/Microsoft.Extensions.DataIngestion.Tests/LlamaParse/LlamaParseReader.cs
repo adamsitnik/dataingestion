@@ -69,33 +69,6 @@ public class LlamaParseReader : DocumentReader
             .ToArrayAsync(cancellationToken));
     }
 
-    public override async Task<Document> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (stream is null)
-        {
-            throw new ArgumentNullException(nameof(stream));
-        }
-
-        Memory<byte> content = new byte[checked(stream.Length - stream.Position)];
-        await stream.ReadAtLeastAsync(content, content.Length, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        string fileName = stream is FileStream fileStream
-            ? Path.GetFileName(fileStream.Name)
-            // TODO: adsitnik: this is either a design flaw of DocumentReader or LlamaParseClient limitation.
-            // As InMemoryFile tries to obtain the MIME type from the file name, but we only have a stream here.
-            : throw new NotImplementedException("Unable to get file name and MIME type from stream.");
-
-        InMemoryFile inMemoryFile = new(content, fileName);
-
-        return MapToDocument(await _client.LoadDataRawAsync(
-                inMemoryFile,
-                resultType: ResultType.Json,
-                cancellationToken: cancellationToken)
-            .ToArrayAsync(cancellationToken));
-    }
-
     private Document MapToDocument(RawResult[] parsed)
     {
         Document result = new();

@@ -9,54 +9,12 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion
 {
+    // Design notes: this class no longer exposes an overload that takes a Stream and a CancellationToken.
+    // The reason is that Stream does not provide the necessary information like the MIME type or the file name.
     public abstract class DocumentReader
     {
-        public abstract Task<Document> ReadAsync(Stream stream, CancellationToken cancellationToken = default);
+        public abstract Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default);
 
-        public virtual async Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (string.IsNullOrEmpty(filePath))
-            {
-                throw new ArgumentNullException(nameof(filePath));
-            }
-
-            // There is no need to buffer the file stream when reading a document.
-            // Specifying 1 as buffer size will disable buffering on every target framework (Core and Full).
-            const int DisableBuffering = 1;
-            // By default, FileStream is opened for synchronous I/O operations, async is on demand.
-            const bool useAsync = true;
-
-            using FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, DisableBuffering, useAsync);
-            return await ReadAsync(fileStream, cancellationToken);
-        }
-
-        public virtual async Task<Document> ReadAsync(Uri source, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (source is null)
-            {
-                throw new ArgumentNullException(nameof(source));
-            }
-
-            if (source.IsFile)
-            {
-                return await ReadAsync(source.LocalPath, cancellationToken);
-            }
-
-            HttpClient httpClient = new();
-            using HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            using Stream stream = await
-#if NET8_0_OR_GREATER
-                response.Content.ReadAsStreamAsync(cancellationToken);
-#else
-                response.Content.ReadAsStreamAsync();
-#endif
-            return await ReadAsync(stream, cancellationToken);
-        }
+        public abstract Task<Document> ReadAsync(Uri source, CancellationToken cancellationToken = default);
     }
 }
