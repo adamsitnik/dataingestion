@@ -29,35 +29,32 @@ public class MarkItDownReader : DocumentReader
         {
             FileName = _exePath,
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            StandardOutputEncoding = Encoding.UTF8,
         };
 
-        string outputPath = GetTempFilePath();
-        startInfo.ArgumentList.Add(filePath);
-        startInfo.ArgumentList.Add("-o");
-        startInfo.ArgumentList.Add(outputPath);
+        // Force UTF-8 encoding in the environment (will produce garbage otherwise).
+        startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
+        startInfo.Environment["LC_ALL"] = "C.UTF-8";
+        startInfo.Environment["LANG"] = "C.UTF-8";
 
+        startInfo.ArgumentList.Add(filePath);
 
         string outputContent = "";
-        try
+        using (Process process = new() { StartInfo = startInfo })
         {
-            using (var process = new Process { StartInfo = startInfo })
+            process.Start();
+
+            // Read standard output asynchronously
+            outputContent = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+
+            await process.WaitForExitAsync(cancellationToken);
+
+            if (process.ExitCode != 0)
             {
-                process.Start();
-
-                await process.WaitForExitAsync(cancellationToken);
-
-                if (process.ExitCode != 0)
-                {
-                    throw new InvalidOperationException($"MarkItDown process failed with exit code {process.ExitCode}.");
-                }
+                throw new InvalidOperationException($"MarkItDown process failed with exit code {process.ExitCode}.");
             }
-
-            outputContent = await File.ReadAllTextAsync(outputPath, cancellationToken);
-        }
-        finally
-        {
-            File.Delete(outputPath); // Clean up the temporary output file as soon as we are done with it.
         }
 
         // Markdig's "UseAdvancedExtensions" option includes many common extensions beyond
