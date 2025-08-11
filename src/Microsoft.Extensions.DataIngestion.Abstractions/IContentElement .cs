@@ -11,7 +11,6 @@ namespace Microsoft.Extensions.DataIngestion
 {
     public interface IContentElement
     {
-        string Text { get; }
         string Markdown { get; }
         int? PageNumber { get; }
     }
