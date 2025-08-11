@@ -26,6 +26,20 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             _modelName = string.IsNullOrEmpty(modelName) ? throw new ArgumentNullException(nameof(modelName)) : modelName;
         }
 
+        public override async Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
+
+            byte[] bytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
+            BinaryData binaryData = BinaryData.FromBytes(bytes);
+            return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), cancellationToken);
+        }
+
         public override Task<Document> ReadAsync(Uri uri, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -33,7 +47,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             return ReadAsync(new AnalyzeDocumentOptions(_modelName, uri), cancellationToken);
         }
 
-        public override async Task<Document> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public async Task<Document> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
