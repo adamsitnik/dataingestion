@@ -2,10 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Microsoft.Extensions.DataIngestion
 {
+    [DebuggerDisplay("{Markdown}")]
     public sealed class Document
     {
         private string? _markdown;
@@ -17,10 +19,9 @@ namespace Microsoft.Extensions.DataIngestion
             get => _markdown ??= string.Join("", Sections.Select(section => section.Markdown));
             set => _markdown = value;
         }
-
-        public override string ToString() => Markdown;
     }
 
+    [DebuggerDisplay("{GetType().Name}: {Markdown}")]
     public abstract class Element
     {
         public string Text { get; set; } = string.Empty;
@@ -28,8 +29,6 @@ namespace Microsoft.Extensions.DataIngestion
         public virtual string Markdown { get; set; } = string.Empty;
 
         public int? PageNumber { get; set; }
-
-        public override string ToString() => $"{GetType().Name}: {Markdown}";
     }
 
     /// <summary>
