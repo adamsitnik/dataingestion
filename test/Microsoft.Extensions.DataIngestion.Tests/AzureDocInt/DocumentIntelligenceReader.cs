@@ -198,7 +198,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                 };
             }
 
-            throw new NotSupportedException($"DocumentParagraph role '{parsedParagraph.Role}' is not supported.");
+            throw new NotSupportedException($"Paragraph role '{parsedParagraph.Role}' is not supported.");
         }
 
         private static int? GetPageNumber(IReadOnlyList<BoundingRegion> boundingRegions)
@@ -206,7 +206,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         private static string GetMarkdown(IReadOnlyList<DocumentSpan> spans, string entireContent)
         {
-            Debug.Assert(spans.Count > 0, "DocumentParagraph should have at least one span.");
+            Debug.Assert(spans.Count > 0, "Paragraph should have at least one span.");
 
             return spans.Count switch
             {
