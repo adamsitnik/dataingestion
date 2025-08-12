@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class MarkItDownReaderTests : DocumentReaderConformanceTests
 {
-    protected override DocumentReader CreateDocumentReader() => new MarkItDownReader();
+    protected override DocumentReader CreateDocumentReader(bool extractImages = false) => new MarkItDownReader();
 
     protected override void SimpleAsserts(Document document, string source)
     {
