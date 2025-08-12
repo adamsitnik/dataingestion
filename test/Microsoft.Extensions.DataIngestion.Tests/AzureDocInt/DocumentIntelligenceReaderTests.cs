@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 {
     public class DocumentIntelligenceReaderTests : DocumentReaderConformanceTests
     {
-        protected override DocumentReader CreateDocumentReader()
+        protected override DocumentReader CreateDocumentReader(bool extractImages = false)
         {
             string key = Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_KEY")!;
             string endpoint = Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_ENDPOINT")!;
@@ -18,7 +18,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             AzureKeyCredential credential = new(key);
             DocumentIntelligenceClient client = new(new Uri(endpoint), credential);
 
-            return new DocumentIntelligenceReader(client);
+            return new DocumentIntelligenceReader(client, extractImages: extractImages);
         }
     }
 }

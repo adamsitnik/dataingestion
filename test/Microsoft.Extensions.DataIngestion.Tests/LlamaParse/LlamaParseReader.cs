@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using LlamaIndex.Core.Schema;
 using LlamaParse;
 using System;
 using System.Collections.Generic;
@@ -34,11 +35,15 @@ public class LlamaParseReader : DocumentReader
             throw new ArgumentNullException(nameof(filePath));
         }
 
-        return MapToDocument(await _client.LoadDataRawAsync(
-                new FileInfo(filePath),
+        FileInfo fileInfo = new(filePath);
+        (List<RawResult> rawResults, List<ImageDocument> imageDocuments) = await LoadDataAsync(
+            _client.LoadDataRawAsync(
+                fileInfo,
                 resultType: ResultType.Json,
-                cancellationToken: cancellationToken)
-            .ToArrayAsync(cancellationToken));
+                cancellationToken: cancellationToken),
+            cancellationToken);
+
+        return MapToDocument(rawResults, imageDocuments);
     }
 
     public override async Task<Document> ReadAsync(Uri source, CancellationToken cancellationToken = default)
@@ -62,37 +67,50 @@ public class LlamaParseReader : DocumentReader
         Memory<byte> content = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
         InMemoryFile inMemoryFile = new(content, source.Segments[^1]);
 
-        return MapToDocument(await _client.LoadDataRawAsync(
+        (List<RawResult> rawResults, List<ImageDocument> imageDocuments) = await LoadDataAsync(
+            _client.LoadDataRawAsync(
                 inMemoryFile,
                 resultType: ResultType.Json,
-                cancellationToken: cancellationToken)
-            .ToArrayAsync(cancellationToken));
+                cancellationToken: cancellationToken),
+            cancellationToken);
+
+        return MapToDocument(rawResults, imageDocuments);
     }
 
-    private Document MapToDocument(RawResult[] parsed)
+    private async Task<(List<RawResult> Parsed, List<ImageDocument> Images)> LoadDataAsync(
+        IAsyncEnumerable<RawResult> rawResults,
+        CancellationToken cancellationToken)
+    {
+        List<RawResult> parsed = [];
+        List<ImageDocument> images = [];
+
+        await foreach (var rawResult in rawResults)
+        {
+            parsed.Add(rawResult);
+
+            await foreach (var imageDocument in _client.LoadImagesAsync(rawResult, cancellationToken))
+            {
+                images.Add(imageDocument);
+            }
+        }
+
+        return (parsed, images);
+    }
+
+    private Document MapToDocument(List<RawResult> parsed, List<ImageDocument> images)
     {
         Document result = new();
 
-        // As of now, we assume that there is only one result.
-        // But when there are any images, the first one is the document
-        // and the rest are images. Same seems to be true for charts.
         foreach (var rawResult in parsed)
         {
-            if (rawResult.Result.TryGetProperty("pages", out var property))
-            {
-                LlamaParseDocument document = JsonSerializer.Deserialize<LlamaParseDocument>(rawResult.Result, _jsonSerializerOptions)!;
-                result.Sections.AddRange(Map(document));
-            }
-            else
-            {
-                throw new NotImplementedException("Image support is missing");
-            }
+            LlamaParseDocument document = JsonSerializer.Deserialize<LlamaParseDocument>(rawResult.Result, _jsonSerializerOptions)!;
+            result.Sections.AddRange(Map(document, images));
         }
 
         return result;
     }
 
-    private IEnumerable<DocumentSection> Map(LlamaParseDocument document)
+    private IEnumerable<DocumentSection> Map(LlamaParseDocument document, List<ImageDocument> images)
     {
         foreach (var parsedPage in document.Pages)
         {
@@ -108,7 +126,7 @@ public class LlamaParseReader : DocumentReader
                 page.Elements.Add(new DocumentHeader()
                 {
                     // It's weird: Page Header is exposed as Markdown, but not as Text.
-                    Text = RemoveHashtags(parsedPage.PageHeaderMarkdown),
+                    Text = parsedPage.PageHeaderMarkdown.TrimStart('#'),
                     Markdown = parsedPage.PageHeaderMarkdown
                 });
             }
@@ -138,30 +156,35 @@ public class LlamaParseReader : DocumentReader
                 page.Elements.Add(element);
             }
 
+            // All we know about the location of images is the page number, so we add them at the end of the page.
+            object boxOnce = parsedPage.PageNumber;
+            foreach (var image in images.Where(image => image.Image is not null &&
+                image.Metadata.TryGetValue("page_number", out object? pageNumber) && pageNumber.Equals(boxOnce)))
+            {
+                // Based on what we learn from the further steps like using the image with IChatClient,
+                // the Base64 string might become the standard instead of BinaryData.
+                BinaryData binaryData = BinaryData.FromBytes(Convert.FromBase64String(image.Image!));
+
+                page.Elements.Add(new DocumentImage()
+                {
+                    PageNumber = parsedPage.PageNumber,
+                    Caption = image.Text ?? string.Empty,
+                    MimeType = image.MimeType,
+                    Content = binaryData
+                });
+            }
+
             if (!string.IsNullOrEmpty(parsedPage.PageFooterMarkdown))
             {
                 page.Elements.Add(new DocumentFooter()
                 {
                     // It's weird: Page Footer is exposed as Markdown, but not as Text.
-                    Text = RemoveHashtags(parsedPage.PageFooterMarkdown),
+                    Text = parsedPage.PageFooterMarkdown.TrimStart('#'),
                     Markdown = parsedPage.PageFooterMarkdown
                 });
             }
 
             yield return page;
         }
-    }
-
-    private string RemoveHashtags(string pageHeaderMarkdown)
-    {
-        for (int i = 0; i < pageHeaderMarkdown.Length; i++)
-        {
-            if (pageHeaderMarkdown[i] != '#')
-            {
-                return i == 0 ? pageHeaderMarkdown : pageHeaderMarkdown[i..];
-            }
-        }
-
-        return pageHeaderMarkdown;
     }
 }

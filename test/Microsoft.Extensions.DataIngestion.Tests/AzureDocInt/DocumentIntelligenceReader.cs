@@ -20,12 +20,15 @@ namespace Microsoft.Extensions.DataIngestion.Tests
     {
         private readonly DocumentIntelligenceClient _client;
         private readonly string _modelName;
+        private readonly bool _extractImages;
 
         /// <param name="modelName">Unique document model name (<see cref="https://learn.microsoft.com/azure/ai-services/document-intelligence/overview#document-analysis-models"/>).</param>
-        public DocumentIntelligenceReader(DocumentIntelligenceClient client, string modelName = "prebuilt-layout")
+        /// <param name="extractImages">Generate cropped images of detected figures. Disabled by default.</param>
+        public DocumentIntelligenceReader(DocumentIntelligenceClient client, string modelName = "prebuilt-layout", bool extractImages = false)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _modelName = string.IsNullOrEmpty(modelName) ? throw new ArgumentNullException(nameof(modelName)) : modelName;
+            _extractImages = extractImages;
         }
 
         public override async Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default)
@@ -60,12 +63,31 @@ namespace Microsoft.Extensions.DataIngestion.Tests
         private async Task<Document> ReadAsync(AnalyzeDocumentOptions options, CancellationToken cancellationToken)
         {
             options.OutputContentFormat = DocumentContentFormat.Markdown;
+            if (_extractImages)
+            {
+                options.Output.Add(AnalyzeOutputOption.Figures);
+            }
 
             Operation<AnalyzeResult> operation = await _client.AnalyzeDocumentAsync(WaitUntil.Completed, options, cancellationToken);
-            return MapToDocument(operation.Value);
+            Dictionary<string, BinaryData> figures = await GetFigures(operation, cancellationToken);
+
+            return MapToDocument(operation.Value, figures);
         }
 
-        private static Document MapToDocument(AnalyzeResult parsed)
+        private async Task<Dictionary<string, BinaryData>> GetFigures(Operation<AnalyzeResult> result, CancellationToken cancellationToken)
+        {
+            Dictionary<string, BinaryData> figures = new(StringComparer.Ordinal);
+            if (_extractImages)
+            {
+                foreach (var figure in result.Value.Figures)
+                {
+                    figures[figure.Id] = await _client.GetAnalyzeResultFigureAsync(result.Value.ModelId, result.Id, figure.Id, cancellationToken);
+                }
+            }
+            return figures;
+        }
+
+        private static Document MapToDocument(AnalyzeResult parsed, Dictionary<string, BinaryData> figures)
         {
             Document document = new()
             {
@@ -128,7 +150,16 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                             });
                             break;
                         case "figure":
-                            // TODO adsitnik: handle images and charts.
+                            var figure = parsed.Figures[index];
+                            BinaryData? content = figures.TryGetValue(figure.Id, out var data) ? data : null;
+                            section.Elements.Add(new DocumentImage
+                            {
+                                Content = content,
+                                MimeType = content?.MediaType,
+                                PageNumber = GetPageNumber(figure.BoundingRegions),
+                                Caption = figure.Caption?.Content,
+                                Markdown = GetMarkdown(figure.Spans, entireContent),
+                            });
                             break;
                         default:
                             throw new NotSupportedException($"Element kind '{kind}' is not supported.");
