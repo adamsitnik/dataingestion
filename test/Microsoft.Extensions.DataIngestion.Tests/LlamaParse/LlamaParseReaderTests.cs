@@ -16,8 +16,13 @@ public class LlamaParseReaderTests : DocumentReaderConformanceTests
         LlamaParse.Configuration configuration = new()
         {
             ApiKey = key ?? throw new InvalidOperationException("LLAMACLOUD_API_KEY environment variable is not set."),
-            ItemsToExtract = extractImages ? ItemType.Image : ItemType.Table,
+            ItemsToExtract = ItemType.Table,
         };
+
+        if (extractImages)
+        {
+            configuration.ItemsToExtract |= ItemType.Image;
+        }
 
         return new LlamaParseReader(new LlamaParseClient(new HttpClient(), configuration));
     }
