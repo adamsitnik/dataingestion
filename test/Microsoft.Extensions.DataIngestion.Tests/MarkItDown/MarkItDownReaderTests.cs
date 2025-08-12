@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
@@ -29,5 +30,13 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
 
         Assert.Contains(elements, element => element is DocumentParagraph);
         Assert.All(elements, element => Assert.NotEmpty(element.Markdown));
+    }
+
+    public override Task SupportsImages(string filePath)
+    {
+        // MarkItDown currently does not support images (the original purpose of the library was to support text-only LLMs).
+        // Source: https://github.com/microsoft/markitdown/issues/56#issuecomment-2546357264
+
+        return Task.CompletedTask;
     }
 }

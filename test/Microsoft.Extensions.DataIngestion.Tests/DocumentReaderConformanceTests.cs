@@ -34,7 +34,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             Assert.Contains(elements, element => element is DocumentHeader);
             Assert.Contains(elements, element => element is DocumentParagraph);
             Assert.Contains(elements, element => element is DocumentTable);
-            Assert.All(elements, element => Assert.NotEmpty(element.Markdown));
+            Assert.All(elements.Where(element => element is not DocumentImage), element => Assert.NotEmpty(element.Markdown));
         }
 
         [Theory]
@@ -79,7 +79,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         [Theory]
         [MemberData(nameof(Images))]
-        public async Task SupportsImages(string filePath)
+        public virtual async Task SupportsImages(string filePath)
         {
             var reader = CreateDocumentReader(extractImages: true);
             var document = await reader.ReadAsync(filePath);

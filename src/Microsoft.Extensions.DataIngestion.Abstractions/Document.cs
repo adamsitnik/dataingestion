@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -62,5 +63,14 @@ namespace Microsoft.Extensions.DataIngestion
 
     public sealed class DocumentTable : DocumentElement
     {
+    }
+
+    public sealed class DocumentImage : DocumentElement
+    {
+        public BinaryData? Content { get; set; }
+
+        public string? Caption { get; set; }
+
+        public string? MimeType { get; set; }
     }
 }

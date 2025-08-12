@@ -18,7 +18,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             AzureKeyCredential credential = new(key);
             DocumentIntelligenceClient client = new(new Uri(endpoint), credential);
 
-            return new DocumentIntelligenceReader(client);
+            return new DocumentIntelligenceReader(client, extractImages: extractImages);
         }
     }
 }
