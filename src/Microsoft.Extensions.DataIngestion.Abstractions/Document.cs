@@ -13,12 +13,21 @@ namespace Microsoft.Extensions.DataIngestion
     {
         private string? _markdown;
 
+        public string Identifier { get; }
         public List<DocumentSection> Sections { get; } = [];
 
         public string Markdown
         {
             get => _markdown ??= string.Join("", Sections.Select(section => section.Markdown));
             set => _markdown = value;
+        }
+
+        public Document(string identifier)
+        {
+            if (string.IsNullOrWhiteSpace(identifier))
+                throw new ArgumentException("Identifier cannot be null or whitespace.", nameof(identifier));
+
+            Identifier = identifier;
         }
     }
 
