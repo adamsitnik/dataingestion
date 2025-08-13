@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace Microsoft.Extensions.DataIngestion
 {
-    [DebuggerDisplay("{Markdown}")]
+    [DebuggerDisplay("{Content}")]
     public sealed class Chunk
     {
         public string Content { get; }
