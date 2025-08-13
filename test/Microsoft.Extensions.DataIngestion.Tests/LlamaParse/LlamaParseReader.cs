@@ -99,7 +99,7 @@ public class LlamaParseReader : DocumentReader
 
     private Document MapToDocument(List<RawResult> parsed, List<ImageDocument> images)
     {
-        Document result = new();
+        Document result = new("1");
 
         foreach (var rawResult in parsed)
         {

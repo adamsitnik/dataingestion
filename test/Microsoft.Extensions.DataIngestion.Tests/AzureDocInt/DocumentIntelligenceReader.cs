@@ -89,7 +89,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         private static Document MapToDocument(AnalyzeResult parsed, Dictionary<string, BinaryData> figures)
         {
-            Document document = new()
+            Document document = new("1")
             {
                 Markdown = parsed.Content,
             };
