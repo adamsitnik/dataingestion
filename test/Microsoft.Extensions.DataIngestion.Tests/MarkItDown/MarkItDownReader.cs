@@ -120,7 +120,7 @@ public class MarkItDownReader : DocumentReader
         {
             Markdown = outputContent
         };
-        Document result = new()
+        Document result = new("1")
         {
             Markdown = outputContent,
             Sections = { rootSection }

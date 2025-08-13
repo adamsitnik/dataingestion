@@ -12,7 +12,7 @@ public class DocumentFlattenerTests
     [Fact]
     public async Task StructureIsPreservedWithinSectionsAndDocument()
     {
-        Document doc = new()
+        Document doc = new("1")
         {
             Markdown = "same",
         };

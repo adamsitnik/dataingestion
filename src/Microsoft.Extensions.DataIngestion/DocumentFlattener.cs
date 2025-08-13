@@ -31,7 +31,7 @@ public class DocumentFlattener : DocumentProcessor
 
             FlattenAndKeepOrder(document.Sections, rootSection.Elements);
 
-            Document flat = new()
+            Document flat = new("1")
             {
                 Markdown = document.Markdown, // Markdown needs to be preserved
                 Sections = { rootSection }
