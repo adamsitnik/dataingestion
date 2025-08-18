@@ -167,10 +167,10 @@ public class LlamaParseReader : DocumentReader
 
                 page.Elements.Add(new DocumentImage()
                 {
+                    Content = binaryData,
+                    MediaType = image.ImageMimetype,
                     PageNumber = parsedPage.PageNumber,
-                    Caption = image.Text ?? string.Empty,
-                    MimeType = image.MimeType,
-                    Content = binaryData
+                    Text = image.Text ?? string.Empty,
                 });
             }
 

@@ -9,12 +9,14 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.3.0-beta.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="LlamaParse" Version="0.1.1" />
     <PackageReference Include="Markdig" Version="0.41.3" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.8.0-preview.1.25412.6" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.0-preview.6.25358.103" />
     <PackageReference Include="xunit" Version="2.9.3" />
@@ -33,6 +35,8 @@
     <Compile Remove="AzureDocInt\**\*ReaderTests.cs" Condition="'$(AZURE_DOCUMENT_INT_KEY)' == ''" />
     <!-- Do not run the tests when LLAMACLOUD_API_KEY environment variable is not set -->
     <Compile Remove="LlamaParse\**\*ReaderTests.cs" Condition="'$(LLAMACLOUD_API_KEY)' == ''" />
+    <!-- Do not run the tests when AZURE_OPENAI_ENDPOINT environment variable is not set -->
+    <Compile Remove="ImageDescriptionProcessorTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
   </ItemGroup>
 
   <ItemGroup>
