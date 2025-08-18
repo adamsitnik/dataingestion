@@ -69,8 +69,8 @@ namespace Microsoft.Extensions.DataIngestion
     {
         public BinaryData? Content { get; set; }
 
-        public string? Caption { get; set; }
+        public string? MediaType { get; set; }
 
-        public string? MimeType { get; set; }
+        public string? Description { get; set; }
     }
 }

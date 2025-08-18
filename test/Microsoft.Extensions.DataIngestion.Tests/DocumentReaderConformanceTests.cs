@@ -86,7 +86,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
             SimpleAsserts(document, filePath);
             var elements = Flatten(document).ToArray();
-            Assert.Contains(elements, element => element is DocumentImage);
+            Assert.Contains(elements, element => element is DocumentImage img && img.Content is not null && !string.IsNullOrEmpty(img.MediaType));
         }
 
         [Fact]

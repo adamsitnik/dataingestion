@@ -155,9 +155,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                             section.Elements.Add(new DocumentImage
                             {
                                 Content = content,
-                                MimeType = content?.MediaType,
+                                MediaType = content?.MediaType ?? "image/png",
                                 PageNumber = GetPageNumber(figure.BoundingRegions),
-                                Caption = figure.Caption?.Content,
+                                Text = figure.Caption?.Content ?? "",
                                 Markdown = GetMarkdown(figure.Spans, entireContent),
                             });
                             break;
