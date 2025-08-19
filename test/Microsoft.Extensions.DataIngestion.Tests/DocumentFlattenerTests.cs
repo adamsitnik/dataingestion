@@ -12,7 +12,7 @@ public class DocumentFlattenerTests
     [Fact]
     public async Task StructureIsPreservedWithinSectionsAndDocument()
     {
-        Document doc = new()
+        Document doc = new("withSubSections")
         {
             Markdown = "same",
         };
@@ -49,6 +49,7 @@ public class DocumentFlattenerTests
         List<Document> flattened = await flattener.ProcessAsync(new List<Document> { doc });
 
         Document flatDoc = flattened[0];
+        Assert.Same(doc.Identifier, flatDoc.Identifier); // The identifier should be preserved
         DocumentSection flatSection = flatDoc.Sections[0];
 
         Assert.Single(flattened);

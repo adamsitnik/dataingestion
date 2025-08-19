@@ -12,9 +12,10 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
 {
     protected override DocumentReader CreateDocumentReader(bool extractImages = false) => new MarkItDownReader();
 
-    protected override void SimpleAsserts(Document document, string source)
+    protected override void SimpleAsserts(Document document, string source, string expectedId)
     {
         Assert.NotNull(document);
+        Assert.Equal(expectedId, document.Identifier);
         Assert.NotEmpty(document.Sections);
         Assert.NotEmpty(document.Markdown);
 
@@ -32,7 +33,7 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
         Assert.All(elements, element => Assert.NotEmpty(element.Markdown));
     }
 
-    public override Task SupportsImages(string filePath)
+    public override Task SupportsImages(string filePath, string expectedId)
     {
         // MarkItDown currently does not support images (the original purpose of the library was to support text-only LLMs).
         // Source: https://github.com/microsoft/markitdown/issues/56#issuecomment-2546357264

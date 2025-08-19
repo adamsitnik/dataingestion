@@ -38,7 +38,7 @@ public class ImageDescriptionProcessorTests
             MediaType = "image/png"
         };
 
-        Document document = new()
+        Document document = new("withImage")
         {
             Sections =
             {
