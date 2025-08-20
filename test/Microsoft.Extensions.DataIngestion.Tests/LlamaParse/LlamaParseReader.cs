@@ -26,13 +26,17 @@ public class LlamaParseReader : DocumentReader
 
     public LlamaParseReader(LlamaParseClient client) => _client = client;
 
-    public override async Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default)
+    public override async Task<Document> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         if (string.IsNullOrEmpty(filePath))
         {
             throw new ArgumentNullException(nameof(filePath));
+        }
+        else if (string.IsNullOrEmpty(identifier))
+        {
+            throw new ArgumentNullException(nameof(identifier));
         }
 
         FileInfo fileInfo = new(filePath);
@@ -43,10 +47,10 @@ public class LlamaParseReader : DocumentReader
                 cancellationToken: cancellationToken),
             cancellationToken);
 
-        return MapToDocument(rawResults, imageDocuments);
+        return MapToDocument(rawResults, imageDocuments, identifier);
     }
 
-    public override async Task<Document> ReadAsync(Uri source, CancellationToken cancellationToken = default)
+    public override async Task<Document> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -54,10 +58,9 @@ public class LlamaParseReader : DocumentReader
         {
             throw new ArgumentNullException(nameof(source));
         }
-
-        if (source.IsFile)
+        else if (string.IsNullOrEmpty(identifier))
         {
-            return await ReadAsync(source.LocalPath, cancellationToken);
+            throw new ArgumentNullException(nameof(identifier));
         }
 
         HttpClient httpClient = new();
@@ -74,7 +77,7 @@ public class LlamaParseReader : DocumentReader
                 cancellationToken: cancellationToken),
             cancellationToken);
 
-        return MapToDocument(rawResults, imageDocuments);
+        return MapToDocument(rawResults, imageDocuments, identifier);
     }
 
     private async Task<(List<RawResult> Parsed, List<ImageDocument> Images)> LoadDataAsync(
@@ -97,9 +100,9 @@ public class LlamaParseReader : DocumentReader
         return (parsed, images);
     }
 
-    private Document MapToDocument(List<RawResult> parsed, List<ImageDocument> images)
+    private Document MapToDocument(List<RawResult> parsed, List<ImageDocument> images, string identifier)
     {
-        Document result = new();
+        Document result = new(identifier);
 
         foreach (var rawResult in parsed)
         {

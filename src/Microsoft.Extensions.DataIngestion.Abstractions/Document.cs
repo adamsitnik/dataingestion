@@ -13,7 +13,14 @@ namespace Microsoft.Extensions.DataIngestion
     {
         private string? _markdown;
 
+        public Document(string identifier)
+        {
+            Identifier = identifier ?? throw new ArgumentNullException(nameof(identifier));
+        }
+
         public List<DocumentSection> Sections { get; } = [];
+
+        public string Identifier { get; }
 
         public string Markdown
         {

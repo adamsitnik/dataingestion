@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             _extractImages = extractImages;
         }
 
-        public override async Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default)
+        public override async Task<Document> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -39,28 +39,50 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             {
                 throw new ArgumentNullException(nameof(filePath));
             }
+            else if (string.IsNullOrEmpty(identifier))
+            {
+                throw new ArgumentNullException(nameof(identifier));
+            }
 
             byte[] bytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
             BinaryData binaryData = BinaryData.FromBytes(bytes);
-            return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), cancellationToken);
+            return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), identifier, cancellationToken);
         }
 
-        public override Task<Document> ReadAsync(Uri uri, CancellationToken cancellationToken = default)
+        public override Task<Document> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            return ReadAsync(new AnalyzeDocumentOptions(_modelName, uri), cancellationToken);
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            else if (string.IsNullOrEmpty(identifier))
+            {
+                throw new ArgumentNullException(nameof(identifier));
+            }
+
+            return ReadAsync(new AnalyzeDocumentOptions(_modelName, source), identifier, cancellationToken);
         }
 
-        public async Task<Document> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public async Task<Document> ReadAsync(Stream stream, string identifier, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (stream is null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+            else if (string.IsNullOrEmpty(identifier))
+            {
+                throw new ArgumentNullException(nameof(identifier));
+            }
 
             BinaryData binaryData = await BinaryData.FromStreamAsync(stream, cancellationToken);
-            return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), cancellationToken);
+            return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), identifier, cancellationToken);
         }
 
-        private async Task<Document> ReadAsync(AnalyzeDocumentOptions options, CancellationToken cancellationToken)
+        private async Task<Document> ReadAsync(AnalyzeDocumentOptions options, string identifier, CancellationToken cancellationToken)
         {
             options.OutputContentFormat = DocumentContentFormat.Markdown;
             if (_extractImages)
@@ -71,7 +93,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             Operation<AnalyzeResult> operation = await _client.AnalyzeDocumentAsync(WaitUntil.Completed, options, cancellationToken);
             Dictionary<string, BinaryData> figures = await GetFigures(operation, cancellationToken);
 
-            return MapToDocument(operation.Value, figures);
+            return MapToDocument(operation.Value, figures, identifier);
         }
 
         private async Task<Dictionary<string, BinaryData>> GetFigures(Operation<AnalyzeResult> result, CancellationToken cancellationToken)
@@ -87,9 +109,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             return figures;
         }
 
-        private static Document MapToDocument(AnalyzeResult parsed, Dictionary<string, BinaryData> figures)
+        private static Document MapToDocument(AnalyzeResult parsed, Dictionary<string, BinaryData> figures, string identifier)
         {
-            Document document = new()
+            Document document = new(identifier)
             {
                 Markdown = parsed.Content,
             };

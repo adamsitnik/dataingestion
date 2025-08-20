@@ -23,13 +23,17 @@ public class MarkItDownReader : DocumentReader
         _exePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
     }
 
-    public override async Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default)
+    public override async Task<Document> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         if (string.IsNullOrEmpty(filePath))
         {
             throw new ArgumentNullException(nameof(filePath));
+        }
+        else if (string.IsNullOrEmpty(identifier))
+        {
+            throw new ArgumentNullException(nameof(identifier));
         }
 
         ProcessStartInfo startInfo = new()
@@ -72,10 +76,10 @@ public class MarkItDownReader : DocumentReader
             .Build();
 
         MarkdownDocument markdownDocument = Markdown.Parse(outputContent, pipeline);
-        return Map(markdownDocument, outputContent);
+        return Map(markdownDocument, outputContent, identifier);
     }
 
-    public override async Task<Document> ReadAsync(Uri source, CancellationToken cancellationToken = default)
+    public override async Task<Document> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -83,10 +87,9 @@ public class MarkItDownReader : DocumentReader
         {
             throw new ArgumentNullException(nameof(source));
         }
-
-        if (source.IsFile)
+        else if (string.IsNullOrEmpty(identifier))
         {
-            return await ReadAsync(source.LocalPath, cancellationToken);
+            throw new ArgumentNullException(nameof(identifier));
         }
 
         HttpClient httpClient = new();
@@ -106,7 +109,7 @@ public class MarkItDownReader : DocumentReader
 
         try
         {
-            return await ReadAsync(inputFilePath, cancellationToken);
+            return await ReadAsync(inputFilePath, identifier, cancellationToken);
         }
         finally
         {
@@ -114,13 +117,13 @@ public class MarkItDownReader : DocumentReader
         }
     }
 
-    private static Document Map(MarkdownDocument markdownDocument, string outputContent)
+    private static Document Map(MarkdownDocument markdownDocument, string outputContent, string identifier)
     {
         DocumentSection rootSection = new()
         {
             Markdown = outputContent
         };
-        Document result = new()
+        Document result = new(identifier)
         {
             Markdown = outputContent,
             Sections = { rootSection }
