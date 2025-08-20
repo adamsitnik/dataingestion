@@ -65,7 +65,7 @@ public class VectorStoreWriterTests
         [VectorStoreKey(StorageName = "key")]
         public Guid Id { get; set; }
 
-        [VectorStoreVector(Dimensions: 3, StorageName = "embedding")]
+        [VectorStoreVector(Dimensions: 4, StorageName = "embedding")]
         public string Content { get; set; } = string.Empty;
 
         [VectorStoreData(StorageName = "doc_id")]
