@@ -1,13 +1,10 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Connectors.InMemory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -58,33 +55,5 @@ public class VectorStoreWriterTests
             Assert.Equal(chunks[i].Content, retrieved[i].Content);
             Assert.Equal(document.Identifier, retrieved[i].DocumentId);
         }
-    }
-
-    public class TestRecord
-    {
-        [VectorStoreKey(StorageName = "key")]
-        public Guid Id { get; set; }
-
-        [VectorStoreVector(Dimensions: 4, StorageName = "embedding")]
-        public string Content { get; set; } = string.Empty;
-
-        [VectorStoreData(StorageName = "doc_id")]
-        public string DocumentId { get; set; } = string.Empty;
-    }
-
-    private class TestEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
-    {
-        public bool WasCalled { get; private set; } = false;
-
-        public void Dispose() { }
-
-        public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default)
-        {
-            WasCalled = true;
-
-            return Task.FromResult(new GeneratedEmbeddings<Embedding<float>>([new(new float[] { 0, 1, 2, 3 })]));
-        }
-
-        public object? GetService(Type serviceType, object? serviceKey = null) => null;
     }
 }
