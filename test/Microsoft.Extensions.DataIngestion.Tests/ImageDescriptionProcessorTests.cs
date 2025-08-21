@@ -52,7 +52,7 @@ public class ImageDescriptionProcessorTests
             }
         };
 
-        await sut.ProcessAsync([document]);
+        await sut.ProcessAsync(document);
 
         Assert.NotNull(documentImage.Description);
         Assert.NotEmpty(documentImage.Description);
