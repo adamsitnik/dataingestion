@@ -46,13 +46,11 @@ public class DocumentFlattenerTests
         });
 
         DocumentFlattener flattener = new();
-        List<Document> flattened = await flattener.ProcessAsync(new List<Document> { doc });
+        Document flatDoc = await flattener.ProcessAsync(doc);
 
-        Document flatDoc = flattened[0];
         Assert.Same(doc.Identifier, flatDoc.Identifier); // The identifier should be preserved
         DocumentSection flatSection = flatDoc.Sections[0];
 
-        Assert.Single(flattened);
         Assert.Same(doc.Markdown, flatDoc.Markdown); // The Markdown of the flattened document should be the same as the original
         Assert.Single(flatDoc.Sections); // There should be only one section in the flattened document
         Assert.Same(doc.Markdown, flatSection.Markdown); // The Markdown of the section should be the same as the whole document

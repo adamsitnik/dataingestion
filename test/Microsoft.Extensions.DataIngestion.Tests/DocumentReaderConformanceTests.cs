@@ -134,14 +134,13 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         protected static IEnumerable<DocumentElement> Flatten(Document document)
         {
-            ValueTask<List<Document>> job = _documentFlattener.ProcessAsync([document]);
+            ValueTask<Document> job = _documentFlattener.ProcessAsync(document);
 
             Assert.True(job.IsCompletedSuccessfully);
-            List<Document> flattenedDocuments = job.Result;
-            Assert.Single(flattenedDocuments); // We expect only one document to be returned
-            Assert.Single(flattenedDocuments[0].Sections); // We expect only one section in the flattened document
+            Document flattenedDocument = job.Result;
+            Assert.Single(flattenedDocument.Sections); // We expect only one section in the flattened document
 
-            return flattenedDocuments.Single().Sections.Single().Elements;
+            return flattenedDocument.Sections.Single().Elements;
         }
     }
 }

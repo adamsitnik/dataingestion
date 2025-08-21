@@ -10,37 +10,31 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public class DocumentFlattener : DocumentProcessor
 {
-    public override ValueTask<List<Document>> ProcessAsync(List<Document> documents, CancellationToken cancellationToken = default)
+    public override ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (documents is null)
+        if (document is null)
         {
-            throw new ArgumentNullException(nameof(documents));
+            throw new ArgumentNullException(nameof(document));
         }
 
-        List<Document> flattenedDocuments = new(documents.Count);
-        foreach (Document document in documents)
+        DocumentSection rootSection = new()
         {
-            DocumentSection rootSection = new()
-            {
-                // Since we have a single section that contains all elements,
-                // we can treat the Markdown of the whole Document as the section's Markdown.
-                Markdown = document.Markdown,
-            };
+            // Since we have a single section that contains all elements,
+            // we can treat the Markdown of the whole Document as the section's Markdown.
+            Markdown = document.Markdown,
+        };
 
-            FlattenAndKeepOrder(document.Sections, rootSection.Elements);
+        FlattenAndKeepOrder(document.Sections, rootSection.Elements);
 
-            Document flat = new(document.Identifier)
-            {
-                Markdown = document.Markdown, // Markdown needs to be preserved
-                Sections = { rootSection }
-            };
+        Document flat = new(document.Identifier)
+        {
+            Markdown = document.Markdown, // Markdown needs to be preserved
+            Sections = { rootSection }
+        };
 
-            flattenedDocuments.Add(flat);
-        }
-
-        return new(flattenedDocuments);
+        return new(flat);
     }
 
     private static void FlattenAndKeepOrder(List<DocumentSection> sections, List<DocumentElement> targetElements)
