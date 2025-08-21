@@ -17,7 +17,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DocumentPipelineTests
 {
-    public static TheoryData<string[], DocumentReader> DocumentReaders
+    public static TheoryData<string[], DocumentReader> FilesAndReaders
     {
         get
         {
@@ -51,7 +51,7 @@ public class DocumentPipelineTests
     }
 
     [Theory]
-    [MemberData(nameof(DocumentReaders))]
+    [MemberData(nameof(FilesAndReaders))]
     public async Task CanProcessDocuments(string[] filePaths, DocumentReader reader)
     {
         DocumentProcessor[] documentProcessors = [new DocumentFlattener()];
@@ -79,6 +79,57 @@ public class DocumentPipelineTests
 
         DocumentPipeline pipeline = new(reader, documentProcessors, documentChunker, vectorStoreWriter);
         await pipeline.ProcessAsync(filePaths);
+
+        Assert.NotEmpty(ids);
+        Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
+
+        TestRecord[] retrieved = await inMemoryCollection.GetAsync(ids).ToArrayAsync();
+        Assert.Equal(ids.Count, retrieved.Length);
+        for (int i = 0; i < retrieved.Length; i++)
+        {
+            Assert.Equal(ids[i], retrieved[i].Id);
+            Assert.NotEmpty(retrieved[i].Content);
+            Assert.NotEmpty(retrieved[i].DocumentId);
+        }
+    }
+
+    public static TheoryData<DocumentReader> Readers => new(CreateReaders());
+
+    [Theory]
+    [MemberData(nameof(Readers))]
+    public async Task CanProcessDocumentsInDirectory(DocumentReader reader)
+    {
+        DocumentChunker documentChunker = new DummyChunker();
+        List<Guid> ids = [];
+        TestEmbeddingGenerator embeddingGenerator = new();
+        InMemoryVectorStoreOptions options = new()
+        {
+            EmbeddingGenerator = embeddingGenerator
+        };
+        using InMemoryVectorStore testVectorStore = new(options);
+        using InMemoryCollection<Guid, TestRecord> inMemoryCollection = testVectorStore.GetCollection<Guid, TestRecord>("testCollection");
+        using VectorStoreWriter<Guid, TestRecord> vectorStoreWriter = new(inMemoryCollection, (doc, chunk) =>
+        {
+            Guid recordId = Guid.NewGuid();
+            ids.Add(recordId);
+
+            return new()
+            {
+                Id = recordId,
+                Content = chunk.Content,
+                DocumentId = doc.Identifier
+            };
+        });
+
+        DocumentPipeline pipeline = new(reader, [], documentChunker, vectorStoreWriter);
+
+        DirectoryInfo directory = new("TestFiles");
+        string searchPattern = reader switch
+        {
+            MarkdownReader => "*.md",
+            _ => "*.docx"
+        };
+        await pipeline.ProcessAsync(directory, searchPattern);
 
         Assert.NotEmpty(ids);
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");

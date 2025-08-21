@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,6 +31,27 @@ public class DocumentPipeline
     public DocumentChunker Chunker { get; }
 
     public DocumentWriter Writer { get; }
+
+    public async Task ProcessAsync(DirectoryInfo directory, string searchPattern = "*.*", SearchOption searchOption = SearchOption.TopDirectoryOnly, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (directory is null)
+        {
+            throw new ArgumentNullException(nameof(directory));
+        }
+        else if (string.IsNullOrEmpty(searchPattern))
+        {
+            throw new ArgumentNullException(nameof(searchPattern));
+        }
+        else if (!(searchOption is SearchOption.TopDirectoryOnly or SearchOption.AllDirectories))
+        {
+            throw new ArgumentOutOfRangeException(nameof(searchOption));
+        }
+        
+        IEnumerable<string> filePaths = directory.EnumerateFiles(searchPattern, searchOption).Select(fileInfo => fileInfo.FullName);
+        await ProcessAsync(filePaths, cancellationToken);
+    }
 
     public virtual async Task ProcessAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
     {
