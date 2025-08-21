@@ -40,7 +40,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         [Theory]
         [MemberData(nameof(Sources))]
-        public async Task SupportsUris(string uri, string expectedId)
+        public virtual async Task SupportsUris(string uri, string expectedId)
         {
             var reader = CreateDocumentReader();
             var document = await reader.ReadAsync(new Uri(uri));
@@ -61,7 +61,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         [Theory]
         [MemberData(nameof(Files))]
-        public async Task SupportsFiles(string filePath, string expectedId)
+        public virtual async Task SupportsFiles(string filePath, string expectedId)
         {
             var reader = CreateDocumentReader();
             var document = await reader.ReadAsync(filePath);
