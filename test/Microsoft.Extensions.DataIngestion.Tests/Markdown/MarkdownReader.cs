@@ -142,10 +142,10 @@ public sealed class MarkdownReader : DocumentReader
                 Text = link.FirstChild is LiteralInline literal ? literal.Content.ToString() : GetText(image.Inline),
                 Content = link.Url is not null && link.Url.StartsWith("data:image/png;base64,", StringComparison.Ordinal)
                     ? BinaryData.FromBytes(Convert.FromBase64String(link.Url.Substring("data:image/png;base64,".Length)), "image/png")
-                    : throw new NotSupportedException(), // we may implement it in the future if needed
+                    : null, // we may implement it in the future if needed
                 MediaType = link.Url is not null && link.Url.StartsWith("data:image/png;base64,", StringComparison.Ordinal)
                     ? "image/png"
-                    : throw new NotSupportedException() // we may implement it in the future if needed
+                    : null // we may implement it in the future if needed
             },
             ParagraphBlock paragraph => new DocumentParagraph
             {
