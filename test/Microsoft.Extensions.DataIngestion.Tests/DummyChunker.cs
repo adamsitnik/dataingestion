@@ -21,7 +21,7 @@ public class DummyChunker : DocumentChunker
         return new(chunks);
     }
 
-    private void Add(DocumentSection section, List<Chunk> chunks)
+    private static void Add(DocumentSection section, List<Chunk> chunks)
     {
         foreach (DocumentElement element in section.Elements)
         {
@@ -33,7 +33,10 @@ public class DummyChunker : DocumentChunker
                 case DocumentFooter footer:
                     break; // We don't care about footers (they usually contain page numbers or similar)
                 default:
-                    chunks.Add(new Chunk(element.Markdown, tokenCount: DummyTokenCount));
+                    if (!string.IsNullOrEmpty(element.Markdown))
+                    {
+                        chunks.Add(new Chunk(element.Markdown, tokenCount: DummyTokenCount));
+                    }
                     break;
             }
         }
