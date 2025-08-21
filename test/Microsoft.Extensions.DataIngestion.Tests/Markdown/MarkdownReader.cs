@@ -94,22 +94,12 @@ public sealed class MarkdownReader : DocumentReader
                 continue; // TODO: Handle link reference definitions if needed.
             }
 
-            if (block is LeafBlock emptyLeafBlock && (emptyLeafBlock.Inline is null || emptyLeafBlock.Inline.FirstChild is null))
+            if (IsEmptyBlock(block))
             {
-                continue; // Block with no text. Sample: QuoteBlock the next block is a quote.
+                continue;
             }
 
-            DocumentElement? element = block switch
-            {
-                LeafBlock leafBlock => MapLeafBlockToElement(leafBlock, previousWasBreak),
-                ListBlock listBlock => MapListBlock(listBlock, previousWasBreak, outputContent),
-                QuoteBlock quoteBlock => MapQuoteBlock(quoteBlock, previousWasBreak, outputContent),
-                Markdig.Extensions.Tables.Table table => new DocumentTable()
-                {
-                    // TODO: provide DocumentTable design and map all data
-                },
-                _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
-            };
+            DocumentElement element = MapBlock(outputContent, previousWasBreak, block);
 
             element.Markdown = outputContent.Substring(block.Span.Start, block.Span.Length);
             rootSection.Elements.Add(element);
@@ -118,6 +108,22 @@ public sealed class MarkdownReader : DocumentReader
 
         return result;
     }
+
+    private static bool IsEmptyBlock(Block block) // Block with no text. Sample: QuoteBlock the next block is a quote.
+        =>  block is LeafBlock emptyLeafBlock && (emptyLeafBlock.Inline is null || emptyLeafBlock.Inline.FirstChild is null);
+
+    private static DocumentElement MapBlock(string outputContent, bool previousWasBreak, Block block)
+        => block switch
+        {
+            LeafBlock leafBlock => MapLeafBlockToElement(leafBlock, previousWasBreak),
+            ListBlock listBlock => MapListBlock(listBlock, previousWasBreak, outputContent),
+            QuoteBlock quoteBlock => MapQuoteBlock(quoteBlock, previousWasBreak, outputContent),
+            Markdig.Extensions.Tables.Table table => new DocumentTable()
+            {
+                // TODO: provide DocumentTable design and map all data
+            },
+            _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
+        };
 
     private static DocumentElement MapLeafBlockToElement(LeafBlock block, bool previousWasBreak)
         => block switch
@@ -133,9 +139,12 @@ public sealed class MarkdownReader : DocumentReader
             },
             ParagraphBlock image when image.Inline!.FirstChild is LinkInline link && link.IsImage => new DocumentImage
             {
-                Text = GetText(image.Inline),
+                Text = link.FirstChild is LiteralInline literal ? literal.Content.ToString() : GetText(image.Inline),
                 Content = link.Url is not null && link.Url.StartsWith("data:image/png;base64,", StringComparison.Ordinal)
-                    ? BinaryData.FromBytes(Convert.FromBase64String(link.Url.Substring("data:image/png;base64,".Length)))
+                    ? BinaryData.FromBytes(Convert.FromBase64String(link.Url.Substring("data:image/png;base64,".Length)), "image/png")
+                    : throw new NotSupportedException(), // we may implement it in the future if needed
+                MediaType = link.Url is not null && link.Url.StartsWith("data:image/png;base64,", StringComparison.Ordinal)
+                    ? "image/png"
                     : throw new NotSupportedException() // we may implement it in the future if needed
             },
             ParagraphBlock paragraph => new DocumentParagraph
@@ -157,6 +166,11 @@ public sealed class MarkdownReader : DocumentReader
         {
             foreach (LeafBlock child in item)
             {
+                if (IsEmptyBlock(child))
+                {
+                    continue; // Skip empty blocks in lists
+                }
+
                 DocumentElement element = MapLeafBlockToElement(child, previousWasBreak);
                 element.Markdown = outputContent.Substring(child.Span.Start, child.Span.Length);
                 list.Elements.Add(element);
@@ -170,9 +184,14 @@ public sealed class MarkdownReader : DocumentReader
     {
         // So far Sections were only pages (LP) or sections for ADI. Now they can also represent quotes.
         DocumentSection quote = new();
-        foreach (LeafBlock child in quoteBlock)
+        foreach (Block child in quoteBlock)
         {
-            DocumentElement element = MapLeafBlockToElement(child, previousWasBreak);
+            if (IsEmptyBlock(child))
+            {
+                continue; // Skip empty blocks in quotes
+            }
+
+            DocumentElement element = MapBlock(outputContent, previousWasBreak, child);
             element.Markdown = outputContent.Substring(child.Span.Start, child.Span.Length);
             quote.Elements.Add(element);
         }
