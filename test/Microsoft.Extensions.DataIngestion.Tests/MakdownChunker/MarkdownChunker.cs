@@ -99,15 +99,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.MakdownChunker
             string textContent = content.ToString();
             if (string.IsNullOrWhiteSpace(textContent))
                 return null;
-            int tokenCount = CountTokens();
-            return new Chunk(textContent, tokenCount, context); 
-        }
-
-        private static int CountTokens()
-        {
-            // This method is a placeholder to match the original code structure.
-            // In a real implementation, it would count tokens in the markdown content.
-            return 1;
+            return new Chunk(textContent, context: context); 
         }
 
         private static int CountLeadingHashes(string line)

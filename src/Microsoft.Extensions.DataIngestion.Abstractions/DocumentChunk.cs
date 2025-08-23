@@ -22,13 +22,21 @@ public sealed class DocumentChunk
 
     public DocumentChunk(string content, int? tokenCount = null, string? context = null)
     {
-        if (string.IsNullOrWhiteSpace(content))
-            throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
-        if (tokenCount.HasValue && tokenCount.Value <= 0)
-            throw new ArgumentOutOfRangeException(nameof(tokenCount), "Token count must be greater than zero.");
+        public string Content { get; }
+        public int? TokenCount { get; }
 
-        Content = content;
-        TokenCount = tokenCount;
-        Context = context;
+        public string? Context { get; }
+
+        public Chunk(string content, int? tokenCount = null, string? context = null)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+                throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
+            if (tokenCount <= 0)
+                throw new ArgumentOutOfRangeException(nameof(tokenCount), "Token count must be greater than zero.");
+
+            Content = content;
+            TokenCount = tokenCount;
+            Context = context;
+        }
     }
 }
