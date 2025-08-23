@@ -6,24 +6,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Extensions.DataIngestion.Tests.MakdownChunker
+namespace Microsoft.Extensions.DataIngestion.Tests
 {
-    public class MarkdownChunkerTests
+    public class MarkdownChunkerTests : DocumentChunkerTests
     {
-        protected DocumentChunker CreateDocumentChunker()
+        override protected DocumentChunker CreateDocumentChunker()
         {
             return new MarkdownChunker();
         }
 
-        [Fact]
-        public async Task EmptyDocument()
-        {
-            Document emptyDoc = new("emptyDoc");
-            DocumentChunker chunker = CreateDocumentChunker();
-
-            List<Chunk> chunks = await chunker.ProcessAsync(emptyDoc);
-            Assert.Empty(chunks);
-        }
+        
 
         [Fact]
         public async Task NoheaderDocument()
