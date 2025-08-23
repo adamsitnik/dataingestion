@@ -3,14 +3,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DataIngestion.Tests.MakdownChunker
+namespace Microsoft.Extensions.DataIngestion.Tests
 {
     public sealed class MarkdownChunker : DocumentChunker
     {
@@ -26,6 +24,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests.MakdownChunker
 
         public override ValueTask<List<Chunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
+            if (document is null) throw new ArgumentNullException(nameof(document));
+
             string markdown = document.Markdown.ReplaceLineEndings();
             string[] lines = markdown.Split(Environment.NewLine);
 
@@ -59,7 +59,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.MakdownChunker
 
                     if (leadingHashes == markdownHeaderLevel)
                     {
-                        lastHeader = line;                        
+                        lastHeader = line;
                     }
                     else if (leadingHashes < markdownHeaderLevel)
                     {
@@ -99,7 +99,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.MakdownChunker
             string textContent = content.ToString();
             if (string.IsNullOrWhiteSpace(textContent))
                 return null;
-            return new Chunk(textContent, context: context); 
+            return new Chunk(textContent, context: context);
         }
 
         private static int CountLeadingHashes(string line)
