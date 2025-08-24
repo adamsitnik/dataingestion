@@ -107,16 +107,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             if (string.IsNullOrEmpty(line))
                 return 0;
 
-            int count = 0;
-            foreach (char c in line)
-            {
-                if (c == '#')
-                    count++;
-                else
-                    break;
-            }
-
-            return count;
+            return line.TakeWhile(c => c == '#').Count();
         }
     }
 
