@@ -10,11 +10,11 @@ namespace Microsoft.Extensions.DataIngestion
     public sealed class Chunk
     {
         public string Content { get; }
-        public int TokenCount { get; }
+        public int? TokenCount { get; }
 
         public string? Context { get; }
 
-        public Chunk(string content, int tokenCount, string? context = null)
+        public Chunk(string content, int? tokenCount = null, string? context = null)
         {
             if (string.IsNullOrWhiteSpace(content))
                 throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
