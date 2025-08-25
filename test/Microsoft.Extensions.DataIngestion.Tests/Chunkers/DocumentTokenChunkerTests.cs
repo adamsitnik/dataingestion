@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.ML.Tokenizers;
+using Microsoft.Extensions.DataIngestion.Chunkers;
 
 namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {

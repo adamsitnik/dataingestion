@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.Extensions.DataIngestion.Chunkers;
 
 namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
@@ -158,7 +159,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                            "\n### Header 3\n" + content3 +
                            "\n## Header 4\n" + content4
             };
-            DocumentChunker chunker = new MarkdownChunker(MarkdownHeaderLevel.Header2);
+            DocumentChunker chunker = new MarkdownChunker(2);
 
             List<Chunk> chunks = await chunker.ProcessAsync(complexDoc);
             Assert.Equal(3, chunks.Count);
