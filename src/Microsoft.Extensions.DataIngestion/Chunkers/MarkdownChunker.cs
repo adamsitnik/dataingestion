@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DataIngestion.Tests
+namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     /// <summary>
     /// Processes a Markdown document and splits it into smaller chunks based on specified header levels.
@@ -22,7 +22,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
         private readonly bool _stripHeaders;
 
 
-        public MarkdownChunker(MarkdownHeaderLevel HeaderLevelToSplitOn = MarkdownHeaderLevel.Header3, bool StripHeaders = true)
+        public MarkdownChunker(int HeaderLevelToSplitOn = 3, bool StripHeaders = true)
         {
             _headerLevelToSplitOn = (int)HeaderLevelToSplitOn;
             _stripHeaders = StripHeaders;
@@ -32,8 +32,13 @@ namespace Microsoft.Extensions.DataIngestion.Tests
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            string markdown = document.Markdown.ReplaceLineEndings();
-            string[] lines = markdown.Split(Environment.NewLine);
+#if NET6_0_OR_GREATER
+                string markdown = document.Markdown.ReplaceLineEndings();
+                string[] lines = markdown.Split(Environment.NewLine);
+#else
+            string markdown = document.Markdown.Replace("\r\n", "\n").Replace("\r", "\n");
+            string[] lines = markdown.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+#endif
 
             var lineStack = new Stack<string>(lines.Reverse());
             return new ValueTask<List<Chunk>>(ParseLevel(lineStack, 1));
@@ -92,7 +97,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
         private static string StringyfyContext(string? context, string? lastHeader)
         {
-            return String.Join(';', new[] { context, lastHeader }.Where(x => x is not null));
+            return string.Join(";", new[] { context, lastHeader }.Where(x => x is not null));
         }
 
         private Chunk? CreateChunk(StringBuilder content, string context, string? header)
@@ -115,15 +120,5 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
             return line.TakeWhile(c => c == '#').Count();
         }
-    }
-
-    public enum MarkdownHeaderLevel
-    {
-        Header1 = 1,
-        Header2 = 2,
-        Header3 = 3,
-        Header4 = 4,
-        Header5 = 5,
-        Header6 = 6
     }
 }

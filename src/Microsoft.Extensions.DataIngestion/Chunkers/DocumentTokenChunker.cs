@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DataIngestion.Tests
+namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     /// <summary>
     /// Processes a document by tokenizing its content and dividing it into overlapping chunks of tokens.
@@ -18,7 +18,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
     /// <remarks>This class uses a tokenizer to convert the document's content into tokens and then splits the
     /// tokens into chunks of a specified size, with a configurable overlap between consecutive chunks. The resulting
     /// chunks are returned as a list of <see cref="Chunk"/> objects.</remarks>
-    internal class DocumentTokenChunker : DocumentChunker
+    public sealed class DocumentTokenChunker : DocumentChunker
     {
         private readonly Tokenizer _tokenizer;
         private readonly int _chunkSize;
