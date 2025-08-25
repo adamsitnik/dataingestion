@@ -10,6 +10,12 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Tests
 {
+    /// <summary>
+    /// Processes a Markdown document and splits it into smaller chunks based on specified header levels.
+    /// </summary>
+    /// <remarks>This class is designed to parse a Markdown document and divide it into logical chunks based
+    /// on the specified header level. Each chunk represents a section of the document, and the headers can be
+    /// optionally stripped from the output. The splitting behavior is controlled by the header level. </remarks>
     public sealed class MarkdownChunker : DocumentChunker
     {
         private readonly int _headerLevelToSplitOn;

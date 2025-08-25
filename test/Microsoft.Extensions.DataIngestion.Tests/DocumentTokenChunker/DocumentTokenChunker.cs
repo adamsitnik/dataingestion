@@ -12,6 +12,12 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Tests
 {
+    /// <summary>
+    /// Processes a document by tokenizing its content and dividing it into overlapping chunks of tokens.
+    /// </summary>
+    /// <remarks>This class uses a tokenizer to convert the document's content into tokens and then splits the
+    /// tokens into chunks of a specified size, with a configurable overlap between consecutive chunks. The resulting
+    /// chunks are returned as a list of <see cref="Chunk"/> objects.</remarks>
     internal class DocumentTokenChunker : DocumentChunker
     {
         private readonly Tokenizer _tokenizer;
@@ -32,30 +38,26 @@ namespace Microsoft.Extensions.DataIngestion.Tests
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            var tokens = _tokenizer.EncodeToIds(document.Markdown);
-            var token_groups = CreateGroups(tokens);
+            int[] tokens = _tokenizer.EncodeToIds(document.Markdown).ToArray();
+            List<ArraySegment<int>> token_groups = CreateGroups(tokens);
             List<Chunk> text_groups = token_groups.Select(GroupToChunk).ToList();
-
 
             return new ValueTask<List<Chunk>>(text_groups);
         }
         // Additional methods for chunking documents would go here.
 
-        private List<List<int>> CreateGroups(IReadOnlyCollection<int> tokens)
+        private List<ArraySegment<int>> CreateGroups(int[] tokens)
         {
-            List<List<int>> groups = new List<List<int>>();
-            for (int i = 0; i < tokens.Count; i += (_chunkSize - _chunkOverlap))
+            List<ArraySegment<int>> groups = new List<ArraySegment<int>>();
+            for (int i = 0; i < tokens.Length; i += (_chunkSize - _chunkOverlap))
             {
-                var chunk = tokens.Skip(i).Take(_chunkSize).ToList();
-                if (chunk.Any())
-                {
-                    groups.Add(chunk);
-                }
+                int count = Math.Min(_chunkSize, tokens.Length - i);
+                groups.Add(new ArraySegment<int>(tokens, i, count));
             }
             return groups;
         }
 
-        private Chunk GroupToChunk(List<int> tokenGroup)
+        private Chunk GroupToChunk(ArraySegment<int> tokenGroup)
         {
             string text = _tokenizer.Decode(tokenGroup);
             return new Chunk(text, tokenGroup.Count);

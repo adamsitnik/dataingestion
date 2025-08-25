@@ -10,7 +10,7 @@ using Xunit;
 using Microsoft.ML.Tokenizers;
 using Xunit;
 
-namespace Microsoft.Extensions.DataIngestion.Tests
+namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class DocumentTokenChunkerTests : DocumentChunkerTests
     {
@@ -28,13 +28,6 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             int chunkSize = 512;
             int chunkOverlap = 0;
             return new DocumentTokenChunker(tokenizer, chunkSize, chunkOverlap);
-        }
-
-        [Fact]
-        public async Task Placeholder()
-        {
-            // Placeholder test to ensure the test class is recognized by the test framework.
-            Assert.True(true);
         }
 
         [Fact]
@@ -85,11 +78,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
             List<Chunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(3, chunks.Count);
-
-            foreach (var chunk in chunks.Take(chunks.Count - 1))
-            {
-                Assert.Equal(chunkSize, chunk.TokenCount);
-            }
+            Assert.Equal("The quick brown fox", chunks[0].Content.Trim());
+            Assert.Equal("fox jumps over the", chunks[1].Content.Trim());
+            Assert.Equal("the lazy dog", chunks[2].Content.Trim());
 
             Assert.True(chunks.Last().TokenCount <= chunkSize);
 

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Extensions.DataIngestion.Tests
+namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class MarkdownChunkerTests : DocumentChunkerTests
     {
