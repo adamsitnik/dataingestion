@@ -17,6 +17,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
         private readonly Tokenizer _tokenizer;
         private readonly int _chunkSize;
         private readonly int _chunkOverlap;
+
         public DocumentTokenChunker(Tokenizer tokenizer, int chunkSize, int chunkOverlap)
         {
             if (chunkOverlap >= chunkSize)
