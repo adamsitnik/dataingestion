@@ -29,8 +29,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             Assert.True(chunks.Count == 1);
 
             Chunk chunk = chunks.First();
-            Assert.Equal("This is a document without headers.", chunk.Content.Trim());
-            Assert.Equal(chunk.Context, string.Empty);
+            ChunkAssertions.ContextEquals(string.Empty, chunk);
+            ChunkAssertions.ContentEquals("This is a document without headers.", chunk);
         }
 
         [Fact]
@@ -44,8 +44,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             List<Chunk> chunks = await chunker.ProcessAsync(singleHeaderDoc);
             Assert.True(chunks.Count == 1);
             Chunk chunk = chunks.First();
-            Assert.Equal("# Header 1", chunk.Context);
-            Assert.Equal("This is the content under header 1.", chunk.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1", chunk);
+            ChunkAssertions.ContentEquals("This is the content under header 1.", chunk);
         }
 
         [Fact]
@@ -60,8 +60,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             List<Chunk> chunks = await chunker.ProcessAsync(singleHeaderTwoParagraphDoc);
             Assert.True(chunks.Count == 1);
             Chunk chunk = chunks.First();
-            Assert.Equal("# Header 1", chunk.Context);
-            Assert.Equal(content, chunk.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1", chunk);
+            ChunkAssertions.ContentEquals(content, chunk);
         }
 
         [Fact]
@@ -76,12 +76,14 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             DocumentChunker chunker = new MarkdownChunker();
             List<Chunk> chunks = await chunker.ProcessAsync(multiHeaderDoc);
             Assert.True(chunks.Count == 2);
+
             Chunk chunk1 = chunks[0];
-            Assert.Equal("# Header 1", chunk1.Context);
-            Assert.Equal(content1, chunk1.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1", chunk1);
+            ChunkAssertions.ContentEquals(content1, chunk1);
+
             Chunk chunk2 = chunks[1];
-            Assert.Equal("# Header 1;## Header 2", chunk2.Context);
-            Assert.Equal(content2, chunk2.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1;## Header 2", chunk2);
+            ChunkAssertions.ContentEquals(content2, chunk2);
         }
 
         [Fact]
@@ -96,12 +98,14 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             DocumentChunker chunker = CreateDocumentChunker();
             List<Chunk> chunks = await chunker.ProcessAsync(twoHeaderDoc);
             Assert.True(chunks.Count == 2);
+
             Chunk chunk1 = chunks[0];
-            Assert.Equal("# Header 1", chunk1.Context);
-            Assert.Equal(content1, chunk1.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1", chunk1);
+            ChunkAssertions.ContentEquals(content1, chunk1);
+
             Chunk chunk2 = chunks[1];
-            Assert.Equal("# Header 2", chunk2.Context);
-            Assert.Equal(content2, chunk2.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 2", chunk2);
+            ChunkAssertions.ContentEquals(content2, chunk2);
         }
 
         [Fact]
@@ -119,20 +123,25 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                            "\n## Header 4\n" + content4
             };
             DocumentChunker chunker = CreateDocumentChunker();
+
             List<Chunk> chunks = await chunker.ProcessAsync(complexDoc);
-            Assert.True(chunks.Count == 4);
+            Assert.Equal(4, chunks.Count);
+
             Chunk chunk1 = chunks[0];
-            Assert.Equal("# Header 1", chunk1.Context);
-            Assert.Equal(content1, chunk1.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1", chunk1);
+            ChunkAssertions.ContentEquals(content1, chunk1);
+
             Chunk chunk2 = chunks[1];
-            Assert.Equal("# Header 1;## Header 2", chunk2.Context);
-            Assert.Equal(content2, chunk2.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1;## Header 2", chunk2);
+            ChunkAssertions.ContentEquals(content2, chunk2);
+
             Chunk chunk3 = chunks[2];
-            Assert.Equal("# Header 1;## Header 2;### Header 3", chunk3.Context);
-            Assert.Equal(content3, chunk3.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1;## Header 2;### Header 3", chunk3);
+            ChunkAssertions.ContentEquals(content3, chunk3);
+
             Chunk chunk4 = chunks[3];
-            Assert.Equal("# Header 1;## Header 4", chunk4.Context);
-            Assert.Equal(content4, chunk4.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1;## Header 4", chunk4);
+            ChunkAssertions.ContentEquals(content4, chunk4);
         }
 
         [Fact]
@@ -150,17 +159,21 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                            "\n## Header 4\n" + content4
             };
             DocumentChunker chunker = new MarkdownChunker(MarkdownHeaderLevel.Header2);
+
             List<Chunk> chunks = await chunker.ProcessAsync(complexDoc);
-            Assert.True(chunks.Count == 3);
+            Assert.Equal(3, chunks.Count);
+
             Chunk chunk1 = chunks[0];
-            Assert.Equal("# Header 1", chunk1.Context);
-            Assert.Equal(content1, chunk1.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1", chunk1);
+            ChunkAssertions.ContentEquals(content1, chunk1);
+
             Chunk chunk2 = chunks[1];
-            Assert.Equal("# Header 1;## Header 2", chunk2.Context);
-            Assert.Equal((content2 + "\n### Header 3\n" + content3).ReplaceLineEndings(), chunk2.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1;## Header 2", chunk2);
+            ChunkAssertions.ContentEquals(content2 + "\n### Header 3\n" + content3, chunk2);
+
             Chunk chunk3 = chunks[2];
-            Assert.Equal("# Header 1;## Header 4", chunk3.Context);
-            Assert.Equal(content4, chunk3.Content.Trim());
+            ChunkAssertions.ContextEquals("# Header 1;## Header 4", chunk3);
+            ChunkAssertions.ContentEquals(content4, chunk3);
         }
     }
 }
