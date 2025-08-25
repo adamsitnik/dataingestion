@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DataIngestion.Tests
+namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class DummyChunkerTests : DocumentChunkerTests
     {
