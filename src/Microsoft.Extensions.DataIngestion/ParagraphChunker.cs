@@ -13,6 +13,7 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public class ParagraphChunker : DocumentChunker
 {
+    private const int MaxHeaderLevel = 6;
     private readonly Tokenizer _tokenizer;
     private readonly int _maxTokensPerParagraph;
     private readonly int _overlapTokens;
@@ -27,7 +28,7 @@ public class ParagraphChunker : DocumentChunker
     public override ValueTask<List<Chunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         List<Chunk> chunks = new();
-        List<string?> headers = new();
+        string?[] headers = new string?[MaxHeaderLevel + 1];
         List<string> paragraphs = new();
 
         foreach (DocumentSection section in document.Sections)
@@ -35,34 +36,27 @@ public class ParagraphChunker : DocumentChunker
             Process(section, chunks, headers, paragraphs);
         }
 
+        // take care of any remaining paragraphs
+        SplitIntoChunks(chunks, headers, paragraphs);
+
         return new(chunks);
     }
 
-    private void Process(DocumentSection section, List<Chunk> chunks, List<string?> headers, List<string> paragraphs)
+    private void Process(DocumentSection section, List<Chunk> chunks, string?[] headers, List<string> paragraphs)
     {
-        string? chunkHeader = null;
         foreach (DocumentElement element in section.Elements)
         {
             switch (element)
             {
                 case DocumentHeader header:
-                    if (paragraphs.Count > 0)
-                    {
-                        chunkHeader ??= string.Join(" ", headers.Where(h => !string.IsNullOrEmpty(h)));
-                        foreach (string chunk in TextChunker.SplitPlainTextParagraphs(paragraphs, _maxTokensPerParagraph, _overlapTokens, chunkHeader,
-                            text => _tokenizer.CountTokens(text)))
-                        {
-                            chunks.Add(new Chunk(chunk, tokenCount: _tokenizer.CountTokens(chunk)));
-                        }
-                        paragraphs.Clear();
-                    }
+                    SplitIntoChunks(chunks, headers, paragraphs);
 
                     int headerLevel = header.Level.GetValueOrDefault();
-                    for (int i = headers.Count - 1; i > headerLevel; i--)
+                    for (int i = headers.Length - 1; i >= headerLevel; i--)
                     {
-                        headers.RemoveAt(i);
+                        headers[i] = null;
                     }
-                    headers.Insert(headerLevel, header.Text);
+                    headers[headerLevel] = header.Markdown;
                     break;
                 case DocumentSection simple when IsSimpleLeaf(simple):
                     paragraphs.Add(simple.Markdown);
@@ -82,7 +76,7 @@ public class ParagraphChunker : DocumentChunker
         }
     }
 
-    private bool IsSimpleLeaf(DocumentSection leafSection)
+    private static bool IsSimpleLeaf(DocumentSection leafSection)
     {
         foreach (DocumentElement element in leafSection.Elements)
         {
@@ -92,5 +86,20 @@ public class ParagraphChunker : DocumentChunker
             }
         }
         return true;
+    }
+
+    private void SplitIntoChunks(List<Chunk> chunks, string?[] headers, List<string> paragraphs)
+    {
+        if (paragraphs.Count > 0)
+        {
+            string chunkHeader = string.Join(" ", headers.Where(h => !string.IsNullOrEmpty(h)));
+            foreach (string chunk in TextChunker.SplitMarkdownParagraphs(paragraphs, _maxTokensPerParagraph, _overlapTokens,
+                chunkHeader: chunkHeader.Length == 0 ? "" : chunkHeader + ' ', // we need to separate the header from the content
+                text => _tokenizer.CountTokens(text)))
+            {
+                chunks.Add(new Chunk(content: chunk, tokenCount: _tokenizer.CountTokens(chunk), context: chunkHeader));
+            }
+            paragraphs.Clear();
+        }
     }
 }
