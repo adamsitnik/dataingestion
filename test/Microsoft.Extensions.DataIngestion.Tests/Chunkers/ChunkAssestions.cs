@@ -3,22 +3,18 @@
 
 using Xunit;
 
-namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
+namespace Microsoft.Extensions.DataIngestion.Tests
 {
-    /// <summary>
-    /// Extension methods for making assertions on <see cref="Chunk"/> objects in tests.
-    /// </summary>
     public static class ChunkAssertions
     {
-        /// <summary>
-        /// Asserts that the chunk's content (trimmed) equals the expected string.
-        /// </summary>
-        /// <param name="assert">The Assert instance (not used but required for extension method syntax)</param>
-        /// <param name="expected">The expected string content</param>
-        /// <param name="chunk">The chunk to test</param>
-        public static void Equal(this Assert assert, string expected, Chunk chunk)
+        public static void ContentEquals(string expected, Chunk chunk)
         {
-            Assert.Equal(expected, chunk.Content.Trim());
+            Assert.Equal(expected.ReplaceLineEndings(), chunk.Content.Trim());
+        }
+
+        public static void ContextEquals(string expected, Chunk chunk)
+        {
+            Assert.Equal(expected, chunk.Context?.Trim() ?? string.Empty);
         }
     }
 }

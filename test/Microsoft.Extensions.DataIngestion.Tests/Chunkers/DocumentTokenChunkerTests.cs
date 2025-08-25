@@ -4,11 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.ML.Tokenizers;
-using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
@@ -42,7 +40,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             List<Chunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Single(chunks);
             Chunk chunk = chunks.First();
-            Assert.Equal(text, chunk.Content.Trim());
+            ChunkAssertions.ContentEquals(text, chunk);
         }
 
         [Fact]
@@ -78,9 +76,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 
             List<Chunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(3, chunks.Count);
-            Assert.Equal("The quick brown fox", chunks[0].Content.Trim());
-            Assert.Equal("fox jumps over the", chunks[1].Content.Trim());
-            Assert.Equal("the lazy dog", chunks[2].Content.Trim());
+            ChunkAssertions.ContentEquals("The quick brown fox", chunks[0]);
+            ChunkAssertions.ContentEquals("fox jumps over the", chunks[1]);
+            ChunkAssertions.ContentEquals("the lazy dog", chunks[2]);
 
             Assert.True(chunks.Last().TokenCount <= chunkSize);
 
