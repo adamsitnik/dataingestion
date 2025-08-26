@@ -22,149 +22,66 @@ namespace Samples
 
         static Task<int> Main(string[] args)
         {
-            Option<string> readerOption = new("--reader", "-r")
-            {
-                Description = "The document reader to use. Options are 'markitdown', 'markdown', 'adi' (Azure Document Intelligence), and 'llama' (LlamaParse).",
-                Required = true,
-            };
-            readerOption.AcceptOnlyFromAmong("markitdown", "markdown", "adi", "llama");
-            readerOption.Validators.Add(result =>
-            {
-                string? errorMessage = result.Tokens.Single().Value switch
-                {
-                    "llama" when string.IsNullOrEmpty(Environment.GetEnvironmentVariable("LLAMACLOUD_API_KEY")) => "LLAMACLOUD_API_KEY environment variable is not set.",
-                    "adi" when string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_KEY")) => "AZURE_DOCUMENT_INT_KEY environment variable is not set.",
-                    "adi" when string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_ENDPOINT")) => "AZURE_DOCUMENT_INT_ENDPOINT environment variable is not set.",
-                    _ => null
-                };
-
-                if (errorMessage is not null)
-                {
-                    result.AddError(errorMessage);
-                }
-            });
-            Option<bool> extractImagesOption = new("--extract-images", "-e")
-            {
-                Description = "Whether to extract images (if supported by the selected reader).",
-            };
-            extractImagesOption.Validators.Add(result =>
-            {
-                if (!result.Implicit)
-                {
-                    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")))
-                    {
-                        result.AddError("AZURE_OPENAI_ENDPOINT environment variable is not set.");
-                    }
-                    else if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")))
-                    {
-                        result.AddError("AZURE_OPENAI_API_KEY environment variable is not set.");
-                    }
-                }
-            });
-            Option<FileInfo[]> filesOption = new("--files", "-f")
-            {
-                Description = "The files to process.",
-            };
-            filesOption.AcceptExistingOnly();
-            Option<Uri[]> linksOptions = new("--links", "-l")
-            {
-                Description = "The URIs to process.",
-                Arity = ArgumentArity.ZeroOrMore,
-                CustomParser = result => result.Tokens.Select(t => new Uri(t.Value)).ToArray()
-            };
-            Option<LogLevel> logLevelOption = new("--log-level")
-            {
-                Description = "The minimum log level to use. Default is Information.",
-                DefaultValueFactory = _ => LogLevel.Information
-            };
-            logLevelOption.AcceptOnlyFromAmong(Enum.GetNames(typeof(LogLevel)));
-            RootCommand rootCommand = new("Data Ingestion Sample")
-            {
-                readerOption,
-                extractImagesOption,
-                filesOption,
-                linksOptions,
-                logLevelOption
-            };
-            rootCommand.SetAction(async (parseResult, cancellationToken) =>
-            {
-                bool extractImages = parseResult.GetValue(extractImagesOption);
-                string readerId = parseResult.GetRequiredValue(readerOption);
-                LogLevel logLevel = parseResult.GetValue(logLevelOption);
-
-                using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
-                {
-                    builder.SetMinimumLevel(logLevel);
-
-                    builder.AddSimpleConsole(configure =>
-                    {
-                        configure.TimestampFormat = "[HH:mm:ss] ";
-                        configure.UseUtcTimestamp = true;
-                    });
-                });
-
-                var logger = loggerFactory.CreateLogger<Program>();
-
-                FileInfo[]? files = parseResult.GetValue(filesOption);
-                Uri[]? links = parseResult.GetValue(linksOptions);
-
-                if ((files is null || files.Length == 0) && (links is null || links.Length == 0))
-                {
-                    await parseResult.InvocationConfiguration.Error.WriteLineAsync("No files or links specified to process. Use --files and/or --links options.");
-                    return 1;
-                }
-
-                DocumentReader reader = CreateReader(readerId, extractImages);
-                DocumentProcessor[] processors = CreateProcessors(extractImages);
-
-                DocumentChunker chunker = new HeaderChunker(
-                    TiktokenTokenizer.CreateForModel("gpt-4"),
-                    // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
-                    maxTokensPerParagraph: 2000,
-                    overlapTokens: 500);
-
-                using SqlServerVectorStore sqlServerVectorStore = new(
-                    Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,
-                    new()
-                    {
-                        EmbeddingGenerator = CreateEmbeddingGenerator(),
-                    });
-
-                using SqlServerCollection<Guid, ChunkRecord> collection = sqlServerVectorStore.GetCollection<Guid, ChunkRecord>("chunks");
-                List<Guid> ids = [];
-                using DocumentWriter writer = new VectorStoreWriter<Guid, ChunkRecord>(collection, (doc, chunk) =>
-                {
-                    Guid recordId = Guid.NewGuid();
-                    ids.Add(recordId);
-
-                    return new()
-                    {
-                        Id = recordId,
-                        Context = chunk.Context,
-                        Content = chunk.Content,
-                        Embedding = chunk.Content,
-                        DocumentId = doc.Identifier
-                    };
-                });
-
-                DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
-
-                if (files?.Length > 0)
-                {
-                    await pipeline.ProcessAsync(files.Select(info => info.FullName), cancellationToken);
-                }
-                else
-                {
-                    await pipeline.ProcessAsync(links!, cancellationToken);
-                }
-
-                ChunkRecord[] retrieved = await collection.GetAsync(ids).ToArrayAsync();
-                logger.LogInformation($"Retrieved {retrieved.Length} chunks from the vector store.");
-
-                return 0;
-            });
+            RootCommand rootCommand = CreateRootCommand();
 
             return rootCommand.Parse(args).InvokeAsync();
+        }
+
+        private static async Task<int> ProcessAsync(string readerId, bool extractImages, LogLevel logLevel,
+            FileInfo[]? files, Uri[]? links, CancellationToken cancellationToken)
+        {
+            using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
+            var logger = loggerFactory.CreateLogger<Program>();
+
+            DocumentReader reader = CreateReader(readerId, extractImages);
+            DocumentProcessor[] processors = CreateProcessors(extractImages);
+
+            DocumentChunker chunker = new HeaderChunker(
+                TiktokenTokenizer.CreateForModel("gpt-4"),
+                // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
+                maxTokensPerParagraph: 2000,
+                overlapTokens: 500);
+
+            using SqlServerVectorStore sqlServerVectorStore = new(
+                Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,
+                new()
+                {
+                    EmbeddingGenerator = CreateEmbeddingGenerator(),
+                });
+
+            using SqlServerCollection<Guid, ChunkRecord> collection = sqlServerVectorStore.GetCollection<Guid, ChunkRecord>("chunks");
+            List<Guid> ids = [];
+            using DocumentWriter writer = new VectorStoreWriter<Guid, ChunkRecord>(collection, (doc, chunk) =>
+            {
+                Guid recordId = Guid.NewGuid();
+                ids.Add(recordId);
+
+                return new()
+                {
+                    Id = recordId,
+                    Context = chunk.Context,
+                    Content = chunk.Content,
+                    Embedding = chunk.Content,
+                    DocumentId = doc.Identifier
+                };
+            });
+
+            DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
+
+            if (files?.Length > 0)
+            {
+                await pipeline.ProcessAsync(files.Select(info => info.FullName), cancellationToken);
+            }
+
+            if (links?.Length > 0)
+            {
+                await pipeline.ProcessAsync(links!, cancellationToken);
+            }
+
+            ChunkRecord[] retrieved = await collection.GetAsync(ids).ToArrayAsync();
+            logger.LogInformation($"Retrieved {retrieved.Length} chunks from the vector store.");
+
+            return 0;
         }
 
         private static DocumentReader CreateReader(string readerId, bool extractImages)
@@ -210,6 +127,106 @@ namespace Samples
 
             return openAIClient.GetEmbeddingClient("text-embedding-3-small").AsIEmbeddingGenerator();
         }
+
+        #region boilerplate
+        private static ILoggerFactory CreateLoggerFactory(LogLevel logLevel)
+            => LoggerFactory.Create(builder =>
+            {
+                builder.SetMinimumLevel(logLevel);
+
+                builder.AddSimpleConsole(configure =>
+                {
+                    configure.TimestampFormat = "[HH:mm:ss] ";
+                    configure.UseUtcTimestamp = true;
+                });
+            });
+
+        private static RootCommand CreateRootCommand()
+        {
+            Option<string> readerOption = new("--reader", "-r")
+            {
+                Description = "The document reader to use. Options are 'markitdown', 'markdown', 'adi' (Azure Document Intelligence), and 'llama' (LlamaParse).",
+                Required = true,
+            };
+            readerOption.AcceptOnlyFromAmong("markitdown", "markdown", "adi", "llama");
+            readerOption.Validators.Add(result =>
+            {
+                string? errorMessage = result.Tokens.Single().Value switch
+                {
+                    "llama" when string.IsNullOrEmpty(Environment.GetEnvironmentVariable("LLAMACLOUD_API_KEY")) => "LLAMACLOUD_API_KEY environment variable is not set.",
+                    "adi" when string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_KEY")) => "AZURE_DOCUMENT_INT_KEY environment variable is not set.",
+                    "adi" when string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_ENDPOINT")) => "AZURE_DOCUMENT_INT_ENDPOINT environment variable is not set.",
+                    _ => null
+                };
+
+                if (errorMessage is not null)
+                {
+                    result.AddError(errorMessage);
+                }
+            });
+            Option<bool> extractImagesOption = new("--extract-images", "-e")
+            {
+                Description = "Whether to extract images (if supported by the selected reader).",
+            };
+            Option<FileInfo[]> filesOption = new("--files", "-f")
+            {
+                Description = "The files to process.",
+                AllowMultipleArgumentsPerToken = true,
+            };
+            filesOption.AcceptExistingOnly();
+            Option<Uri[]> linksOptions = new("--links", "-l")
+            {
+                Description = "The URIs to process.",
+                AllowMultipleArgumentsPerToken = true,
+                CustomParser = result => result.Tokens.Select(t => new Uri(t.Value)).ToArray()
+            };
+            Option<LogLevel> logLevelOption = new("--log-level")
+            {
+                Description = "The minimum log level to use. Default is Information.",
+                DefaultValueFactory = _ => LogLevel.Information
+            };
+            logLevelOption.AcceptOnlyFromAmong(Enum.GetNames(typeof(LogLevel)));
+            RootCommand rootCommand = new("Data Ingestion Sample")
+            {
+                readerOption,
+                extractImagesOption,
+                filesOption,
+                linksOptions,
+                logLevelOption
+            };
+            rootCommand.Validators.Add(result =>
+            {
+                if (result.GetResult(filesOption) is null && result.GetResult(linksOptions) is null)
+                {
+                    result.AddError("At least one of --files or --links options must be specified.");
+                }
+
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")))
+                {
+                    result.AddError("AZURE_OPENAI_ENDPOINT environment variable is not set.");
+                }
+
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")))
+                {
+                    result.AddError("AZURE_OPENAI_API_KEY environment variable is not set.");
+                }
+            });
+
+            rootCommand.SetAction((parseResult, cancellationToken) =>
+            {
+                bool extractImages = parseResult.GetValue(extractImagesOption);
+                string readerId = parseResult.GetRequiredValue(readerOption);
+                LogLevel logLevel = parseResult.GetValue(logLevelOption);
+
+                FileInfo[]? files = parseResult.GetValue(filesOption);
+                Uri[]? links = parseResult.GetValue(linksOptions);
+
+                return ProcessAsync(readerId, extractImages, logLevel, files, links, cancellationToken);
+            });
+
+            return rootCommand;
+        }
+#endregion boilerplate
     }
 
     public class ChunkRecord

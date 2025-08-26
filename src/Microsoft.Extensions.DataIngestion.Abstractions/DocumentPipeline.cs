@@ -71,7 +71,7 @@ public class DocumentPipeline
 
         foreach (string filePath in filePaths)
         {
-            Logger?.LogInformation("Processing file '{FilePath}'.", filePath);
+            Logger?.LogInformation("Processing file '{FilePath}' using '{Reader}'.", filePath, GetShortName(Reader));
 
             Document document = await Reader.ReadAsync(filePath, cancellationToken);
 
@@ -93,7 +93,7 @@ public class DocumentPipeline
 
         foreach (Uri source in sources)
         {
-            Logger?.LogInformation("Processing link '{Link}'.", source);
+            Logger?.LogInformation("Processing link '{Link}' using '{Reader}'.", source, GetShortName(Reader));
 
             Document document = await Reader.ReadAsync(source, cancellationToken);
 
@@ -108,17 +108,26 @@ public class DocumentPipeline
     {
         foreach (DocumentProcessor processor in Processors)
         {
-            Logger?.LogInformation("Processing document '{DocumentId}' with '{Processor}'.", document.Identifier, processor);
+            Logger?.LogInformation("Processing document '{DocumentId}' with '{Processor}'.", document.Identifier, GetShortName(processor));
             document = await processor.ProcessAsync(document, cancellationToken);
             Logger?.LogInformation("Processed document '{DocumentId}'.", document.Identifier);
         }
 
-        Logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, Chunker);
+        Logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, GetShortName(Chunker));
         List<Chunk> chunks = await Chunker.ProcessAsync(document, cancellationToken);
         Logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
 
-        Logger?.LogInformation("Persisting chunks with '{Writer}'.", Writer);
+        Logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(Writer));
         await Writer.WriteAsync(document, chunks, cancellationToken);
         Logger?.LogInformation("Persisted chunks for document '{DocumentId}'.", document.Identifier);
+    }
+
+    private string GetShortName(object any)
+    {
+        Type type = any.GetType();
+
+        return type.IsConstructedGenericType
+            ? type.ToString()
+            : type.Name;
     }
 }
