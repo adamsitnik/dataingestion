@@ -36,7 +36,7 @@ public class ParagraphChunkerTests
             }
         });
 
-        ParagraphChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), 2000, 500);
+        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), 2000, 500);
         List<Chunk> chunks = await chunker.ProcessAsync(doc);
 
         Assert.Equal(5, chunks.Count);

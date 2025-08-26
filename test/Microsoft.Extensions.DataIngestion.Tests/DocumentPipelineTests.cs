@@ -182,6 +182,6 @@ public class DocumentPipelineTests
     private static List<DocumentChunker> CreateChunkers() => [
         new DummyChunker(),
         // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
-        new ParagraphChunker(TiktokenTokenizer.CreateForModel("gpt-4"), 2000, 500)
+        new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"), 2000, 500)
     ];
 }

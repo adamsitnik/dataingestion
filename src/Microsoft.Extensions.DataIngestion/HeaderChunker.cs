@@ -11,14 +11,17 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public class ParagraphChunker : DocumentChunker
+/// <summary>
+/// A <see cref="DocumentChunker"/> that splits documents into chunks based on headers and their corresponding levels, preserving the header context.
+/// </summary>
+public class HeaderChunker : DocumentChunker
 {
     private const int MaxHeaderLevel = 6;
     private readonly Tokenizer _tokenizer;
     private readonly int _maxTokensPerParagraph;
     private readonly int _overlapTokens;
 
-    public ParagraphChunker(Tokenizer tokenizer, int maxTokensPerParagraph, int overlapTokens = 0)
+    public HeaderChunker(Tokenizer tokenizer, int maxTokensPerParagraph, int overlapTokens = 0)
     {
         _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
         _maxTokensPerParagraph = maxTokensPerParagraph > 0 ? maxTokensPerParagraph : throw new ArgumentOutOfRangeException(nameof(maxTokensPerParagraph));
