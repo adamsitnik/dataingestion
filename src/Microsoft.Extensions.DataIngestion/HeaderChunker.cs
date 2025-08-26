@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// </summary>
 public class HeaderChunker : DocumentChunker
 {
-    private const int MaxHeaderLevel = 6;
+    private const int MaxHeaderLevel = 10;
     private readonly Tokenizer _tokenizer;
     private readonly int _maxTokensPerParagraph;
     private readonly int _overlapTokens;
