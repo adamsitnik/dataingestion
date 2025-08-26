@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Samples": {
+      "commandName": "Project",
+      "commandLineArgs": "--reader adi --links \"https://winprotocoldocs-bhdugrdyduf5h2e4.b02.azurefd.net/MS-NRBF/%5bMS-NRBF%5d-190313.docx\""
+    }
+  }
+}

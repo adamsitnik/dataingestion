@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Extensions.DataIn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Extensions.DataIngestion.Tests", "test\Microsoft.Extensions.DataIngestion.Tests\Microsoft.Extensions.DataIngestion.Tests.csproj", "{5EFA871C-EE16-46BB-9A27-2875FCF1E529}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples", "src\Samples\Samples.csproj", "{79FD1A55-FFCD-4708-B831-8773F5F8DDBB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{5EFA871C-EE16-46BB-9A27-2875FCF1E529}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5EFA871C-EE16-46BB-9A27-2875FCF1E529}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5EFA871C-EE16-46BB-9A27-2875FCF1E529}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79FD1A55-FFCD-4708-B831-8773F5F8DDBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79FD1A55-FFCD-4708-B831-8773F5F8DDBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79FD1A55-FFCD-4708-B831-8773F5F8DDBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79FD1A55-FFCD-4708-B831-8773F5F8DDBB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
