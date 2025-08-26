@@ -8,6 +8,7 @@ using LlamaParse;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion;
 using Microsoft.Extensions.DataIngestion.Tests;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.VectorData;
 using Microsoft.ML.Tokenizers;
 using Microsoft.SemanticKernel.Connectors.SqlServer;
@@ -68,21 +69,41 @@ namespace Samples
             Option<Uri[]> linksOptions = new("--links", "-l")
             {
                 Description = "The URIs to process.",
+                Arity = ArgumentArity.ZeroOrMore,
                 CustomParser = result => result.Tokens.Select(t => new Uri(t.Value)).ToArray()
             };
+            Option<LogLevel> logLevelOption = new("--log-level")
+            {
+                Description = "The minimum log level to use. Default is Information.",
+                DefaultValueFactory = _ => LogLevel.Information
+            };
+            logLevelOption.AcceptOnlyFromAmong(Enum.GetNames(typeof(LogLevel)));
             RootCommand rootCommand = new("Data Ingestion Sample")
             {
                 readerOption,
                 extractImagesOption,
                 filesOption,
-                linksOptions
+                linksOptions,
+                logLevelOption
             };
             rootCommand.SetAction(async (parseResult, cancellationToken) =>
             {
                 bool extractImages = parseResult.GetValue(extractImagesOption);
                 string readerId = parseResult.GetRequiredValue(readerOption);
+                LogLevel logLevel = parseResult.GetValue(logLevelOption);
 
-                await parseResult.InvocationConfiguration.Output.WriteLineAsync($"The selected reader is {readerId} with extract images set to {extractImages}.");
+                using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+                {
+                    builder.SetMinimumLevel(logLevel);
+
+                    builder.AddSimpleConsole(configure =>
+                    {
+                        configure.TimestampFormat = "[HH:mm:ss] ";
+                        configure.UseUtcTimestamp = true;
+                    });
+                });
+
+                var logger = loggerFactory.CreateLogger<Program>();
 
                 FileInfo[]? files = parseResult.GetValue(filesOption);
                 Uri[]? links = parseResult.GetValue(linksOptions);
@@ -95,7 +116,6 @@ namespace Samples
 
                 DocumentReader reader = CreateReader(readerId, extractImages);
                 DocumentProcessor[] processors = CreateProcessors(extractImages);
-                await parseResult.InvocationConfiguration.Output.WriteLineAsync($"The selected processors are: {string.Join<DocumentProcessor>(Environment.NewLine, processors)}.");
 
                 DocumentChunker chunker = new HeaderChunker(
                     TiktokenTokenizer.CreateForModel("gpt-4"),
@@ -127,23 +147,19 @@ namespace Samples
                     };
                 });
 
-                DocumentPipeline pipeline = new(reader, processors, chunker, writer);
+                DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
 
                 if (files?.Length > 0)
                 {
-                    await parseResult.InvocationConfiguration.Output.WriteLineAsync($"Processing {files.Length} files...");
                     await pipeline.ProcessAsync(files.Select(info => info.FullName), cancellationToken);
                 }
                 else
                 {
-                    await parseResult.InvocationConfiguration.Output.WriteLineAsync($"Processing {links!.Length} links...");
-                    await pipeline.ProcessAsync(links, cancellationToken);
+                    await pipeline.ProcessAsync(links!, cancellationToken);
                 }
 
-                await parseResult.InvocationConfiguration.Output.WriteLineAsync($"Processed {ids.Count} chunks.");
-
                 ChunkRecord[] retrieved = await collection.GetAsync(ids).ToArrayAsync();
-                await parseResult.InvocationConfiguration.Output.WriteLineAsync($"Retrieved {retrieved.Length} chunks from the vector store.");
+                logger.LogInformation($"Retrieved {retrieved.Length} chunks from the vector store.");
 
                 return 0;
             });

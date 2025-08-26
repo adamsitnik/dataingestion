@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public class ParagraphChunkerTests
+public class HeaderChunkerTests
 {
     [Fact]
     public async Task CanChunkNonTrivialDocument()
