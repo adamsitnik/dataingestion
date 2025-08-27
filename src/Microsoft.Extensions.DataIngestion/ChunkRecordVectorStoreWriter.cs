@@ -12,6 +12,7 @@ namespace Microsoft.Extensions.DataIngestion;
 public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
     where TKey : notnull
 {
+    private readonly VectorStoreCollection<TKey, ChunkRecord<TKey>> _vectorStoreCollection;
     private readonly VectorStoreWriter<TKey, ChunkRecord<TKey>> _innerWriter;
     private readonly Func<Chunk, TKey> _keyProvider;
 
@@ -45,12 +46,13 @@ public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
 
         _keyProvider = keyProvider ?? GenerateKey;
 
-        VectorStoreCollectionDefinition definition = GetVectorStoreRecordDefinition(dimensionCount);
-        VectorStoreCollection<TKey, ChunkRecord<TKey>> vectorStoreCollection = vectorStore.GetCollection<TKey, ChunkRecord<TKey>>(collectionName!, definition);
-        _innerWriter = new VectorStoreWriter<TKey, ChunkRecord<TKey>>(vectorStoreCollection, Map);
+        _vectorStoreCollection = vectorStore.GetCollection<TKey, ChunkRecord<TKey>>(collectionName!, GetVectorStoreRecordDefinition(dimensionCount));
+        _innerWriter = new VectorStoreWriter<TKey, ChunkRecord<TKey>>(_vectorStoreCollection, Map);
     }
 
     public override void Dispose() => _innerWriter.Dispose();
+
+    public VectorStoreCollection<TKey, ChunkRecord<TKey>> VectorStoreCollection => _vectorStoreCollection;
 
     public override Task WriteAsync(Document document, List<Chunk> chunks, CancellationToken cancellationToken = default)
         => _innerWriter.WriteAsync(document, chunks, cancellationToken);

@@ -18,8 +18,6 @@ namespace Samples
 {
     internal class Program
     {
-        internal const int DimensionCount = 1536; // text-embedding-3-small
-
         static Task<int> Main(string[] args)
         {
             RootCommand rootCommand = CreateRootCommand();
@@ -28,7 +26,7 @@ namespace Samples
         }
 
         private static async Task<int> ProcessAsync(string readerId, bool extractImages, LogLevel logLevel,
-            FileInfo[]? files, Uri[]? links, CancellationToken cancellationToken)
+            FileInfo[]? files, Uri[]? links, string? searchValue, CancellationToken cancellationToken)
         {
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
@@ -48,7 +46,7 @@ namespace Samples
                     EmbeddingGenerator = CreateEmbeddingGenerator(),
                 });
 
-            using DocumentWriter writer = new ChunkRecordVectorStoreWriter<Guid>(sqlServerVectorStore, DimensionCount);
+            using ChunkRecordVectorStoreWriter<Guid> writer = new(sqlServerVectorStore, 1536  /* text-embedding-3-small */);
 
             DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
 
@@ -60,6 +58,14 @@ namespace Samples
             if (links?.Length > 0)
             {
                 await pipeline.ProcessAsync(links!, cancellationToken);
+            }
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                await foreach (var result in writer.VectorStoreCollection.SearchAsync(searchValue, top: 1))
+                {
+                    Console.WriteLine($"Score: {result.Score}\nContent: {result.Record.Content}\n");
+                }
             }
 
             return 0;
@@ -167,13 +173,18 @@ namespace Samples
                 DefaultValueFactory = _ => LogLevel.Information
             };
             logLevelOption.AcceptOnlyFromAmong(Enum.GetNames(typeof(LogLevel)));
+            Option<string> searchValue = new("--search")
+            {
+                Description = "The search value to use."
+            };
             RootCommand rootCommand = new("Data Ingestion Sample")
             {
                 readerOption,
                 extractImagesOption,
                 filesOption,
                 linksOptions,
-                logLevelOption
+                logLevelOption,
+                searchValue
             };
             rootCommand.Validators.Add(result =>
             {
@@ -202,7 +213,9 @@ namespace Samples
                 FileInfo[]? files = parseResult.GetValue(filesOption);
                 Uri[]? links = parseResult.GetValue(linksOptions);
 
-                return ProcessAsync(readerId, extractImages, logLevel, files, links, cancellationToken);
+                string? search = parseResult.GetValue(searchValue);
+
+                return ProcessAsync(readerId, extractImages, logLevel, files, links, search, cancellationToken);
             });
 
             return rootCommand;
