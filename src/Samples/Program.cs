@@ -18,8 +18,6 @@ namespace Samples
 {
     internal class Program
     {
-        internal const int DimensionCount = 1536; // text-embedding-3-small
-
         static Task<int> Main(string[] args)
         {
             RootCommand rootCommand = CreateRootCommand();
@@ -28,10 +26,9 @@ namespace Samples
         }
 
         private static async Task<int> ProcessAsync(string readerId, bool extractImages, LogLevel logLevel,
-            FileInfo[]? files, Uri[]? links, CancellationToken cancellationToken)
+            FileInfo[]? files, Uri[]? links, string? searchValue, CancellationToken cancellationToken)
         {
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
-            var logger = loggerFactory.CreateLogger<Program>();
 
             DocumentReader reader = CreateReader(readerId, extractImages);
             DocumentProcessor[] processors = CreateProcessors(extractImages);
@@ -49,22 +46,7 @@ namespace Samples
                     EmbeddingGenerator = CreateEmbeddingGenerator(),
                 });
 
-            using SqlServerCollection<Guid, ChunkRecord> collection = sqlServerVectorStore.GetCollection<Guid, ChunkRecord>("chunks");
-            List<Guid> ids = [];
-            using DocumentWriter writer = new VectorStoreWriter<Guid, ChunkRecord>(collection, (doc, chunk) =>
-            {
-                Guid recordId = Guid.NewGuid();
-                ids.Add(recordId);
-
-                return new()
-                {
-                    Id = recordId,
-                    Context = chunk.Context,
-                    Content = chunk.Content,
-                    Embedding = chunk.Content,
-                    DocumentId = doc.Identifier
-                };
-            });
+            using ChunkRecordVectorStoreWriter<Guid> writer = new(sqlServerVectorStore, 1536  /* text-embedding-3-small */);
 
             DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
 
@@ -78,8 +60,13 @@ namespace Samples
                 await pipeline.ProcessAsync(links!, cancellationToken);
             }
 
-            ChunkRecord[] retrieved = await collection.GetAsync(ids).ToArrayAsync();
-            logger.LogInformation($"Retrieved {retrieved.Length} chunks from the vector store.");
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                await foreach (var result in writer.VectorStoreCollection.SearchAsync(searchValue, top: 1))
+                {
+                    Console.WriteLine($"Score: {result.Score}\nContent: {result.Record.Content}\n");
+                }
+            }
 
             return 0;
         }
@@ -186,13 +173,18 @@ namespace Samples
                 DefaultValueFactory = _ => LogLevel.Information
             };
             logLevelOption.AcceptOnlyFromAmong(Enum.GetNames(typeof(LogLevel)));
+            Option<string> searchValue = new("--search")
+            {
+                Description = "The search value to use."
+            };
             RootCommand rootCommand = new("Data Ingestion Sample")
             {
                 readerOption,
                 extractImagesOption,
                 filesOption,
                 linksOptions,
-                logLevelOption
+                logLevelOption,
+                searchValue
             };
             rootCommand.Validators.Add(result =>
             {
@@ -221,29 +213,13 @@ namespace Samples
                 FileInfo[]? files = parseResult.GetValue(filesOption);
                 Uri[]? links = parseResult.GetValue(linksOptions);
 
-                return ProcessAsync(readerId, extractImages, logLevel, files, links, cancellationToken);
+                string? search = parseResult.GetValue(searchValue);
+
+                return ProcessAsync(readerId, extractImages, logLevel, files, links, search, cancellationToken);
             });
 
             return rootCommand;
         }
 #endregion boilerplate
-    }
-
-    public class ChunkRecord
-    {
-        [VectorStoreKey(StorageName = "key")]
-        public Guid Id { get; set; }
-
-        [VectorStoreVector(Dimensions: Program.DimensionCount, StorageName = "embedding")]
-        public string Embedding { get; set; } = string.Empty;
-
-        [VectorStoreData(StorageName = "content")]
-        public string Content { get; set; } = string.Empty;
-
-        [VectorStoreData(StorageName = "context")]
-        public string? Context { get; set; }
-
-        [VectorStoreData(StorageName = "doc_id")]
-        public string DocumentId { get; set; } = string.Empty;
     }
 }
