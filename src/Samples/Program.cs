@@ -31,7 +31,6 @@ namespace Samples
             FileInfo[]? files, Uri[]? links, CancellationToken cancellationToken)
         {
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
-            var logger = loggerFactory.CreateLogger<Program>();
 
             DocumentReader reader = CreateReader(readerId, extractImages);
             DocumentProcessor[] processors = CreateProcessors(extractImages);
@@ -49,22 +48,7 @@ namespace Samples
                     EmbeddingGenerator = CreateEmbeddingGenerator(),
                 });
 
-            using SqlServerCollection<Guid, ChunkRecord> collection = sqlServerVectorStore.GetCollection<Guid, ChunkRecord>("chunks");
-            List<Guid> ids = [];
-            using DocumentWriter writer = new VectorStoreWriter<Guid, ChunkRecord>(collection, (doc, chunk) =>
-            {
-                Guid recordId = Guid.NewGuid();
-                ids.Add(recordId);
-
-                return new()
-                {
-                    Id = recordId,
-                    Context = chunk.Context,
-                    Content = chunk.Content,
-                    Embedding = chunk.Content,
-                    DocumentId = doc.Identifier
-                };
-            });
+            using DocumentWriter writer = new ChunkRecordVectorStoreWriter<Guid>(sqlServerVectorStore, DimensionCount);
 
             DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
 
@@ -77,9 +61,6 @@ namespace Samples
             {
                 await pipeline.ProcessAsync(links!, cancellationToken);
             }
-
-            ChunkRecord[] retrieved = await collection.GetAsync(ids).ToArrayAsync();
-            logger.LogInformation($"Retrieved {retrieved.Length} chunks from the vector store.");
 
             return 0;
         }
@@ -227,23 +208,5 @@ namespace Samples
             return rootCommand;
         }
 #endregion boilerplate
-    }
-
-    public class ChunkRecord
-    {
-        [VectorStoreKey(StorageName = "key")]
-        public Guid Id { get; set; }
-
-        [VectorStoreVector(Dimensions: Program.DimensionCount, StorageName = "embedding")]
-        public string Embedding { get; set; } = string.Empty;
-
-        [VectorStoreData(StorageName = "content")]
-        public string Content { get; set; } = string.Empty;
-
-        [VectorStoreData(StorageName = "context")]
-        public string? Context { get; set; }
-
-        [VectorStoreData(StorageName = "doc_id")]
-        public string DocumentId { get; set; } = string.Empty;
     }
 }
