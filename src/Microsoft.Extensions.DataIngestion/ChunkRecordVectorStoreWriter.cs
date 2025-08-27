@@ -17,7 +17,7 @@ public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
     private readonly Func<Chunk, TKey> _keyProvider;
 
     /// <summary>
-    /// Creates a new instance of <see cref="ChunkRecordVectorStoreWriter{TKey}"/> that uses default schema to store the <see cref="Chunk"/> instances as <see cref="ChunkRecord{TKey}"/> using provided vectore store, collection name and dimension count.
+    /// Creates a new instance of <see cref="ChunkRecordVectorStoreWriter{TKey}"/> that uses default schema to store the <see cref="Chunk"/> instances as <see cref="ChunkRecord{TKey}"/> using provided vector store, collection name and dimension count.
     /// </summary>
     /// <param name="vectorStore">The <see cref="VectorStore"/> to use to store the <see cref="Chunk"/> instances.</param>
     /// <param name="dimensionCount">The number of dimensions that the vector has. This value is required when creating collections.</param>
