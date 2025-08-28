@@ -22,7 +22,7 @@ public sealed class ChunkRecord<TKey> where TKey : notnull
     public TKey Key { get; set; } = default!;
 
     [VectorStoreVector(Dimensions: int.MaxValue, StorageName = EmbeddingStorageName)]
-    public string Embedding { get; set; } = string.Empty;
+    public string Embedding => Content;
 
     [VectorStoreData(StorageName = ContentStorageName)]
     public string Content { get; set; } = string.Empty;

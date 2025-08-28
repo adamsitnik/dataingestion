@@ -21,11 +21,13 @@ public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
     /// </summary>
     /// <param name="vectorStore">The <see cref="VectorStore"/> to use to store the <see cref="Chunk"/> instances.</param>
     /// <param name="dimensionCount">The number of dimensions that the vector has. This value is required when creating collections.</param>
+    /// <param name="distanceFunction">The distance function to use when creating the collection. When not provided, the default specific to given database will be used. Check <see cref="DistanceFunction"/> for available values.</param>
     /// <param name="keyProvider">The key provider. It's optional when <typeparamref name="TKey"/> is <see cref="Guid"/> or <see cref="string"/>.</param>
     /// <param name="collectionName">The name of the collection.</param>
     /// <exception cref="ArgumentNullException">When <paramref name="vectorStore"/> or <paramref name="collectionName"/> are null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">When <paramref name="dimensionCount"/> is less or equal zero.</exception>
-    public ChunkRecordVectorStoreWriter(VectorStore vectorStore, int dimensionCount, Func<Chunk, TKey>? keyProvider = null, string? collectionName = "chunks")
+    public ChunkRecordVectorStoreWriter(VectorStore vectorStore, int dimensionCount, string? distanceFunction = null,
+        Func<Chunk, TKey>? keyProvider = null, string? collectionName = "chunks")
     {
         if (vectorStore is null)
         {
@@ -46,7 +48,8 @@ public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
 
         _keyProvider = keyProvider ?? GenerateKey;
 
-        _vectorStoreCollection = vectorStore.GetCollection<TKey, ChunkRecord<TKey>>(collectionName!, GetVectorStoreRecordDefinition(dimensionCount));
+        _vectorStoreCollection = vectorStore.GetCollection<TKey, ChunkRecord<TKey>>(
+            collectionName!, GetVectorStoreRecordDefinition(dimensionCount, distanceFunction));
         _innerWriter = new VectorStoreWriter<TKey, ChunkRecord<TKey>>(_vectorStoreCollection, Map);
     }
 
@@ -60,16 +63,33 @@ public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
     private static TKey GenerateKey(Chunk chunk)
         => typeof(TKey) == typeof(Guid) ? (TKey)(object)Guid.NewGuid() : (TKey)(object)Guid.NewGuid().ToString();
 
-    private static VectorStoreCollectionDefinition GetVectorStoreRecordDefinition(int dimensionCount)
+    private static VectorStoreCollectionDefinition GetVectorStoreRecordDefinition(int dimensionCount, string? distanceFunction)
         => new()
         {
             Properties =
             {
-                new VectorStoreKeyProperty(nameof(ChunkRecord<TKey>.Key), typeof(TKey)) { StorageName = ChunkRecord<TKey>.KeyStorageName },
-                new VectorStoreVectorProperty(nameof(ChunkRecord<TKey>.Embedding), typeof(string), dimensionCount) { StorageName = ChunkRecord<TKey>.EmbeddingStorageName },
-                new VectorStoreDataProperty(nameof(ChunkRecord<TKey>.Content), typeof(string)) { StorageName = ChunkRecord<TKey>.ContentStorageName },
-                new VectorStoreDataProperty(nameof(ChunkRecord<TKey>.Context), typeof(string)) { StorageName = ChunkRecord<TKey>.ContextStorageName },
-                new VectorStoreDataProperty(nameof(ChunkRecord<TKey>.DocumentId), typeof(string)) { StorageName = ChunkRecord<TKey>.DocumentIdStorageName }
+                new VectorStoreKeyProperty(nameof(ChunkRecord<TKey>.Key), typeof(TKey))
+                {
+                    StorageName = ChunkRecord<TKey>.KeyStorageName
+                },
+                new VectorStoreVectorProperty(nameof(ChunkRecord<TKey>.Embedding), typeof(string), dimensionCount)
+                {
+                    StorageName = ChunkRecord<TKey>.EmbeddingStorageName,
+                    DistanceFunction = distanceFunction
+                },
+                new VectorStoreDataProperty(nameof(ChunkRecord<TKey>.Content), typeof(string))
+                {
+                    StorageName = ChunkRecord<TKey>.ContentStorageName
+                },
+                new VectorStoreDataProperty(nameof(ChunkRecord<TKey>.Context), typeof(string))
+                {
+                    StorageName = ChunkRecord<TKey>.ContextStorageName
+                },
+                new VectorStoreDataProperty(nameof(ChunkRecord<TKey>.DocumentId), typeof(string))
+                {
+                    StorageName = ChunkRecord<TKey>.DocumentIdStorageName,
+                    IsIndexed = true
+                }
             }
         };
 
@@ -78,7 +98,6 @@ public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
         {
             Key = _keyProvider(chunk),
             Content = chunk.Content,
-            Embedding = chunk.Content,
             Context = chunk.Context,
             DocumentId = document.Identifier
         };
