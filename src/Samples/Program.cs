@@ -71,6 +71,66 @@ namespace Samples
             return 0;
         }
 
+        private static async Task<int> FAQAsync(string readerId, LogLevel logLevel,
+            FileInfo[]? files, Uri[]? links, CancellationToken cancellationToken)
+        {
+            using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
+
+            DocumentReader reader = CreateReader(readerId, extractImages: false);
+            DocumentProcessor[] processors = CreateProcessors(extractImages: false);
+
+            DocumentChunker chunker = new HeaderChunker(
+                TiktokenTokenizer.CreateForModel("gpt-4"),
+                // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
+                maxTokensPerParagraph: 2000,
+                overlapTokens: 500);
+
+            using SqlServerVectorStore sqlServerVectorStore = new(
+                Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,
+                new()
+                {
+                    EmbeddingGenerator = CreateEmbeddingGenerator(),
+                });
+            using SqlServerCollection<Guid, QARecord> collection = sqlServerVectorStore.GetCollection<Guid, QARecord>("faq");
+
+            string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")!;
+            string key = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")!;
+
+            AzureOpenAIClient openAIClient = new(new Uri(endpoint), new AzureKeyCredential(key));
+
+            using QAWriter writer = new(collection, openAIClient.GetChatClient("gpt-4.1").AsIChatClient());
+
+            DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
+
+            if (files?.Length > 0)
+            {
+                await pipeline.ProcessAsync(files.Select(info => info.FullName), cancellationToken);
+            }
+
+            if (links?.Length > 0)
+            {
+                await pipeline.ProcessAsync(links!, cancellationToken);
+            }
+
+            while (true)
+            {
+                Console.Write("Enter your question (or 'exit' to quit): ");
+                string? searchValue = Console.ReadLine();
+                if (string.IsNullOrEmpty(searchValue) || searchValue.Equals("exit", StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+                Console.WriteLine("Searching...\n");
+                // For FAQ, we want to return multiple results
+                await foreach (var result in collection.SearchAsync(searchValue, top: 3))
+                {
+                    Console.WriteLine($"Score: {result.Score}\n\tQuestion: {result.Record.Question}\n\tAnswer: {result.Record.Answer}\n");
+                }
+            }
+
+            return 0;
+        }
+
         private static DocumentReader CreateReader(string readerId, bool extractImages)
             => readerId switch
             {
@@ -177,6 +237,23 @@ namespace Samples
             {
                 Description = "The search value to use."
             };
+
+            Command faqCommand = new("faq", "Runs the FAQ sample.")
+            {
+                readerOption,
+                filesOption,
+                linksOptions,
+                logLevelOption,
+            };
+            faqCommand.SetAction((parseResult, cancellationToken) =>
+            {
+                string readerId = parseResult.GetRequiredValue(readerOption);
+                LogLevel logLevel = parseResult.GetValue(logLevelOption);
+                FileInfo[]? files = parseResult.GetValue(filesOption);
+                Uri[]? links = parseResult.GetValue(linksOptions);
+                return FAQAsync(readerId, logLevel, files, links, cancellationToken);
+            });
+
             RootCommand rootCommand = new("Data Ingestion Sample")
             {
                 readerOption,
@@ -184,8 +261,10 @@ namespace Samples
                 filesOption,
                 linksOptions,
                 logLevelOption,
-                searchValue
+                searchValue,
+                faqCommand
             };
+
             rootCommand.Validators.Add(result =>
             {
                 if (result.GetResult(filesOption) is null && result.GetResult(linksOptions) is null)
