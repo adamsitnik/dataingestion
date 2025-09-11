@@ -160,6 +160,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                             var paragraph = MapToElement(parsedParagraph, markdown);
                             paragraph.Markdown = markdown;
                             paragraph.PageNumber = GetPageNumber(parsedParagraph.BoundingRegions);
+                            paragraph.Metadata[nameof(AdiParagraph.BoundingRegions)] = parsedParagraph.BoundingRegions;
+                            paragraph.Metadata[nameof(AdiParagraph.Role)] = parsedParagraph.Role;
+
                             section.Elements.Add(paragraph);
                             break;
                         case "table":
@@ -169,6 +172,14 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                             {
                                 PageNumber = GetPageNumber(parsedTable.BoundingRegions),
                                 Markdown = GetMarkdown(parsedTable.Spans, entireContent),
+                                Metadata =
+                                {
+                                    { nameof(parsedTable.RowCount), parsedTable.RowCount },
+                                    { nameof(parsedTable.ColumnCount), parsedTable.ColumnCount },
+                                    { nameof(parsedTable.BoundingRegions), parsedTable.BoundingRegions },
+                                    { nameof(parsedTable.Caption), parsedTable.Caption },
+                                    { nameof(parsedTable.Footnotes), parsedTable.Footnotes }
+                                }
                             });
                             break;
                         case "figure":
@@ -181,6 +192,13 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                                 PageNumber = GetPageNumber(figure.BoundingRegions),
                                 Text = figure.Caption?.Content ?? "",
                                 Markdown = GetMarkdown(figure.Spans, entireContent),
+                                Metadata =
+                                {
+                                    { nameof(figure.Id), figure.Id },
+                                    { nameof(figure.BoundingRegions), figure.BoundingRegions },
+                                    { nameof(figure.Caption), figure.Caption },
+                                    { nameof(figure.Footnotes), figure.Footnotes },
+                                }
                             });
                             break;
                         default:
