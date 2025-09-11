@@ -32,11 +32,15 @@ namespace Microsoft.Extensions.DataIngestion
     [DebuggerDisplay("{GetType().Name}: {Markdown}")]
     public abstract class DocumentElement
     {
+        private Dictionary<string, object?>? _metadata;
+
         public string Text { get; set; } = string.Empty;
 
         public virtual string Markdown { get; set; } = string.Empty;
 
         public int? PageNumber { get; set; }
+
+        public Dictionary<string, object?> Metadata => _metadata ??= new();
     }
 
     /// <summary>

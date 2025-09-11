@@ -121,7 +121,13 @@ public class LlamaParseReader : DocumentReader
             {
                 Text = parsedPage.Text,
                 Markdown = parsedPage.Markdown,
-                PageNumber = parsedPage.PageNumber
+                PageNumber = parsedPage.PageNumber,
+                Metadata =
+                {
+                    { nameof(Page.Width), parsedPage.Width },
+                    { nameof(Page.Height), parsedPage.Height },
+                    { nameof(Page.Confidence), parsedPage.Confidence },
+                }
             };
 
             if (!string.IsNullOrEmpty(parsedPage.PageHeaderMarkdown))
@@ -155,6 +161,7 @@ public class LlamaParseReader : DocumentReader
                 };
                 element.PageNumber = parsedPage.PageNumber;
                 element.Markdown = item.Markdown;
+                element.Metadata[nameof(PageItem.BoundingBox)] = item.BoundingBox;
 
                 page.Elements.Add(element);
             }
@@ -168,13 +175,20 @@ public class LlamaParseReader : DocumentReader
                 // the Base64 string might become the standard instead of BinaryData.
                 BinaryData binaryData = BinaryData.FromBytes(Convert.FromBase64String(image.Image!));
 
-                page.Elements.Add(new DocumentImage()
+                DocumentImage documentImage = new()
                 {
                     Content = binaryData,
                     MediaType = image.ImageMimetype,
                     PageNumber = parsedPage.PageNumber,
                     Text = image.Text ?? string.Empty,
-                });
+                };
+
+                foreach (var kvp in image.Metadata)
+                {
+                    documentImage.Metadata[kvp.Key] = kvp.Value;
+                }
+
+                page.Elements.Add(documentImage);
             }
 
             if (!string.IsNullOrEmpty(parsedPage.PageFooterMarkdown))
