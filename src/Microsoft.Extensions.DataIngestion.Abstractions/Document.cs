@@ -74,6 +74,9 @@ namespace Microsoft.Extensions.DataIngestion
 
     public sealed class DocumentTable : DocumentElement
     {
+        // So far, we only support Markdown representation of the table
+        // because "LLMs speak Markdown" and there was no need to access
+        // individual rows/columns/cells.
     }
 
     public sealed class DocumentImage : DocumentElement

@@ -167,7 +167,6 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                             break;
                         case "table":
                             var parsedTable = parsed.Tables[index];
-                            // TODO adsitnik: handle tables and decide on design (list of rows vs list of cells).
                             section.Elements.Add(new DocumentTable()
                             {
                                 PageNumber = GetPageNumber(parsedTable.BoundingRegions),
