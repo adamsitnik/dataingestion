@@ -6,19 +6,18 @@ using Azure;
 using Azure.AI.DocumentIntelligence;
 using System;
 
-namespace Microsoft.Extensions.DataIngestion.Tests
+namespace Microsoft.Extensions.DataIngestion.Tests;
+
+public class DocumentIntelligenceReaderTests : DocumentReaderConformanceTests
 {
-    public class DocumentIntelligenceReaderTests : DocumentReaderConformanceTests
+    protected override DocumentReader CreateDocumentReader(bool extractImages = false)
     {
-        protected override DocumentReader CreateDocumentReader(bool extractImages = false)
-        {
-            string key = Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_KEY")!;
-            string endpoint = Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_ENDPOINT")!;
+        string key = Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_KEY")!;
+        string endpoint = Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_ENDPOINT")!;
 
-            AzureKeyCredential credential = new(key);
-            DocumentIntelligenceClient client = new(new Uri(endpoint), credential);
+        AzureKeyCredential credential = new(key);
+        DocumentIntelligenceClient client = new(new Uri(endpoint), credential);
 
-            return new DocumentIntelligenceReader(client, extractImages: extractImages);
-        }
+        return new DocumentIntelligenceReader(client, extractImages: extractImages);
     }
 }
