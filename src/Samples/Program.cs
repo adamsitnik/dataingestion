@@ -46,7 +46,7 @@ namespace Samples
                     EmbeddingGenerator = CreateEmbeddingGenerator(),
                 });
 
-            using ChunkRecordVectorStoreWriter<Guid> writer = new(sqlServerVectorStore, 1536  /* text-embedding-3-small */);
+            using ChunkRecordWriter<Guid> writer = new(sqlServerVectorStore, 1536  /* text-embedding-3-small */);
 
             DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
 

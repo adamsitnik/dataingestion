@@ -7,7 +7,7 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public sealed class ChunkRecord<TKey> where TKey : notnull
 {
-    // The property names and types must match the VectorStoreCollectionDefinition created in ChunkRecordVectorStoreWriter.GetVectorStoreRecordDefinition.
+    // The property names and types must match the VectorStoreCollectionDefinition created in ChunkRecordWriter.GetVectorStoreRecordDefinition.
     // They are annotated with attributes in case the user uses this type directly to fetch them
     // (without providing VectorStoreCollectionDefinition when creating the collection).
 
