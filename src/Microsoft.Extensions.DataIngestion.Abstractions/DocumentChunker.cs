@@ -5,10 +5,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DataIngestion
+namespace Microsoft.Extensions.DataIngestion;
+
+public abstract class DocumentChunker
 {
-    public abstract class DocumentChunker
-    {
-        public abstract ValueTask<List<Chunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default);
-    }
+    public abstract ValueTask<List<Chunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default);
 }

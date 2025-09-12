@@ -91,7 +91,7 @@ public sealed class MarkdownReader : DocumentReader
 
             if (block is LinkReferenceDefinitionGroup linkReferenceGroup)
             {
-                continue; // TODO: Handle link reference definitions if needed.
+                continue; // In the future, we might want to handle links differently.
             }
 
             if (IsEmptyBlock(block))
@@ -99,10 +99,7 @@ public sealed class MarkdownReader : DocumentReader
                 continue;
             }
 
-            DocumentElement element = MapBlock(outputContent, previousWasBreak, block);
-
-            element.Markdown = outputContent.Substring(block.Span.Start, block.Span.Length);
-            rootSection.Elements.Add(element);
+            rootSection.Elements.Add(MapBlock(outputContent, previousWasBreak, block));
             previousWasBreak = false;
         }
 
@@ -113,17 +110,20 @@ public sealed class MarkdownReader : DocumentReader
         =>  block is LeafBlock emptyLeafBlock && (emptyLeafBlock.Inline is null || emptyLeafBlock.Inline.FirstChild is null);
 
     private static DocumentElement MapBlock(string outputContent, bool previousWasBreak, Block block)
-        => block switch
+    {
+        DocumentElement element = block switch
         {
             LeafBlock leafBlock => MapLeafBlockToElement(leafBlock, previousWasBreak),
             ListBlock listBlock => MapListBlock(listBlock, previousWasBreak, outputContent),
             QuoteBlock quoteBlock => MapQuoteBlock(quoteBlock, previousWasBreak, outputContent),
-            Markdig.Extensions.Tables.Table table => new DocumentTable()
-            {
-                // TODO: provide DocumentTable design and map all data
-            },
+            Markdig.Extensions.Tables.Table table => new DocumentTable(),
             _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
         };
+
+        element.Markdown = outputContent.Substring(block.Span.Start, block.Span.Length);
+
+        return element;
+    }
 
     private static DocumentElement MapLeafBlockToElement(LeafBlock block, bool previousWasBreak)
         => block switch
@@ -139,7 +139,8 @@ public sealed class MarkdownReader : DocumentReader
             },
             ParagraphBlock image when image.Inline!.FirstChild is LinkInline link && link.IsImage => new DocumentImage
             {
-                Text = link.FirstChild is LiteralInline literal ? literal.Content.ToString() : GetText(image.Inline),
+                // ![Alt text](data:image/png;base64,...)
+                AlternativeText = link.FirstChild is LiteralInline literal ? literal.Content.ToString() : null,
                 Content = link.Url is not null && link.Url.StartsWith("data:image/png;base64,", StringComparison.Ordinal)
                     ? BinaryData.FromBytes(Convert.FromBase64String(link.Url.Substring("data:image/png;base64,".Length)), "image/png")
                     : null, // we may implement it in the future if needed
@@ -162,7 +163,7 @@ public sealed class MarkdownReader : DocumentReader
     {
         // So far Sections were only pages (LP) or sections for ADI. Now they can also represent lists.
         DocumentSection list = new();
-        foreach (ListItemBlock item in listBlock) // can this hard cast fail for quote of lists?
+        foreach (ListItemBlock item in listBlock)
         {
             foreach (LeafBlock child in item)
             {
@@ -191,9 +192,7 @@ public sealed class MarkdownReader : DocumentReader
                 continue; // Skip empty blocks in quotes
             }
 
-            DocumentElement element = MapBlock(outputContent, previousWasBreak, child);
-            element.Markdown = outputContent.Substring(child.Span.Start, child.Span.Length);
-            quote.Elements.Add(element);
+            quote.Elements.Add(MapBlock(outputContent, previousWasBreak, child));
         }
 
         return quote;
@@ -219,18 +218,21 @@ public sealed class MarkdownReader : DocumentReader
             }
             else if (inline is LineBreakInline)
             {
-                // TODO adsitnik design: should each reader accept the NewLine property from the configuration?
-                // So parsing the same document on different platforms would yield the same result?
                 content.AppendLine(); // Append a new line for line breaks
             }
             else if (inline is ContainerInline another)
             {
-                content.Append(GetText(another)); // recursion!
+                // EmphasisInline is also a ContainerInline, but it does not get any special treatment,
+                // as we use raw text here (instead of a markdown, where emphasis can be expressed).
+                content.Append(GetText(another));
+            }
+            else if (inline is CodeInline codeInline)
+            {
+                content.Append(codeInline.Content);
             }
             else
             {
-                // TODO: study EmphasisInline and LinkInline to see how to handle them properly.
-                content.Append(inline.ToString()); // Fallback for other inline types
+                throw new NotSupportedException($"Inline type '{inline.GetType().Name}' is not supported.");
             }
         }
 

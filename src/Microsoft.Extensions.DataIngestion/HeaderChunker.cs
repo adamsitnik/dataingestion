@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <summary>
 /// A <see cref="DocumentChunker"/> that splits documents into chunks based on headers and their corresponding levels, preserving the header context.
 /// </summary>
-public class HeaderChunker : DocumentChunker
+public sealed class HeaderChunker : DocumentChunker
 {
     private const int MaxHeaderLevel = 10;
     private readonly Tokenizer _tokenizer;
@@ -68,7 +68,7 @@ public class HeaderChunker : DocumentChunker
                     Process(nestedSection, chunks, headers, paragraphs);
                     break;
                 case DocumentImage image:
-                    paragraphs.Add(image.Description ?? image.Text);
+                    paragraphs.Add(image.AlternativeText ?? image.Text);
                     break;
                 case DocumentFooter footer:
                     break;

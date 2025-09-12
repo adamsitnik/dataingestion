@@ -11,11 +11,11 @@ using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public class ImageDescriptionProcessorTests
+public class ImageAlternativeTextProcessorTests
 {
     private readonly IChatClient _chatClient;
 
-    public ImageDescriptionProcessorTests()
+    public ImageAlternativeTextProcessorTests()
     {
         string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")!;
         string key = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")!;
@@ -26,14 +26,14 @@ public class ImageDescriptionProcessorTests
     }
 
     [Fact]
-    public async Task CanGenerateImageDescription()
+    public async Task CanGenerateImageAltText()
     {
-        ImageDescriptionProcessor sut = new(_chatClient);
+        ImageAlternativeTextProcessor sut = new(_chatClient);
         ReadOnlyMemory<byte> imageContent = await File.ReadAllBytesAsync(Path.Combine("TestFiles", "SampleImage.png"));
 
         DocumentImage documentImage = new()
         {
-            Description = null,
+            AlternativeText = null,
             Content = BinaryData.FromBytes(imageContent),
             MediaType = "image/png"
         };
@@ -54,7 +54,7 @@ public class ImageDescriptionProcessorTests
 
         await sut.ProcessAsync(document);
 
-        Assert.NotNull(documentImage.Description);
-        Assert.NotEmpty(documentImage.Description);
+        Assert.NotNull(documentImage.AlternativeText);
+        Assert.NotEmpty(documentImage.AlternativeText);
     }
 }

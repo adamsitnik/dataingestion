@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
+public sealed class ChunkRecordWriter<TKey> : DocumentWriter
     where TKey : notnull
 {
     private readonly VectorStoreCollection<TKey, ChunkRecord<TKey>> _vectorStoreCollection;
@@ -17,7 +17,7 @@ public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
     private readonly Func<Chunk, TKey> _keyProvider;
 
     /// <summary>
-    /// Creates a new instance of <see cref="ChunkRecordVectorStoreWriter{TKey}"/> that uses default schema to store the <see cref="Chunk"/> instances as <see cref="ChunkRecord{TKey}"/> using provided vector store, collection name and dimension count.
+    /// Creates a new instance of <see cref="ChunkRecordWriter{TKey}"/> that uses default schema to store the <see cref="Chunk"/> instances as <see cref="ChunkRecord{TKey}"/> using provided vector store, collection name and dimension count.
     /// </summary>
     /// <param name="vectorStore">The <see cref="VectorStore"/> to use to store the <see cref="Chunk"/> instances.</param>
     /// <param name="dimensionCount">The number of dimensions that the vector has. This value is required when creating collections.</param>
@@ -26,7 +26,7 @@ public partial class ChunkRecordVectorStoreWriter<TKey> : DocumentWriter
     /// <param name="collectionName">The name of the collection.</param>
     /// <exception cref="ArgumentNullException">When <paramref name="vectorStore"/> or <paramref name="collectionName"/> are null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">When <paramref name="dimensionCount"/> is less or equal zero.</exception>
-    public ChunkRecordVectorStoreWriter(VectorStore vectorStore, int dimensionCount, string? distanceFunction = null,
+    public ChunkRecordWriter(VectorStore vectorStore, int dimensionCount, string? distanceFunction = null,
         Func<Chunk, TKey>? keyProvider = null, string? collectionName = "chunks")
     {
         if (vectorStore is null)

@@ -4,26 +4,25 @@
 using System;
 using System.Diagnostics;
 
-namespace Microsoft.Extensions.DataIngestion
+namespace Microsoft.Extensions.DataIngestion;
+
+[DebuggerDisplay("{Content}")]
+public sealed class Chunk
 {
-    [DebuggerDisplay("{Content}")]
-    public sealed class Chunk
+    public string Content { get; }
+    public int TokenCount { get; }
+
+    public string? Context { get; }
+
+    public Chunk(string content, int tokenCount, string? context = null)
     {
-        public string Content { get; }
-        public int TokenCount { get; }
+        if (string.IsNullOrWhiteSpace(content))
+            throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
+        if (tokenCount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(tokenCount), "Token count must be greater than zero.");
 
-        public string? Context { get; }
-
-        public Chunk(string content, int tokenCount, string? context = null)
-        {
-            if (string.IsNullOrWhiteSpace(content))
-                throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
-            if (tokenCount <= 0)
-                throw new ArgumentOutOfRangeException(nameof(tokenCount), "Token count must be greater than zero.");
-
-            Content = content;
-            TokenCount = tokenCount;
-            Context = context;
-        }
+        Content = content;
+        TokenCount = tokenCount;
+        Context = context;
     }
 }

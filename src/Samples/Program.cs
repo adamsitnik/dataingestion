@@ -9,7 +9,6 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion;
 using Microsoft.Extensions.DataIngestion.Tests;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.VectorData;
 using Microsoft.ML.Tokenizers;
 using Microsoft.SemanticKernel.Connectors.SqlServer;
 using System.CommandLine;
@@ -46,7 +45,7 @@ namespace Samples
                     EmbeddingGenerator = CreateEmbeddingGenerator(),
                 });
 
-            using ChunkRecordVectorStoreWriter<Guid> writer = new(sqlServerVectorStore, 1536  /* text-embedding-3-small */);
+            using ChunkRecordWriter<Guid> writer = new(sqlServerVectorStore, 1536  /* text-embedding-3-small */);
 
             DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
 
@@ -162,7 +161,7 @@ namespace Samples
 
             AzureOpenAIClient openAIClient = new(new Uri(endpoint), new AzureKeyCredential(key));
 
-            return [new ImageDescriptionProcessor(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];
+            return [new ImageAlternativeTextProcessor(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];
         }
 
         private static IEmbeddingGenerator<string, Embedding<float>> CreateEmbeddingGenerator()
