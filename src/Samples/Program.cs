@@ -9,7 +9,6 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion;
 using Microsoft.Extensions.DataIngestion.Tests;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.VectorData;
 using Microsoft.ML.Tokenizers;
 using Microsoft.SemanticKernel.Connectors.SqlServer;
 using System.CommandLine;
