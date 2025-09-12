@@ -139,7 +139,8 @@ public sealed class MarkdownReader : DocumentReader
             },
             ParagraphBlock image when image.Inline!.FirstChild is LinkInline link && link.IsImage => new DocumentImage
             {
-                Text = link.FirstChild is LiteralInline literal ? literal.Content.ToString() : GetText(image.Inline),
+                // ![Alt text](data:image/png;base64,...)
+                AlternativeText = link.FirstChild is LiteralInline literal ? literal.Content.ToString() : null,
                 Content = link.Url is not null && link.Url.StartsWith("data:image/png;base64,", StringComparison.Ordinal)
                     ? BinaryData.FromBytes(Convert.FromBase64String(link.Url.Substring("data:image/png;base64,".Length)), "image/png")
                     : null, // we may implement it in the future if needed

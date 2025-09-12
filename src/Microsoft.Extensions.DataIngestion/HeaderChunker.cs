@@ -68,7 +68,7 @@ public class HeaderChunker : DocumentChunker
                     Process(nestedSection, chunks, headers, paragraphs);
                     break;
                 case DocumentImage image:
-                    paragraphs.Add(image.Description ?? image.Text);
+                    paragraphs.Add(image.AlternativeText ?? image.Text);
                     break;
                 case DocumentFooter footer:
                     break;

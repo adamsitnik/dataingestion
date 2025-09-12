@@ -82,6 +82,10 @@ namespace Microsoft.Extensions.DataIngestion
 
         public string? MediaType { get; set; }
 
-        public string? Description { get; set; }
+        /// <summary>
+        /// Alternative text is a brief, descriptive text that explains the content, context, or function of an image when the image cannot be displayed or accessed.
+        /// This property can be used when generating the embedding for the image that is part of larger chunk.
+        /// </summary>
+        public string? AlternativeText { get; set; }
     }
 }

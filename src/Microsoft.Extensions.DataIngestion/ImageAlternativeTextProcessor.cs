@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion;
 
 // This name is not final, we need to find a better one.
-public sealed class ImageDescriptionProcessor : DocumentProcessor
+public sealed class ImageAlternativeTextProcessor : DocumentProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
 
-    public ImageDescriptionProcessor(IChatClient chatClient, ChatOptions? chatOptions = null)
+    public ImageAlternativeTextProcessor(IChatClient chatClient, ChatOptions? chatOptions = null)
     {
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
         _chatOptions = chatOptions;
@@ -32,18 +32,19 @@ public sealed class ImageDescriptionProcessor : DocumentProcessor
 
         foreach (DocumentImage image in GetImages(document))
         {
-            if (image.Content is not null && !string.IsNullOrEmpty(image.MediaType))
+            if (image.Content is not null && !string.IsNullOrEmpty(image.MediaType)
+                && string.IsNullOrEmpty(image.AlternativeText))
             {
                 var response = await _chatClient.GetResponseAsync(
                 [
                     new(ChatRole.User,
                     [
-                        new TextContent("Write a detailed description for this image with less than 50 words."),
+                        new TextContent("Write a detailed alternative text for this image with less than 50 words."),
                         new DataContent(image.Content.ToMemory(), image.MediaType!),
                     ])
                 ], _chatOptions, cancellationToken: cancellationToken);
 
-                image.Description = response.Text;
+                image.AlternativeText = response.Text;
             }
         }
 
