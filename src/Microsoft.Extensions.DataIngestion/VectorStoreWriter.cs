@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public class VectorStoreWriter<TKey, TRecord> : DocumentWriter
+public sealed class VectorStoreWriter<TKey, TRecord> : DocumentWriter
     where TKey : notnull
     where TRecord : class
 {
