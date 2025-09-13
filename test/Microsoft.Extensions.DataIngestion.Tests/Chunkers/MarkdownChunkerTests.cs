@@ -21,10 +21,18 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         [Fact]
         public async Task NoheaderDocument()
         {
-            Document noHeaerDoc = new Document("noHeaderDoc")
+            Document noHeaerDoc = new Document("noHeaderDoc");
+            noHeaerDoc.Sections.Add(new DocumentSection
             {
-                Markdown = "This is a document without headers.".ReplaceLineEndings()
-            };
+                Elements =
+                {
+                    new DocumentParagraph
+                    {
+                        Markdown = "This is a document without headers.".ReplaceLineEndings()
+                    }
+                }
+            });
+
             DocumentChunker chunker = CreateDocumentChunker();
             List<Chunk> chunks = await chunker.ProcessAsync(noHeaerDoc);
             Assert.True(chunks.Count == 1);
@@ -37,10 +45,23 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         [Fact]
         public async Task SingleHeaderDocument()
         {
-            Document singleHeaderDoc = new Document("singleHeaderDoc")
+            Document singleHeaderDoc = new Document("singleHeaderDoc");
+            singleHeaderDoc.Sections.Add(new DocumentSection
             {
-                Markdown = "# Header 1\nThis is the content under header 1.".ReplaceLineEndings()
-            };
+                Elements =
+                {
+                    new DocumentHeader
+                    {
+                        Markdown = "Header 1",
+                        Level = 1
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = "This is the content under header 1.".ReplaceLineEndings()
+                    }
+                }
+            });
+
             DocumentChunker chunker = CreateDocumentChunker();
             List<Chunk> chunks = await chunker.ProcessAsync(singleHeaderDoc);
             Assert.True(chunks.Count == 1);
