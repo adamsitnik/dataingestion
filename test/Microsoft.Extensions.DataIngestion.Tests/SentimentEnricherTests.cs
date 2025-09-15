@@ -11,24 +11,12 @@ using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public class SentimentEnricherTests
+public class SentimentEnricherTests : ChatClientTestBase
 {
-    private readonly IChatClient _chatClient;
-
-    public SentimentEnricherTests()
-    {
-        string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")!;
-        string key = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")!;
-
-        AzureOpenAIClient openAIClient = new(new Uri(endpoint), new AzureKeyCredential(key));
-
-        _chatClient = openAIClient.GetChatClient("gpt-4.1").AsIChatClient();
-    }
-
     [Fact]
     public async Task CanProvideSentiment()
     {
-        SentimentEnricher sut = new(_chatClient);
+        SentimentEnricher sut = new(ChatClient);
 
         List<Chunk> chunks = new()
         {
