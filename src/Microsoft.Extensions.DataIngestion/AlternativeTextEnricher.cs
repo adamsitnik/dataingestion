@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion;
 
 // This name is not final, we need to find a better one.
-public sealed class ImageAlternativeTextProcessor : DocumentProcessor
+public sealed class AlternativeTextEnricher : DocumentProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
 
-    public ImageAlternativeTextProcessor(IChatClient chatClient, ChatOptions? chatOptions = null)
+    public AlternativeTextEnricher(IChatClient chatClient, ChatOptions? chatOptions = null)
     {
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
         _chatOptions = chatOptions;
