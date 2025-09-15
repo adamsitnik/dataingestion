@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Microsoft.Extensions.DataIngestion;
@@ -9,10 +10,14 @@ namespace Microsoft.Extensions.DataIngestion;
 [DebuggerDisplay("{Content}")]
 public sealed class Chunk
 {
+    private Dictionary<string, object?>? _metadata;
+
     public string Content { get; }
     public int TokenCount { get; }
 
     public string? Context { get; }
+
+    public Dictionary<string, object?> Metadata => _metadata ??= new();
 
     public Chunk(string content, int tokenCount, string? context = null)
     {

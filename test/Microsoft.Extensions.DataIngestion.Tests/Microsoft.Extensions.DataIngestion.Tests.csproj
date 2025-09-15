@@ -38,7 +38,7 @@
     <!-- Do not run the tests when LLAMACLOUD_API_KEY environment variable is not set -->
     <Compile Remove="LlamaParse\**\*ReaderTests.cs" Condition="'$(LLAMACLOUD_API_KEY)' == ''" />
     <!-- Do not run the tests when AZURE_OPENAI_ENDPOINT environment variable is not set -->
-    <Compile Remove="ImageAlternativeTextProcessorTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
+    <Compile Remove="**\*EnricherTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
   </ItemGroup>
 
   <ItemGroup>
