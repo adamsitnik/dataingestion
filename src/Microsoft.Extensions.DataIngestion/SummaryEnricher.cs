@@ -48,7 +48,6 @@ public sealed class SummaryEnricher : ChunkProcessor
                 ])
             ], _chatOptions, cancellationToken: cancellationToken);
 
-
             chunk.Metadata["Summary"] = response.Text;
         }
 
