@@ -58,7 +58,7 @@ public sealed class SentimentEnricher : ChunkProcessor
     private class SentimentWithScore
     {
         public string Sentiment { get; set; } = string.Empty;
-        // This name is long to avoid collisions with other "ConfidenceScore" keys.
+        // This name contains "Sentiment" prefix to avoid collisions with other "ConfidenceScore" keys.
         public double SentimentConfidenceScore { get; set; }
     }
 }
