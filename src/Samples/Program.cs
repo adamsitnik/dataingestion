@@ -161,7 +161,7 @@ namespace Samples
 
             AzureOpenAIClient openAIClient = new(new Uri(endpoint), new AzureKeyCredential(key));
 
-            return [new ImageAlternativeTextProcessor(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];
+            return [new AlternativeTextEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];
         }
 
         private static IEmbeddingGenerator<string, Embedding<float>> CreateEmbeddingGenerator()
