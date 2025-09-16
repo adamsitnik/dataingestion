@@ -23,7 +23,7 @@ public abstract class DocumentReader
             throw new ArgumentNullException(nameof(filePath));
         }
 
-        string identifier = filePath; // entire path is more uniq than just part of it.
+        string identifier = filePath; // entire path is more uniqe than just part of it.
         return ReadAsync(filePath, identifier, cancellationToken);
     }
 
@@ -41,7 +41,7 @@ public abstract class DocumentReader
             throw new ArgumentNullException(nameof(source));
         }
 
-        string identifier = source.ToString(); // entire source is more uniq than just part of it.
+        string identifier = source.ToString(); // entire source is more uniqe than just part of it.
         return ReadAsync(source, identifier, cancellationToken);
     }
 
