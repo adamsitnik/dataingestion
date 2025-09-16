@@ -33,10 +33,15 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         public async Task SingleChunkText()
         {
             string text = "This is a short document that fits within a single chunk.";
-            Document doc = new Document("singleChunkDoc")
+            Document doc = new Document("singleChunkDoc");
+            doc.Sections.Add(new DocumentSection
             {
-                Markdown = text
-            };
+                Elements =
+                {
+                    new DocumentParagraph { Markdown = text }
+                }
+            });
+
             DocumentChunker chunker = CreateDocumentChunker();
             List<Chunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Single(chunks);
@@ -48,10 +53,14 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         public async Task TwoChunks_NoOverlap()
         {
             string text = string.Join(" ", Enumerable.Repeat("word", 600)); // 600 words
-            Document doc = new Document("twoChunksNoOverlapDoc")
+            Document doc = new Document("twoChunksNoOverlapDoc");
+            doc.Sections.Add(new DocumentSection
             {
-                Markdown = text
-            };
+                Elements =
+                {
+                    new DocumentParagraph { Markdown = text }
+                }
+            });
             DocumentChunker chunker = CreateNoOverlapTokenChkunker();
             List<Chunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(2, chunks.Count);
@@ -61,19 +70,22 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         }
 
         [Fact]
-        public async Task TokenChunking_WithOverlap_Example()
+        public async Task TokenChunking_WithOverlap()
         {
-            // Arrange
             string text = "The quick brown fox jumps over the lazy dog";
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
             int chunkSize = 4;  // Small chunk size to demonstrate overlap
             int chunkOverlap = 1;
 
             var chunker = new DocumentTokenChunker(tokenizer, chunkSize, chunkOverlap);
-            Document doc = new Document("overlapExample")
+            Document doc = new Document("overlapExample");
+            doc.Sections.Add(new DocumentSection
             {
-                Markdown = text
-            };
+                Elements =
+                {
+                    new DocumentParagraph { Markdown = text }
+                }
+            });
 
             List<Chunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(3, chunks.Count);

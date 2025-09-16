@@ -50,7 +50,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                 {
                     new DocumentHeader
                     {
-                        Markdown = "Header 1",
+                        Markdown = "# Header 1",
                         Level = 1
                     },
                     new DocumentParagraph
@@ -62,7 +62,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 
             DocumentChunker chunker = CreateDocumentChunker();
             List<Chunk> chunks = await chunker.ProcessAsync(singleHeaderDoc);
-            Assert.True(chunks.Count == 1);
+            Assert.Single(chunks);
             Chunk chunk = chunks.First();
             ChunkAssertions.ContextEquals("# Header 1", chunk);
             ChunkAssertions.ContentEquals("This is the content under header 1.", chunk);
@@ -71,16 +71,33 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         [Fact]
         public async Task SingleHeaderTwoParagraphDocument()
         {
-            string content = "This is the first paragraph.\n\nThis is the second paragraph.".ReplaceLineEndings();
-            Document singleHeaderTwoParagraphDoc = new Document("singleHeaderTwoParagraphDoc")
+            
+            Document singleHeaderTwoParagraphDoc = new Document("singleHeaderTwoParagraphDoc");
+            singleHeaderTwoParagraphDoc.Sections.Add(new DocumentSection
             {
-                Markdown = "# Header 1\n" + content
-            };
+                Elements =
+                {
+                    new DocumentHeader
+                    {
+                        Markdown = "# Header 1",
+                        Level = 1
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = "This is the first paragraph."
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = "This is the second paragraph."
+                    }
+                }
+            });
             DocumentChunker chunker = CreateDocumentChunker();
             List<Chunk> chunks = await chunker.ProcessAsync(singleHeaderTwoParagraphDoc);
-            Assert.True(chunks.Count == 1);
+            Assert.Single(chunks);
             Chunk chunk = chunks.First();
             ChunkAssertions.ContextEquals("# Header 1", chunk);
+            string content = "This is the first paragraph.\nThis is the second paragraph.";
             ChunkAssertions.ContentEquals(content, chunk);
         }
 
@@ -89,13 +106,34 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         {
             string content1 = "This is the content under header 1.".ReplaceLineEndings();
             string content2 = "This is the content under header 2.".ReplaceLineEndings();
-            Document multiHeaderDoc = new Document("multiHeaderDoc")
+            Document multiHeaderDoc = new Document("singleHeaderTwoParagraphDoc");
+            multiHeaderDoc.Sections.Add(new DocumentSection
             {
-                Markdown = "# Header 1\n" + content1 + "\n## Header 2\n" + content2
-            };
+                Elements =
+                {
+                    new DocumentHeader
+                    {
+                        Markdown = "# Header 1",
+                        Level = 1
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content1
+                    },
+                    new DocumentHeader
+                    {
+                        Markdown = "## Header 2",
+                        Level = 2
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content2
+                    }
+                }
+            });
             DocumentChunker chunker = new MarkdownChunker();
             List<Chunk> chunks = await chunker.ProcessAsync(multiHeaderDoc);
-            Assert.True(chunks.Count == 2);
+            Assert.Equal(2, chunks.Count);
 
             Chunk chunk1 = chunks[0];
             ChunkAssertions.ContextEquals("# Header 1", chunk1);
@@ -111,13 +149,34 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         {
             string content1 = "This is the content under header 1.".ReplaceLineEndings();
             string content2 = "This is the content under header 2.".ReplaceLineEndings();
-            Document twoHeaderDoc = new Document("twoHeaderDoc")
+            Document twoHeaderDoc = new Document("singleHeaderTwoParagraphDoc");
+            twoHeaderDoc.Sections.Add(new DocumentSection
             {
-                Markdown = "# Header 1\n" + content1 + "\n# Header 2\n" + content2
-            };
+                Elements =
+                {
+                    new DocumentHeader
+                    {
+                        Markdown = "# Header 1",
+                        Level = 1
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content1
+                    },
+                    new DocumentHeader
+                    {
+                        Markdown = "# Header 2",
+                        Level = 1
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content2
+                    }
+                }
+            });
             DocumentChunker chunker = CreateDocumentChunker();
             List<Chunk> chunks = await chunker.ProcessAsync(twoHeaderDoc);
-            Assert.True(chunks.Count == 2);
+            Assert.Equal(2, chunks.Count);
 
             Chunk chunk1 = chunks[0];
             ChunkAssertions.ContextEquals("# Header 1", chunk1);
@@ -135,13 +194,49 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             string content2 = "This is the content under header 2.".ReplaceLineEndings();
             string content3 = "This is the content under header 3.".ReplaceLineEndings();
             string content4 = "This is the content under header 4.".ReplaceLineEndings();
-            Document complexDoc = new Document("complexDoc")
+            Document complexDoc = new Document("complexDoc");
+            complexDoc.Sections.Add(new DocumentSection
             {
-                Markdown = "# Header 1\n" + content1 +
-                           "\n## Header 2\n" + content2 +
-                           "\n### Header 3\n" + content3 +
-                           "\n## Header 4\n" + content4
-            };
+                Elements =
+                {
+                    new DocumentHeader
+                    {
+                        Markdown = "# Header 1",
+                        Level = 1
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content1
+                    },
+                    new DocumentHeader
+                    {
+                        Markdown = "## Header 2",
+                        Level = 2
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content2
+                    },
+                    new DocumentHeader
+                    {
+                        Markdown = "### Header 3",
+                        Level = 3
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content3
+                    },
+                    new DocumentHeader
+                    {
+                        Markdown = "## Header 4",
+                        Level = 2
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content4
+                    }
+                }
+            });
             DocumentChunker chunker = CreateDocumentChunker();
 
             List<Chunk> chunks = await chunker.ProcessAsync(complexDoc);
@@ -171,13 +266,49 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             string content2 = "This is the content under header 2.".ReplaceLineEndings();
             string content3 = "This is the content under header 3.".ReplaceLineEndings();
             string content4 = "This is the content under header 4.".ReplaceLineEndings();
-            Document complexDoc = new Document("complexDoc")
+            Document complexDoc = new Document("complexDoc");
+            complexDoc.Sections.Add(new DocumentSection
             {
-                Markdown = "# Header 1\n" + content1 +
-                           "\n## Header 2\n" + content2 +
-                           "\n### Header 3\n" + content3 +
-                           "\n## Header 4\n" + content4
-            };
+                Elements =
+                {
+                    new DocumentHeader
+                    {
+                        Markdown = "# Header 1",
+                        Level = 1
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content1
+                    },
+                    new DocumentHeader
+                    {
+                        Markdown = "## Header 2",
+                        Level = 2
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content2
+                    },
+                    new DocumentHeader
+                    {
+                        Markdown = "### Header 3",
+                        Level = 3
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content3
+                    },
+                    new DocumentHeader
+                    {
+                        Markdown = "## Header 4",
+                        Level = 2
+                    },
+                    new DocumentParagraph
+                    {
+                        Markdown = content4
+                    }
+                }
+            });
             DocumentChunker chunker = new MarkdownChunker(2);
 
             List<Chunk> chunks = await chunker.ProcessAsync(complexDoc);

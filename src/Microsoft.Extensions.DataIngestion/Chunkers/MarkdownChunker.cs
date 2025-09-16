@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
@@ -24,7 +25,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
         public MarkdownChunker(int HeaderLevelToSplitOn = 3, bool StripHeaders = true)
         {
-            _headerLevelToSplitOn = (int)HeaderLevelToSplitOn;
+            _headerLevelToSplitOn = HeaderLevelToSplitOn;
             _stripHeaders = StripHeaders;
         }
 
@@ -32,19 +33,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-#if NET6_0_OR_GREATER
-                string markdown = document.Markdown.ReplaceLineEndings();
-                string[] lines = markdown.Split(Environment.NewLine);
-#else
-            string markdown = document.Markdown.Replace("\r\n", "\n").Replace("\r", "\n");
-            string[] lines = markdown.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-#endif
+            IEnumerable<DocumentElement> elements = document.Sections.SelectMany(section => section.Elements).Reverse();
+            var sectionStack = new Stack<DocumentElement>(elements);
 
-            var lineStack = new Stack<string>(lines.Reverse());
-            return new ValueTask<List<Chunk>>(ParseLevel(lineStack, 1));
+            return new ValueTask<List<Chunk>>(ParseLevel(sectionStack, 1));
         }
 
-        private List<Chunk> ParseLevel(Stack<string> lines, int markdownHeaderLevel, string context = null, string lastHeader = null)
+        private List<Chunk> ParseLevel(Stack<DocumentElement> lines, int markdownHeaderLevel, string context = null, string lastHeader = null)
         {
             List<Chunk> chunks = new List<Chunk>();
 
@@ -52,12 +47,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
             while (lines.Any())
             {
-                string line = lines.Pop();
+                DocumentElement element = lines.Pop();
 
-                int leadingHashes = CountLeadingHashes(line.Trim());
-                if (leadingHashes == 0 || leadingHashes > _headerLevelToSplitOn)
+                int headerLevel = element is DocumentHeader header ? header.Level.GetValueOrDefault(0) : 0;
+                if (headerLevel == 0 || headerLevel > _headerLevelToSplitOn)
                 {
-                    sb.AppendLine(line);
+                    sb.AppendLine(element.Markdown);
                 }
                 else
                 {
@@ -68,19 +63,19 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                     }
                     sb.Clear();
 
-                    if (leadingHashes == markdownHeaderLevel)
+                    if (headerLevel == markdownHeaderLevel)
                     {
-                        lastHeader = line;
+                        lastHeader = element.Markdown;
                     }
-                    else if (leadingHashes < markdownHeaderLevel)
+                    else if (headerLevel < markdownHeaderLevel)
                     {
-                        lines.Push(line);
+                        lines.Push(element);
                         return chunks;
                     }
                     else
                     {
                         string newContext = StringyfyContext(context, lastHeader);
-                        chunks.AddRange(ParseLevel(lines, markdownHeaderLevel + 1, newContext, line));
+                        chunks.AddRange(ParseLevel(lines, markdownHeaderLevel + 1, newContext, element.Markdown));
                     }
 
                 }
@@ -111,14 +106,6 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             if (string.IsNullOrWhiteSpace(textContent))
                 return null;
             return new Chunk(textContent, context: context);
-        }
-
-        private static int CountLeadingHashes(string line)
-        {
-            if (string.IsNullOrEmpty(line))
-                return 0;
-
-            return line.TakeWhile(c => c == '#').Count();
         }
     }
 }
