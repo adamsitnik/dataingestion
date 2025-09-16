@@ -32,10 +32,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            IEnumerable<DocumentElement> elements = document.Sections.SelectMany(section => section.Elements).Reverse();
+            DocumentFlattener flattener = new();
+            Document flatDoc = flattener.ProcessAsync(document).Result;
+            List<DocumentElement> elements = flatDoc.Sections.Single().Elements;
+            elements.Reverse();
             var sectionStack = new Stack<DocumentElement>(elements);
 
-            return new ValueTask<List<DocumentChunk>>(ParseLevel(sectionStack, 1));
+            return new(ParseLevel(sectionStack, 1));
         }
 
         private List<DocumentChunk> ParseLevel(Stack<DocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)
