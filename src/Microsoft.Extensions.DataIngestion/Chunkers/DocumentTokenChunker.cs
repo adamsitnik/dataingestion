@@ -39,10 +39,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             if (document is null) throw new ArgumentNullException(nameof(document));
 
             int[] tokens = _tokenizer.EncodeToIds(document.Markdown).ToArray();
-            List<ArraySegment<int>> token_groups = CreateGroups(tokens);
-            List<Chunk> text_groups = token_groups.Select(GroupToChunk).ToList();
+            List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
+            List<Chunk> textGroups = tokenGroups.Select(GroupToChunk).ToList();
 
-            return new ValueTask<List<Chunk>>(text_groups);
+            return new ValueTask<List<Chunk>>(textGroups);
         }
         // Additional methods for chunking documents would go here.
 

@@ -16,8 +16,6 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             return new MarkdownChunker();
         }
 
-        
-
         [Fact]
         public async Task NoheaderDocument()
         {
