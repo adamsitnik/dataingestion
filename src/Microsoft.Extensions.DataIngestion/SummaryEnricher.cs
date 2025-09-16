@@ -28,7 +28,7 @@ public sealed class SummaryEnricher : ChunkProcessor
         _maxWordCount = maxWordCount > 0 ? maxWordCount : throw new ArgumentOutOfRangeException(nameof(maxWordCount));
     }
 
-    public override async Task<List<Chunk>> ProcessAsync(List<Chunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -37,7 +37,7 @@ public sealed class SummaryEnricher : ChunkProcessor
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        foreach (Chunk chunk in chunks)
+        foreach (DocumentChunk chunk in chunks)
         {
             var response = await _chatClient.GetResponseAsync(
             [

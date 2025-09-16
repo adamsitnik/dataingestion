@@ -9,11 +9,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DummyChunker : DocumentChunker
 {
-    private const int DummyTokenCount = 1;
-
-    public override ValueTask<List<Chunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public override ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
-        List<Chunk> chunks = new();
+        List<DocumentChunk> chunks = new();
         foreach (DocumentSection section in document.Sections)
         {
             Add(section, chunks);
@@ -21,7 +19,7 @@ public class DummyChunker : DocumentChunker
         return new(chunks);
     }
 
-    private static void Add(DocumentSection section, List<Chunk> chunks)
+    private static void Add(DocumentSection section, List<DocumentChunk> chunks)
     {
         foreach (DocumentElement element in section.Elements)
         {
@@ -35,7 +33,7 @@ public class DummyChunker : DocumentChunker
                 default:
                     if (!string.IsNullOrEmpty(element.Markdown))
                     {
-                        chunks.Add(new Chunk(element.Markdown, tokenCount: DummyTokenCount));
+                        chunks.Add(new DocumentChunk(element.Markdown));
                     }
                     break;
             }

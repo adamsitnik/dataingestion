@@ -28,9 +28,9 @@ public sealed class HeaderChunker : DocumentChunker
         _overlapTokens = overlapTokens >= 0 ? overlapTokens : throw new ArgumentOutOfRangeException(nameof(overlapTokens));
     }
 
-    public override ValueTask<List<Chunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public override ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
-        List<Chunk> chunks = new();
+        List<DocumentChunk> chunks = new();
         string?[] headers = new string?[MaxHeaderLevel + 1];
         List<string> paragraphs = new();
 
@@ -45,7 +45,7 @@ public sealed class HeaderChunker : DocumentChunker
         return new(chunks);
     }
 
-    private void Process(DocumentSection section, List<Chunk> chunks, string?[] headers, List<string> paragraphs)
+    private void Process(DocumentSection section, List<DocumentChunk> chunks, string?[] headers, List<string> paragraphs)
     {
         foreach (DocumentElement element in section.Elements)
         {
@@ -91,7 +91,7 @@ public sealed class HeaderChunker : DocumentChunker
         return true;
     }
 
-    private void SplitIntoChunks(List<Chunk> chunks, string?[] headers, List<string> paragraphs)
+    private void SplitIntoChunks(List<DocumentChunk> chunks, string?[] headers, List<string> paragraphs)
     {
         if (paragraphs.Count > 0)
         {
@@ -100,7 +100,7 @@ public sealed class HeaderChunker : DocumentChunker
                 chunkHeader: chunkHeader.Length == 0 ? "" : chunkHeader + ' ', // we need to separate the header from the content
                 text => _tokenizer.CountTokens(text)))
             {
-                chunks.Add(new Chunk(content: chunk, tokenCount: _tokenizer.CountTokens(chunk), context: chunkHeader));
+                chunks.Add(new DocumentChunk(content: chunk, tokenCount: _tokenizer.CountTokens(chunk), context: chunkHeader));
             }
             paragraphs.Clear();
         }

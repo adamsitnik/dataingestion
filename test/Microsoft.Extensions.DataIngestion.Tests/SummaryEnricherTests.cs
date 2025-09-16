@@ -14,10 +14,10 @@ public class SummaryEnricherTests : ChatClientTestBase
     {
         SummaryEnricher sut = new(ChatClient);
 
-        List<Chunk> chunks = new()
+        List<DocumentChunk> chunks = new()
         {
-            new Chunk("I love programming! It's so much fun and rewarding.", tokenCount: 1),
-            new Chunk("I hate bugs. They are so frustrating and time-consuming.", tokenCount: 1)
+            new DocumentChunk("I love programming! It's so much fun and rewarding."),
+            new DocumentChunk("I hate bugs. They are so frustrating and time-consuming.")
         };
 
         await sut.ProcessAsync(chunks);

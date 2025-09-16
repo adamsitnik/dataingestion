@@ -16,7 +16,7 @@ public class MarkdownReaderTests : DocumentReaderConformanceTests
     {
         get
         {
-            yield return new object[] { "https://raw.githubusercontent.com/microsoft/markitdown/main/README.md", "README.md" };
+            yield return new object[] { "https://raw.githubusercontent.com/microsoft/markitdown/main/README.md" };
         }
     }
 
@@ -24,7 +24,7 @@ public class MarkdownReaderTests : DocumentReaderConformanceTests
     {
         get
         {
-            yield return new object[] { Path.Combine("TestFiles", "Sample.md"), "Sample.md" };
+            yield return new object[] { Path.Combine("TestFiles", "Sample.md") };
         }
     }
 
@@ -32,19 +32,19 @@ public class MarkdownReaderTests : DocumentReaderConformanceTests
     {
         get
         {
-            yield return new object[] { Path.Combine("TestFiles", "SampleWithImage.md"), "SampleWithImage.md" };
+            yield return new object[] { Path.Combine("TestFiles", "SampleWithImage.md") };
         }
     }
 
     [Theory]
     [MemberData(nameof(Sources))]
-    public override Task SupportsUris(string uri, string expectedId) => base.SupportsUris(uri, expectedId);
+    public override Task SupportsUris(string uri) => base.SupportsUris(uri);
 
     [Theory]
     [MemberData(nameof(Files))]
-    public override Task SupportsFiles(string filePath, string expectedId) => base.SupportsFiles(filePath, expectedId);
+    public override Task SupportsFiles(string filePath) => base.SupportsFiles(filePath);
 
     [Theory]
     [MemberData(nameof(Images))]
-    public override Task SupportsImages(string filePath, string expectedId) => base.SupportsImages(filePath, expectedId);
+    public override Task SupportsImages(string filePath) => base.SupportsImages(filePath);
 }

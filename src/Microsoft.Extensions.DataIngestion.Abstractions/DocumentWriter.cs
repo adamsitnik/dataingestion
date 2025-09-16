@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DataIngestion;
 // design notes: it could become an interface if using abstract class does not bring any value.
 public abstract class DocumentWriter : IDisposable
 {
-    public abstract Task WriteAsync(Document document, List<Chunk> chunks, CancellationToken cancellationToken = default);
+    public abstract Task WriteAsync(Document document, List<DocumentChunk> chunks, CancellationToken cancellationToken = default);
 
     public abstract void Dispose();
 }

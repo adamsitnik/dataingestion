@@ -37,7 +37,7 @@ public class HeaderChunkerTests
         });
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), 2000, 500);
-        List<Chunk> chunks = await chunker.ProcessAsync(doc);
+        List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
 
         Assert.Equal(5, chunks.Count);
         string nl = Environment.NewLine;

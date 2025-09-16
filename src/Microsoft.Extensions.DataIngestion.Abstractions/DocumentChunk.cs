@@ -8,22 +8,23 @@ using System.Diagnostics;
 namespace Microsoft.Extensions.DataIngestion;
 
 [DebuggerDisplay("{Content}")]
-public sealed class Chunk
+public sealed class DocumentChunk
 {
     private Dictionary<string, object?>? _metadata;
 
     public string Content { get; }
-    public int TokenCount { get; }
+
+    public int? TokenCount { get; }
 
     public string? Context { get; }
 
     public Dictionary<string, object?> Metadata => _metadata ??= new();
 
-    public Chunk(string content, int tokenCount, string? context = null)
+    public DocumentChunk(string content, int? tokenCount = null, string? context = null)
     {
         if (string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
-        if (tokenCount <= 0)
+        if (tokenCount.HasValue && tokenCount.Value <= 0)
             throw new ArgumentOutOfRangeException(nameof(tokenCount), "Token count must be greater than zero.");
 
         Content = content;

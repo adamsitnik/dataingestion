@@ -37,10 +37,10 @@ public class VectorStoreWriterTests
         });
 
         Document document = new("testDocument");
-        List<Chunk> chunks = new()
+        List<DocumentChunk> chunks = new()
         {
-            new Chunk("This is the content of chunk 1.", tokenCount: int.MaxValue),
-            new Chunk("This is the content of chunk 2.", tokenCount: int.MaxValue)
+            new DocumentChunk("This is the content of chunk 1."),
+            new DocumentChunk("This is the content of chunk 2.")
         };
 
         await vectorStoreWriter.WriteAsync(document, chunks);
