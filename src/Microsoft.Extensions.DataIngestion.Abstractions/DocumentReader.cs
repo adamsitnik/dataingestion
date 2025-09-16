@@ -23,7 +23,7 @@ public abstract class DocumentReader
             throw new ArgumentNullException(nameof(filePath));
         }
 
-        string identifier = System.IO.Path.GetFileName(filePath);
+        string identifier = filePath; // entire path is more uniq than just part of it.
         return ReadAsync(filePath, identifier, cancellationToken);
     }
 
@@ -41,23 +41,9 @@ public abstract class DocumentReader
             throw new ArgumentNullException(nameof(source));
         }
 
-        string identifier = GetId(source);
+        string identifier = source.ToString(); // entire source is more uniq than just part of it.
         return ReadAsync(source, identifier, cancellationToken);
     }
 
     public abstract Task<Document> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default);
-
-    private string GetId(Uri source)
-    {
-        for (int i = source.Segments.Length - 1; i >= 0; i--)
-        {
-            // https://example.com/" would result in an "/" string in the last segment
-            if (!string.IsNullOrEmpty(source.Segments[i]) && source.Segments[i] != "/")
-            {
-                return source.Segments[i].TrimEnd('/');
-            }
-        }
-
-        return source.ToString(); // Fallback to the full URI if no segments are found
-    }
 }
