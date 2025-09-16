@@ -16,8 +16,8 @@ public class SummaryEnricherTests : ChatClientTestBase
 
         List<DocumentChunk> chunks = new()
         {
-            new DocumentChunk("I love programming! It's so much fun and rewarding."),
-            new DocumentChunk("I hate bugs. They are so frustrating and time-consuming.")
+            new("I love programming! It's so much fun and rewarding."),
+            new("I hate bugs. They are so frustrating and time-consuming.")
         };
 
         await sut.ProcessAsync(chunks);
