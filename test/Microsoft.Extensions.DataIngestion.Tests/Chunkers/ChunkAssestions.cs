@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
     {
         public static void ContentEquals(string expected, DocumentChunk chunk)
         {
-            Assert.Equal(expected.ReplaceLineEndings(), chunk.Content.Trim());
+            Assert.Equal(expected, chunk.Content.Trim(), ignoreLineEndingDifferences: true);
         }
 
         public static void ContextEquals(string expected, DocumentChunk chunk)

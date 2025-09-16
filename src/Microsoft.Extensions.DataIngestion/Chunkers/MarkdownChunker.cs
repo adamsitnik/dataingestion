@@ -22,11 +22,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         private readonly int _headerLevelToSplitOn;
         private readonly bool _stripHeaders;
 
-
-        public MarkdownChunker(int HeaderLevelToSplitOn = 3, bool StripHeaders = true)
+        public MarkdownChunker(int headerLevelToSplitOn = 3, bool stripHeaders = true)
         {
-            _headerLevelToSplitOn = HeaderLevelToSplitOn;
-            _stripHeaders = StripHeaders;
+            _headerLevelToSplitOn = headerLevelToSplitOn;
+            _stripHeaders = stripHeaders;
         }
 
         public override ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
@@ -39,7 +38,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return new ValueTask<List<DocumentChunk>>(ParseLevel(sectionStack, 1));
         }
 
-        private List<DocumentChunk> ParseLevel(Stack<DocumentElement> lines, int markdownHeaderLevel, string context = null, string lastHeader = null)
+        private List<DocumentChunk> ParseLevel(Stack<DocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)
         {
             List<DocumentChunk> chunks = new List<DocumentChunk>();
 

@@ -42,9 +42,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
             List<DocumentChunk> textGroups = tokenGroups.Select(GroupToChunk).ToList();
 
-            return new ValueTask<List<DocumentChunk>>(textGroups);
+            return new(textGroups);
         }
-        // Additional methods for chunking documents would go here.
 
         private List<ArraySegment<int>> CreateGroups(int[] tokens)
         {
