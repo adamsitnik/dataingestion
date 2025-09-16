@@ -14,7 +14,7 @@ public class DummyChunker : DocumentChunker
     {
         if (document is null) throw new ArgumentNullException(nameof(document));
 
-        List<Chunk> chunks = new();
+        List<DocumentChunk> chunks = new();
         foreach (DocumentSection section in document.Sections)
         {
             Add(section, chunks);

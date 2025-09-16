@@ -34,15 +34,15 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _chunkOverlap = chunkOverlap >= 0 ? chunkOverlap : throw new ArgumentOutOfRangeException(nameof(chunkOverlap));
         }
 
-        public override ValueTask<List<Chunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public override ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
             int[] tokens = _tokenizer.EncodeToIds(document.Markdown).ToArray();
             List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
-            List<Chunk> textGroups = tokenGroups.Select(GroupToChunk).ToList();
+            List<DocumentChunk> textGroups = tokenGroups.Select(GroupToChunk).ToList();
 
-            return new ValueTask<List<Chunk>>(textGroups);
+            return new ValueTask<List<DocumentChunk>>(textGroups);
         }
         // Additional methods for chunking documents would go here.
 
@@ -57,10 +57,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return groups;
         }
 
-        private Chunk GroupToChunk(ArraySegment<int> tokenGroup)
+        private DocumentChunk GroupToChunk(ArraySegment<int> tokenGroup)
         {
             string text = _tokenizer.Decode(tokenGroup);
-            return new Chunk(text, tokenGroup.Count);
+            return new DocumentChunk(text, tokenGroup.Count);
         }
     }
 }

@@ -29,19 +29,19 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _stripHeaders = StripHeaders;
         }
 
-        public override ValueTask<List<Chunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public override ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
             IEnumerable<DocumentElement> elements = document.Sections.SelectMany(section => section.Elements).Reverse();
             var sectionStack = new Stack<DocumentElement>(elements);
 
-            return new ValueTask<List<Chunk>>(ParseLevel(sectionStack, 1));
+            return new ValueTask<List<DocumentChunk>>(ParseLevel(sectionStack, 1));
         }
 
-        private List<Chunk> ParseLevel(Stack<DocumentElement> lines, int markdownHeaderLevel, string context = null, string lastHeader = null)
+        private List<DocumentChunk> ParseLevel(Stack<DocumentElement> lines, int markdownHeaderLevel, string context = null, string lastHeader = null)
         {
-            List<Chunk> chunks = new List<Chunk>();
+            List<DocumentChunk> chunks = new List<DocumentChunk>();
 
             StringBuilder sb = new StringBuilder();
 
@@ -56,7 +56,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 }
                 else
                 {
-                    Chunk? currentChunk = CreateChunk(sb, context, lastHeader);
+                    DocumentChunk? currentChunk = CreateChunk(sb, context, lastHeader);
                     if (currentChunk is not null)
                     {
                         chunks.Add(currentChunk);
@@ -81,7 +81,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 }
             }
 
-            Chunk? chunk = CreateChunk(sb, context, lastHeader);
+            DocumentChunk? chunk = CreateChunk(sb, context, lastHeader);
             if (chunk is not null)
             {
                 chunks.Add(chunk);
@@ -95,7 +95,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return string.Join(";", new[] { context, lastHeader }.Where(x => x is not null));
         }
 
-        private Chunk? CreateChunk(StringBuilder content, string context, string? header)
+        private DocumentChunk? CreateChunk(StringBuilder content, string context, string? header)
         {
             context = StringyfyContext(context, header);
             if (!_stripHeaders)
@@ -105,7 +105,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             string textContent = content.ToString();
             if (string.IsNullOrWhiteSpace(textContent))
                 return null;
-            return new Chunk(textContent, context: context);
+            return new DocumentChunk(textContent, context: context);
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
             Document emptyDoc = new("emptyDoc");
             DocumentChunker chunker = CreateDocumentChunker();
 
-            List<Chunk> chunks = await chunker.ProcessAsync(emptyDoc);
+            List<DocumentChunk> chunks = await chunker.ProcessAsync(emptyDoc);
             Assert.Empty(chunks);
         }
 
@@ -45,7 +45,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
             DocumentChunker chunker = CreateDocumentChunker();
 
-            List<Chunk> chunks = await chunker.ProcessAsync(emptyDoc);
+            List<DocumentChunk> chunks = await chunker.ProcessAsync(emptyDoc);
             Assert.Empty(chunks);
         }
     }

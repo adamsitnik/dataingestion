@@ -43,9 +43,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             });
 
             DocumentChunker chunker = CreateDocumentChunker();
-            List<Chunk> chunks = await chunker.ProcessAsync(doc);
+            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Single(chunks);
-            Chunk chunk = chunks.First();
+            DocumentChunk chunk = chunks.First();
             ChunkAssertions.ContentEquals(text, chunk);
         }
 
@@ -62,7 +62,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                 }
             });
             DocumentChunker chunker = CreateNoOverlapTokenChkunker();
-            List<Chunk> chunks = await chunker.ProcessAsync(doc);
+            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(2, chunks.Count);
             Assert.True(chunks[0].Content.Split(' ').Length <= 512);
             Assert.True(chunks[1].Content.Split(' ').Length <= 512);
@@ -87,7 +87,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                 }
             });
 
-            List<Chunk> chunks = await chunker.ProcessAsync(doc);
+            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(3, chunks.Count);
             ChunkAssertions.ContentEquals("The quick brown fox", chunks[0]);
             ChunkAssertions.ContentEquals("fox jumps over the", chunks[1]);
