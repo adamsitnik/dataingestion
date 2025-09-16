@@ -14,10 +14,10 @@ public sealed class VectorStoreWriter<TKey, TRecord> : DocumentWriter
     where TRecord : class
 {
     private readonly VectorStoreCollection<TKey, TRecord> _vectorStoreCollection;
-    private readonly Func<Document, Chunk, TRecord> _mapper;
+    private readonly Func<Document, DocumentChunk, TRecord> _mapper;
     private bool _existsChecked = false;
 
-    public VectorStoreWriter(VectorStoreCollection<TKey, TRecord> vectorStoreCollection, Func<Document, Chunk, TRecord> mapper)
+    public VectorStoreWriter(VectorStoreCollection<TKey, TRecord> vectorStoreCollection, Func<Document, DocumentChunk, TRecord> mapper)
     {
         _vectorStoreCollection = vectorStoreCollection ?? throw new ArgumentNullException(nameof(vectorStoreCollection));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -25,7 +25,7 @@ public sealed class VectorStoreWriter<TKey, TRecord> : DocumentWriter
 
     public override void Dispose() => _vectorStoreCollection.Dispose();
 
-    public override async Task WriteAsync(Document document, List<Chunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(Document document, List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -36,7 +36,7 @@ public sealed class VectorStoreWriter<TKey, TRecord> : DocumentWriter
             _existsChecked = true;
         }
 
-        foreach (Chunk chunk in chunks)
+        foreach (DocumentChunk chunk in chunks)
         {
             cancellationToken.ThrowIfCancellationRequested();
 

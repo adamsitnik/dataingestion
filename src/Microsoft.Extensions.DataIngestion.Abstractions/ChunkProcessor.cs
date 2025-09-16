@@ -10,5 +10,5 @@ namespace Microsoft.Extensions.DataIngestion;
 // design notes: it could become an interface if using abstract class does not bring any value.
 public abstract class ChunkProcessor
 {
-    public abstract Task<List<Chunk>> ProcessAsync(List<Chunk> chunks, CancellationToken cancellationToken = default);
+    public abstract Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default);
 }

@@ -14,12 +14,12 @@ public sealed class ChunkRecordWriter<TKey> : DocumentWriter
 {
     private readonly VectorStoreCollection<TKey, ChunkRecord<TKey>> _vectorStoreCollection;
     private readonly VectorStoreWriter<TKey, ChunkRecord<TKey>> _innerWriter;
-    private readonly Func<Chunk, TKey> _keyProvider;
+    private readonly Func<DocumentChunk, TKey> _keyProvider;
 
     /// <summary>
-    /// Creates a new instance of <see cref="ChunkRecordWriter{TKey}"/> that uses default schema to store the <see cref="Chunk"/> instances as <see cref="ChunkRecord{TKey}"/> using provided vector store, collection name and dimension count.
+    /// Creates a new instance of <see cref="ChunkRecordWriter{TKey}"/> that uses default schema to store the <see cref="DocumentChunk"/> instances as <see cref="ChunkRecord{TKey}"/> using provided vector store, collection name and dimension count.
     /// </summary>
-    /// <param name="vectorStore">The <see cref="VectorStore"/> to use to store the <see cref="Chunk"/> instances.</param>
+    /// <param name="vectorStore">The <see cref="VectorStore"/> to use to store the <see cref="DocumentChunk"/> instances.</param>
     /// <param name="dimensionCount">The number of dimensions that the vector has. This value is required when creating collections.</param>
     /// <param name="distanceFunction">The distance function to use when creating the collection. When not provided, the default specific to given database will be used. Check <see cref="DistanceFunction"/> for available values.</param>
     /// <param name="keyProvider">The key provider. It's optional when <typeparamref name="TKey"/> is <see cref="Guid"/> or <see cref="string"/>.</param>
@@ -27,7 +27,7 @@ public sealed class ChunkRecordWriter<TKey> : DocumentWriter
     /// <exception cref="ArgumentNullException">When <paramref name="vectorStore"/> or <paramref name="collectionName"/> are null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">When <paramref name="dimensionCount"/> is less or equal zero.</exception>
     public ChunkRecordWriter(VectorStore vectorStore, int dimensionCount, string? distanceFunction = null,
-        Func<Chunk, TKey>? keyProvider = null, string? collectionName = "chunks")
+        Func<DocumentChunk, TKey>? keyProvider = null, string? collectionName = "chunks")
     {
         if (vectorStore is null)
         {
@@ -57,10 +57,10 @@ public sealed class ChunkRecordWriter<TKey> : DocumentWriter
 
     public VectorStoreCollection<TKey, ChunkRecord<TKey>> VectorStoreCollection => _vectorStoreCollection;
 
-    public override Task WriteAsync(Document document, List<Chunk> chunks, CancellationToken cancellationToken = default)
+    public override Task WriteAsync(Document document, List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
         => _innerWriter.WriteAsync(document, chunks, cancellationToken);
 
-    private static TKey GenerateKey(Chunk chunk)
+    private static TKey GenerateKey(DocumentChunk chunk)
         => typeof(TKey) == typeof(Guid) ? (TKey)(object)Guid.NewGuid() : (TKey)(object)Guid.NewGuid().ToString();
 
     private static VectorStoreCollectionDefinition GetVectorStoreRecordDefinition(int dimensionCount, string? distanceFunction)
@@ -93,7 +93,7 @@ public sealed class ChunkRecordWriter<TKey> : DocumentWriter
             }
         };
 
-    private ChunkRecord<TKey> Map(Document document, Chunk chunk)
+    private ChunkRecord<TKey> Map(Document document, DocumentChunk chunk)
         => new()
         {
             Key = _keyProvider(chunk),

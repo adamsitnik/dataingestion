@@ -8,7 +8,7 @@ using System.Diagnostics;
 namespace Microsoft.Extensions.DataIngestion;
 
 [DebuggerDisplay("{Content}")]
-public sealed class Chunk
+public sealed class DocumentChunk
 {
     private Dictionary<string, object?>? _metadata;
 
@@ -19,7 +19,7 @@ public sealed class Chunk
 
     public Dictionary<string, object?> Metadata => _metadata ??= new();
 
-    public Chunk(string content, int tokenCount, string? context = null)
+    public DocumentChunk(string content, int tokenCount, string? context = null)
     {
         if (string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));

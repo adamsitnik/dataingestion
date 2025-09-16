@@ -114,7 +114,7 @@ public class DocumentPipeline
         }
 
         Logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, GetShortName(Chunker));
-        List<Chunk> chunks = await Chunker.ProcessAsync(document, cancellationToken);
+        List<DocumentChunk> chunks = await Chunker.ProcessAsync(document, cancellationToken);
         Logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
 
         Logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(Writer));
