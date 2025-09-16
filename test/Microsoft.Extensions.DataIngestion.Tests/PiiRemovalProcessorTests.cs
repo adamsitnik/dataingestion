@@ -15,7 +15,7 @@ public class PiiRemovalProcessorTests : ChatClientTestBase
         PiiRemovalProcessor sut = new(ChatClient);
         List<DocumentChunk> chunks = new()
         {
-            new("My name is John Fakename and my email is john.fakename@microsft.com")
+            new("My name is John Fakename and my email is john.fakename@microsoft.com")
             {
                 Metadata = { { "MakeSure", "MetadataIsPreserved" } },
             },
@@ -28,7 +28,7 @@ public class PiiRemovalProcessorTests : ChatClientTestBase
 
         Assert.NotEqual(chunks[0].Content, result[0].Content);
         Assert.DoesNotContain("John Fakename", result[0].Content);
-        Assert.DoesNotContain("john.fakename@microsft.com", result[0].Content);
+        Assert.DoesNotContain("john.fakename@microsoft.com", result[0].Content);
         Assert.Null(result[0].TokenCount);
         Assert.Equal("MetadataIsPreserved", result[0].Metadata["MakeSure"]);
 
