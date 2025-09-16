@@ -97,7 +97,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return string.Join(";", new[] { context, lastHeader }.Where(x => x is not null));
         }
 
-        private DocumentChunk? CreateChunk(StringBuilder content, string context, string? header)
+        private DocumentChunk? CreateChunk(StringBuilder content, string? context, string? header)
         {
             context = StringyfyContext(context, header);
             if (!_stripHeaders)
