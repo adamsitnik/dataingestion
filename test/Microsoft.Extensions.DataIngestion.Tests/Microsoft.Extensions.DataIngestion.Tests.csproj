@@ -18,6 +18,7 @@
     <PackageReference Include="Markdig" Version="0.41.3" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.8.0-preview.1.25412.6" />
     <PackageReference Include="Microsoft.ML.Tokenizers" Version="2.0.0-preview.25373.1" />
+    <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="2.0.0-preview.25373.1" />
     <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="2.0.0-preview.25373.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.63.0-preview" />
