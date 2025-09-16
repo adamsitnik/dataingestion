@@ -43,7 +43,7 @@ public sealed class SentimentEnricher : ChunkProcessor
             [
                 new(ChatRole.User,
                 [
-                    new TextContent("You are a sentiment analysis expert. Analyze the sentiment of the given text and return a response with sentiment (Positive/Negative/Neutral) and confidence score (0-1)."),
+                    new TextContent("You are a sentiment analysis expert. Analyze the sentiment of the given text and return a response with sentiment (Positive/Negative/Neutral) and confidence score (0.0-1.0)."),
                     new TextContent(chunk.Content),
                 ])
             ], _chatOptions, cancellationToken: cancellationToken);

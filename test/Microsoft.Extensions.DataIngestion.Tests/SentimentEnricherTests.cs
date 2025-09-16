@@ -1,10 +1,6 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using Azure;
-using Azure.AI.OpenAI;
-using Microsoft.Extensions.AI;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
@@ -20,9 +16,9 @@ public class SentimentEnricherTests : ChatClientTestBase
 
         List<DocumentChunk> chunks = new()
         {
-            new DocumentChunk("I love programming! It's so much fun and rewarding."),
-            new DocumentChunk("I hate bugs. They are so frustrating and time-consuming."),
-            new DocumentChunk("The weather is okay, not too bad but not great either.")
+            new("I love programming! It's so much fun and rewarding."),
+            new("I hate bugs. They are so frustrating and time-consuming."),
+            new("The weather is okay, not too bad but not great either.")
         };
 
         await sut.ProcessAsync(chunks);
