@@ -11,6 +11,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class TestEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
 {
+    public const int DimensionCount = 4;
+
     public bool WasCalled { get; private set; } = false;
 
     public void Dispose() { }
