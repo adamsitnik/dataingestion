@@ -13,11 +13,11 @@ public sealed class VectorStoreWriter<TKey> : DocumentWriter
     where TKey : notnull
 {
     // The storage names are hardcoded and lowercase with no special characters to ensure compatibility with various vector stores.
-    internal const string KeyStorageName = "key";
-    internal const string EmbeddingStorageName = "embedding";
-    internal const string ContentStorageName = "content";
-    internal const string ContextStorageName = "context";
-    internal const string DocumentIdStorageName = "documentid";
+    private const string KeyStorageName = "key";
+    private const string EmbeddingStorageName = "embedding";
+    private const string ContentStorageName = "content";
+    private const string ContextStorageName = "context";
+    private const string DocumentIdStorageName = "documentid";
 
     private readonly VectorStore _vectorStore;
     private readonly int _dimensionCount;
