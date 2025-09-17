@@ -63,7 +63,7 @@ namespace Samples
             {
                 await foreach (var result in writer.VectorStoreCollection.SearchAsync(searchValue, top: 1))
                 {
-                    Console.WriteLine($"Score: {result.Score}\nContent: {result.Record["Content"]}\n");
+                    Console.WriteLine($"Score: {result.Score}\nContent: {result.Record["content"]}\n");
                 }
             }
 
