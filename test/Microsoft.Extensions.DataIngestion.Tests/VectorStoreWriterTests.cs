@@ -7,6 +7,7 @@ using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -36,16 +37,15 @@ public class VectorStoreWriterTests
     public async Task CanGenerateDynamicSchema(VectorStore vectorStore, TestEmbeddingGenerator testEmbeddingGenerator)
     {
         const string CollectionName = "chunks";
-        string key = Guid.NewGuid().ToString();
+        string documentId = Guid.NewGuid().ToString();
         string dbFilePath = Path.GetTempFileName();
 
-        using VectorStoreWriter<string> writer = new(
+        using VectorStoreWriter writer = new(
             vectorStore,
             dimensionCount: TestEmbeddingGenerator.DimensionCount,
-            keyProvider: _ => key,
             collectionName: CollectionName);
 
-        Document document = new("test");
+        Document document = new(documentId);
         List<DocumentChunk> chunks = new()
         {
             new DocumentChunk("some content")
@@ -63,10 +63,13 @@ public class VectorStoreWriterTests
         Assert.False(testEmbeddingGenerator.WasCalled);
         await writer.WriteAsync(document, chunks);
 
-        Dictionary<string, object?>? record = await writer.VectorStoreCollection.GetAsync(key);
+        Dictionary<string, object?>? record = await writer.VectorStoreCollection
+            .GetAsync(filter: record => (string)record["documentid"]! == documentId, top: 1)
+            .SingleAsync();
 
         Assert.NotNull(record);
-        Assert.Equal(key, record["key"]);
+        Assert.NotNull(record["key"]);
+        Assert.Equal(documentId, record["documentid"]);
         Assert.Equal(chunks[0].Content, record["content"]);
         Assert.True(testEmbeddingGenerator.WasCalled);
         foreach (var kvp in chunks[0].Metadata)

@@ -9,8 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public sealed class VectorStoreWriter<TKey> : DocumentWriter
-    where TKey : notnull
+public sealed class VectorStoreWriter : DocumentWriter
 {
     // The storage names are hardcoded and lowercase with no special characters to ensure compatibility with various vector stores.
     private const string KeyStorageName = "key";
@@ -23,9 +22,9 @@ public sealed class VectorStoreWriter<TKey> : DocumentWriter
     private readonly int _dimensionCount;
     private readonly string? _distanceFunction;
     private readonly string _collectionName;
+    private readonly bool _keysAreStrings;
 
     private VectorStoreCollection<object, Dictionary<string, object?>>? _vectorStoreCollection;
-    private readonly Func<DocumentChunk, TKey> _keyProvider;
 
     /// <summary>
     /// Creates a new instance of <see cref="VectorStoreCollection{TKey, Dictionary{string, object?}}"/> that uses dynamic schema to store the <see cref="DocumentChunk"/> instances as <see cref="Dictionary{string, object?}"/> using provided vector store, collection name and dimension count.
@@ -33,23 +32,21 @@ public sealed class VectorStoreWriter<TKey> : DocumentWriter
     /// <param name="vectorStore">The <see cref="VectorStore"/> to use to store the <see cref="DocumentChunk"/> instances.</param>
     /// <param name="dimensionCount">The number of dimensions that the vector has. This value is required when creating collections.</param>
     /// <param name="distanceFunction">The distance function to use when creating the collection. When not provided, the default specific to given database will be used. Check <see cref="DistanceFunction"/> for available values.</param>
-    /// <param name="keyProvider">The key provider. It's optional when <typeparamref name="TKey"/> is <see cref="Guid"/> or <see cref="string"/>.</param>
     /// <param name="collectionName">The name of the collection.</param>
     /// <exception cref="ArgumentNullException">When <paramref name="vectorStore"/> or <paramref name="collectionName"/> are null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">When <paramref name="dimensionCount"/> is less or equal zero.</exception>
-    public VectorStoreWriter(VectorStore vectorStore, int dimensionCount, string? distanceFunction = null,
-        Func<DocumentChunk, TKey>? keyProvider = null, string? collectionName = "chunks")
+    public VectorStoreWriter(VectorStore vectorStore, int dimensionCount, string? distanceFunction = null, string? collectionName = "chunks")
     {
-        if (keyProvider is null && typeof(TKey) != typeof(Guid) && typeof(TKey) != typeof(string))
-        {
-            throw new ArgumentException("A key provider must be provided when TKey is not Guid or string.", nameof(keyProvider));
-        }
-
         _vectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
         _dimensionCount = dimensionCount > 0 ? dimensionCount : throw new ArgumentOutOfRangeException(nameof(dimensionCount));
         _collectionName = string.IsNullOrEmpty(collectionName) ? throw new ArgumentNullException(nameof(collectionName)) : collectionName!;
         _distanceFunction = distanceFunction;
-        _keyProvider = keyProvider ?? GenerateKey;
+        // Not all vector store support string as the key type, examples:
+        // Qdrant: https://github.com/microsoft/semantic-kernel/blob/28ea2f4df872e8fd03ef0792ebc9e1989b4be0ee/dotnet/src/VectorData/Qdrant/QdrantCollection.cs#L104
+        // When https://github.com/microsoft/semantic-kernel/issues/13141 gets released,
+        // we are going to support Guid keys as well.
+        _keysAreStrings = true;
+
     }
 
     public VectorStoreCollection<object, Dictionary<string, object?>> VectorStoreCollection
@@ -84,8 +81,7 @@ public sealed class VectorStoreWriter<TKey> : DocumentWriter
             // We assume that every chunk has the same metadata schema so we use the first chunk as representative.
             DocumentChunk representativeChunk = chunks[0];
 
-            _vectorStoreCollection = _vectorStore.GetDynamicCollection(_collectionName,
-                GetVectorStoreRecordDefinition(_dimensionCount, _distanceFunction, representativeChunk));
+            _vectorStoreCollection = _vectorStore.GetDynamicCollection(_collectionName, GetVectorStoreRecordDefinition(representativeChunk));
 
             await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -94,9 +90,10 @@ public sealed class VectorStoreWriter<TKey> : DocumentWriter
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            Guid key = Guid.NewGuid();
             Dictionary<string, object?> record = new()
             {
-                [KeyStorageName] = _keyProvider(chunk),
+                [KeyStorageName] = _keysAreStrings ? key.ToString() : key,
                 [ContentStorageName] = chunk.Content,
                 [EmbeddingStorageName] = chunk.Content,
                 [ContextStorageName] = chunk.Context,
@@ -112,20 +109,17 @@ public sealed class VectorStoreWriter<TKey> : DocumentWriter
         }
     }
 
-    private static TKey GenerateKey(DocumentChunk chunk)
-        => typeof(TKey) == typeof(Guid) ? (TKey)(object)Guid.NewGuid() : (TKey)(object)Guid.NewGuid().ToString();
-
-    private static VectorStoreCollectionDefinition GetVectorStoreRecordDefinition(int dimensionCount, string? distanceFunction, DocumentChunk representativeChunk)
+    private VectorStoreCollectionDefinition GetVectorStoreRecordDefinition(DocumentChunk representativeChunk)
     {
         VectorStoreCollectionDefinition definition = new()
         {
             Properties =
             {
-                new VectorStoreKeyProperty(KeyStorageName, typeof(TKey)),
+                new VectorStoreKeyProperty(KeyStorageName, _keysAreStrings ? typeof(string) : typeof(Guid)),
                 // By using string as the type here we allow the vector store to handle the conversion from string to the actual vector type it supports.
-                new VectorStoreVectorProperty(EmbeddingStorageName, typeof(string), dimensionCount)
+                new VectorStoreVectorProperty(EmbeddingStorageName, typeof(string), _dimensionCount)
                 {
-                    DistanceFunction = distanceFunction
+                    DistanceFunction = _distanceFunction
                 },
                 new VectorStoreDataProperty(ContentStorageName, typeof(string)),
                 new VectorStoreDataProperty(ContextStorageName, typeof(string)),
