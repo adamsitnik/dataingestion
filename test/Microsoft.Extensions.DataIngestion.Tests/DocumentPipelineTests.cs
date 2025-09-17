@@ -60,40 +60,33 @@ public class DocumentPipelineTests
     public async Task CanProcessDocuments(string[] filePaths, DocumentReader reader, DocumentChunker chunker)
     {
         DocumentProcessor[] documentProcessors = [new DocumentFlattener()];
-        List<Guid> ids = [];
+        List<object> ids = [];
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using InMemoryCollection<Guid, TestRecord> inMemoryCollection = testVectorStore.GetCollection<Guid, TestRecord>("testCollection");
-        using VectorStoreWriter<Guid, TestRecord> vectorStoreWriter = new(inMemoryCollection, (doc, chunk) =>
+        using VectorStoreWriter<Guid> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount, keyProvider: chunk =>
         {
             Guid recordId = Guid.NewGuid();
             ids.Add(recordId);
-
-            return new()
-            {
-                Id = recordId,
-                Content = chunk.Content,
-                DocumentId = doc.Identifier
-            };
+            return recordId;
         });
 
-        DocumentPipeline pipeline = new(reader, documentProcessors, chunker, vectorStoreWriter);
+        DocumentPipeline pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
         await pipeline.ProcessAsync(filePaths);
 
         Assert.NotEmpty(ids);
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
 
-        TestRecord[] retrieved = await inMemoryCollection.GetAsync(ids).ToArrayAsync();
+        Dictionary<string, object?>[] retrieved = await vectorStoreWriter.VectorStoreCollection.GetAsync(ids).ToArrayAsync();
         Assert.Equal(ids.Count, retrieved.Length);
         for (int i = 0; i < retrieved.Length; i++)
         {
-            Assert.Equal(ids[i], retrieved[i].Id);
-            Assert.NotEmpty(retrieved[i].Content);
-            Assert.NotEmpty(retrieved[i].DocumentId);
+            Assert.Equal(ids[i], retrieved[i]["key"]);
+            Assert.NotEmpty((string)retrieved[i]["content"]!);
+            Assert.NotEmpty((string)retrieved[i]["documentid"]!);
         }
     }
 
@@ -104,28 +97,21 @@ public class DocumentPipelineTests
     public async Task CanProcessDocumentsInDirectory(DocumentReader reader)
     {
         DocumentChunker documentChunker = new DummyChunker();
-        List<Guid> ids = [];
+        List<object> ids = [];
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using InMemoryCollection<Guid, TestRecord> inMemoryCollection = testVectorStore.GetCollection<Guid, TestRecord>("testCollection");
-        using VectorStoreWriter<Guid, TestRecord> vectorStoreWriter = new(inMemoryCollection, (doc, chunk) =>
+        using VectorStoreWriter<Guid> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount, keyProvider: chunk =>
         {
             Guid recordId = Guid.NewGuid();
             ids.Add(recordId);
-
-            return new()
-            {
-                Id = recordId,
-                Content = chunk.Content,
-                DocumentId = doc.Identifier
-            };
+            return recordId;
         });
 
-        DocumentPipeline pipeline = new(reader, [], documentChunker, vectorStoreWriter);
+        DocumentPipeline pipeline = new(reader, [], documentChunker, [], vectorStoreWriter);
 
         DirectoryInfo directory = new("TestFiles");
         string searchPattern = reader switch
@@ -138,13 +124,13 @@ public class DocumentPipelineTests
         Assert.NotEmpty(ids);
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
 
-        TestRecord[] retrieved = await inMemoryCollection.GetAsync(ids).ToArrayAsync();
+        Dictionary<string, object?>[] retrieved = await vectorStoreWriter.VectorStoreCollection.GetAsync(keys: ids).ToArrayAsync();
         Assert.Equal(ids.Count, retrieved.Length);
         for (int i = 0; i < retrieved.Length; i++)
         {
-            Assert.Equal(ids[i], retrieved[i].Id);
-            Assert.NotEmpty(retrieved[i].Content);
-            Assert.NotEmpty(retrieved[i].DocumentId);
+            Assert.Equal(ids[i], retrieved[i]["key"]);
+            Assert.NotEmpty((string)retrieved[i]["content"]!);
+            Assert.NotEmpty((string)retrieved[i]["documentid"]!);
         }
     }
 

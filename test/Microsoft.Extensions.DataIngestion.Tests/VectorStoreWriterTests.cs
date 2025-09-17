@@ -1,10 +1,12 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Connectors.InMemory;
+using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -12,48 +14,65 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class VectorStoreWriterTests
 {
-    [Fact]
-    public async Task CanWriteToVectorStore()
+    public static TheoryData<VectorStore, TestEmbeddingGenerator> VectorStoreTestData
     {
-        List<Guid> ids = [];
-        TestEmbeddingGenerator embeddingGenerator = new();
-        InMemoryVectorStoreOptions options = new()
+        get
         {
-            EmbeddingGenerator = embeddingGenerator
-        };
-        using InMemoryVectorStore testVectorStore = new(options);
-        using InMemoryCollection<Guid, TestRecord> inMemoryCollection = testVectorStore.GetCollection<Guid, TestRecord>("testCollection");
-        using VectorStoreWriter<Guid, TestRecord> vectorStoreWriter = new(inMemoryCollection, (doc, chunk) =>
-        {
-            Guid recordId = Guid.NewGuid();
-            ids.Add(recordId);
+            TestEmbeddingGenerator first = new TestEmbeddingGenerator();
+            TestEmbeddingGenerator second = new TestEmbeddingGenerator();
 
-            return new()
+            return new TheoryData<VectorStore, TestEmbeddingGenerator>
             {
-                Id = recordId,
-                Content = chunk.Content,
-                DocumentId = doc.Identifier
+                { new SqliteVectorStore($"Data Source={Path.GetTempFileName()};Pooling=false",
+                    new() { EmbeddingGenerator = first }), first },
+                { new InMemoryVectorStore(
+                    new() { EmbeddingGenerator = second }), second },
             };
-        });
+        }
+    }
 
-        Document document = new("testDocument");
+    [Theory]
+    [MemberData(nameof(VectorStoreTestData))]
+    public async Task CanGenerateDynamicSchema(VectorStore vectorStore, TestEmbeddingGenerator testEmbeddingGenerator)
+    {
+        const string CollectionName = "chunks";
+        string key = Guid.NewGuid().ToString();
+        string dbFilePath = Path.GetTempFileName();
+
+        using VectorStoreWriter<string> writer = new(
+            vectorStore,
+            dimensionCount: TestEmbeddingGenerator.DimensionCount,
+            keyProvider: _ => key,
+            collectionName: CollectionName);
+
+        Document document = new("test");
         List<DocumentChunk> chunks = new()
         {
-            new DocumentChunk("This is the content of chunk 1."),
-            new DocumentChunk("This is the content of chunk 2.")
+            new DocumentChunk("some content")
+            {
+                Metadata =
+                {
+                    { "key1", "value1" },
+                    { "key2", 123 },
+                    { "key3", true },
+                    { "key4", 123.45 },
+                }
+            }
         };
 
-        await vectorStoreWriter.WriteAsync(document, chunks);
+        Assert.False(testEmbeddingGenerator.WasCalled);
+        await writer.WriteAsync(document, chunks);
 
-        Assert.Equal(2, ids.Count);
-        Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
+        Dictionary<string, object?>? record = await writer.VectorStoreCollection.GetAsync(key);
 
-        TestRecord[] retrieved = await inMemoryCollection.GetAsync(ids).ToArrayAsync();
-        for (int i = 0; i < chunks.Count; i++)
+        Assert.NotNull(record);
+        Assert.Equal(key, record["key"]);
+        Assert.Equal(chunks[0].Content, record["content"]);
+        Assert.True(testEmbeddingGenerator.WasCalled);
+        foreach (var kvp in chunks[0].Metadata)
         {
-            Assert.Equal(ids[i], retrieved[i].Id);
-            Assert.Equal(chunks[i].Content, retrieved[i].Content);
-            Assert.Equal(document.Identifier, retrieved[i].DocumentId);
+            Assert.True(record.ContainsKey(kvp.Key), $"Record does not contain key '{kvp.Key}'");
+            Assert.Equal(kvp.Value, record[kvp.Key]);
         }
     }
 }

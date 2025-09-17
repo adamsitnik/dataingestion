@@ -30,7 +30,8 @@ namespace Samples
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
             DocumentReader reader = CreateReader(readerId, extractImages);
-            DocumentProcessor[] processors = CreateProcessors(extractImages);
+            DocumentProcessor[] processors = CreateDocumentProcessors(extractImages);
+            ChunkProcessor[] chunkProcessors = CreateChunkProcessors();
 
             DocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
@@ -44,10 +45,9 @@ namespace Samples
                 {
                     EmbeddingGenerator = CreateEmbeddingGenerator(),
                 });
+            using VectorStoreWriter<Guid> writer = new(sqlServerVectorStore, 1536  /* text-embedding-3-small */);
 
-            using ChunkRecordWriter<Guid> writer = new(sqlServerVectorStore, 1536  /* text-embedding-3-small */);
-
-            DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
+            DocumentPipeline pipeline = new(reader, processors, chunker, chunkProcessors, writer, loggerFactory);
 
             if (files?.Length > 0)
             {
@@ -63,7 +63,7 @@ namespace Samples
             {
                 await foreach (var result in writer.VectorStoreCollection.SearchAsync(searchValue, top: 1))
                 {
-                    Console.WriteLine($"Score: {result.Score}\nContent: {result.Record.Content}\n");
+                    Console.WriteLine($"Score: {result.Score}\nContent: {result.Record["content"]}\n");
                 }
             }
 
@@ -76,7 +76,7 @@ namespace Samples
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
             DocumentReader reader = CreateReader(readerId, extractImages: false);
-            DocumentProcessor[] processors = CreateProcessors(extractImages: false);
+            DocumentProcessor[] processors = CreateDocumentProcessors(extractImages: false);
 
             DocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
@@ -92,14 +92,11 @@ namespace Samples
                 });
             using SqlServerCollection<Guid, QARecord> collection = sqlServerVectorStore.GetCollection<Guid, QARecord>("faq");
 
-            string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")!;
-            string key = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")!;
-
-            AzureOpenAIClient openAIClient = new(new Uri(endpoint), new AzureKeyCredential(key));
+            AzureOpenAIClient openAIClient = CreateOpenAiClient();
 
             using QAWriter writer = new(collection, openAIClient.GetChatClient("gpt-4.1").AsIChatClient());
 
-            DocumentPipeline pipeline = new(reader, processors, chunker, writer, loggerFactory);
+            DocumentPipeline pipeline = new(reader, processors, chunker, [], writer, loggerFactory);
 
             if (files?.Length > 0)
             {
@@ -149,29 +146,35 @@ namespace Samples
                 _ => throw new NotSupportedException($"The specified reader '{readerId}' is not supported.")
             };
 
-        private static DocumentProcessor[] CreateProcessors(bool extractImages)
+        private static DocumentProcessor[] CreateDocumentProcessors(bool extractImages)
         {
             if (!extractImages)
             {
                 return [];
             }
 
-            string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")!;
-            string key = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")!;
-
-            AzureOpenAIClient openAIClient = new(new Uri(endpoint), new AzureKeyCredential(key));
-
+            AzureOpenAIClient openAIClient = CreateOpenAiClient();
             return [new AlternativeTextEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];
+        }
+
+        private static ChunkProcessor[] CreateChunkProcessors()
+        {
+            AzureOpenAIClient openAIClient = CreateOpenAiClient();
+            return [new SummaryEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];
         }
 
         private static IEmbeddingGenerator<string, Embedding<float>> CreateEmbeddingGenerator()
         {
+            AzureOpenAIClient openAIClient = CreateOpenAiClient();
+            return openAIClient.GetEmbeddingClient("text-embedding-3-small").AsIEmbeddingGenerator();
+        }
+
+        private static AzureOpenAIClient CreateOpenAiClient()
+        {
             string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")!;
             string key = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")!;
 
-            AzureOpenAIClient openAIClient = new(new Uri(endpoint), new AzureKeyCredential(key));
-
-            return openAIClient.GetEmbeddingClient("text-embedding-3-small").AsIEmbeddingGenerator();
+            return new AzureOpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));
         }
 
         #region boilerplate
