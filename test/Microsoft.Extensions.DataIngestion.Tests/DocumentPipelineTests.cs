@@ -81,7 +81,7 @@ public class DocumentPipelineTests
             };
         });
 
-        DocumentPipeline pipeline = new(reader, documentProcessors, chunker, vectorStoreWriter);
+        DocumentPipeline pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
         await pipeline.ProcessAsync(filePaths);
 
         Assert.NotEmpty(ids);
@@ -125,7 +125,7 @@ public class DocumentPipelineTests
             };
         });
 
-        DocumentPipeline pipeline = new(reader, [], documentChunker, vectorStoreWriter);
+        DocumentPipeline pipeline = new(reader, [], documentChunker, [], vectorStoreWriter);
 
         DirectoryInfo directory = new("TestFiles");
         string searchPattern = reader switch

@@ -15,14 +15,16 @@ public class DocumentPipeline
 {
     public DocumentPipeline(
         DocumentReader reader,
-        IReadOnlyList<DocumentProcessor> processors,
+        IReadOnlyList<DocumentProcessor> documentProcessors,
         DocumentChunker chunker,
+        IReadOnlyList<ChunkProcessor> chunkProcessors,
         DocumentWriter writer,
         ILoggerFactory? loggerFactory = default)
     {
         Reader = reader ?? throw new ArgumentNullException(nameof(reader));
-        Processors = processors ?? throw new ArgumentNullException(nameof(processors));
+        Processors = documentProcessors ?? throw new ArgumentNullException(nameof(documentProcessors));
         Chunker = chunker ?? throw new ArgumentNullException(nameof(chunker));
+        ChunkProcessors = chunkProcessors ?? throw new ArgumentNullException(nameof(chunkProcessors));
         Writer = writer ?? throw new ArgumentNullException(nameof(writer));
         Logger = loggerFactory?.CreateLogger<DocumentPipeline>();
     }
@@ -32,6 +34,8 @@ public class DocumentPipeline
     public IReadOnlyList<DocumentProcessor> Processors { get; }
 
     public DocumentChunker Chunker { get; }
+
+    public IReadOnlyList<ChunkProcessor> ChunkProcessors { get; }
 
     public DocumentWriter Writer { get; }
 
@@ -116,6 +120,13 @@ public class DocumentPipeline
         Logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, GetShortName(Chunker));
         List<DocumentChunk> chunks = await Chunker.ProcessAsync(document, cancellationToken);
         Logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
+
+        foreach (ChunkProcessor processor in ChunkProcessors)
+        {
+            Logger?.LogInformation("Processing {ChunkCount} chunks for document '{DocumentId}' with '{Processor}'.", chunks.Count, document.Identifier, GetShortName(processor));
+            chunks = await processor.ProcessAsync(chunks, cancellationToken);
+            Logger?.LogInformation("Processed chunks for document '{DocumentId}'.", document.Identifier);
+        }
 
         Logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(Writer));
         await Writer.WriteAsync(document, chunks, cancellationToken);
