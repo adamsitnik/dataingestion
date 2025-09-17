@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DataIngestion;
 [DebuggerDisplay("{Content}")]
 public sealed class DocumentChunk
 {
-    private Dictionary<string, object?>? _metadata;
+    private Dictionary<string, object>? _metadata;
 
     public string Content { get; }
 
@@ -18,7 +18,7 @@ public sealed class DocumentChunk
 
     public string? Context { get; }
 
-    public Dictionary<string, object?> Metadata => _metadata ??= new();
+    public Dictionary<string, object> Metadata => _metadata ??= new();
 
     public DocumentChunk(string content, int? tokenCount = null, string? context = null)
     {
