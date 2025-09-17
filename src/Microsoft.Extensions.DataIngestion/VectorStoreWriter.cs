@@ -55,7 +55,11 @@ public sealed class VectorStoreWriter<TKey> : DocumentWriter
     public VectorStoreCollection<object, Dictionary<string, object?>> VectorStoreCollection
         => _vectorStoreCollection ?? throw new InvalidOperationException("The collection has not been initialized yet. Call WriteAsync first.");
 
-    public override void Dispose() => _vectorStoreCollection?.Dispose();
+    public override void Dispose()
+    {
+        _vectorStore.Dispose();
+        _vectorStoreCollection?.Dispose();
+    }
 
     public override async Task WriteAsync(Document document, List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
