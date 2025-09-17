@@ -1,7 +1,6 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using System;
 using System.Collections.Generic;
@@ -51,8 +50,8 @@ public class DynamicChunkRecordWriterTests
         Dictionary<string, object?>? record = await writer.VectorStoreCollection.GetAsync(key);
 
         Assert.NotNull(record);
-        Assert.Equal(key, record["Key"]);
-        Assert.Equal(chunks[0].Content, record["Content"]);
+        Assert.Equal(key, record["key"]);
+        Assert.Equal(chunks[0].Content, record["content"]);
         Assert.True(testEmbeddingGenerator.WasCalled);
         foreach (var kvp in chunks[0].Metadata)
         {

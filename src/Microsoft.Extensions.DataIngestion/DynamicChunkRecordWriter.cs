@@ -12,6 +12,13 @@ namespace Microsoft.Extensions.DataIngestion;
 public sealed class DynamicChunkRecordWriter<TKey> : DocumentWriter
     where TKey : notnull
 {
+    // The storage names are hardcoded and lowercase with no special characters to ensure compatibility with various vector stores.
+    internal const string KeyStorageName = "key";
+    internal const string EmbeddingStorageName = "embedding";
+    internal const string ContentStorageName = "content";
+    internal const string ContextStorageName = "context";
+    internal const string DocumentIdStorageName = "documentid";
+
     private readonly VectorStore _vectorStore;
     private readonly int _dimensionCount;
     private readonly string? _distanceFunction;
@@ -85,11 +92,11 @@ public sealed class DynamicChunkRecordWriter<TKey> : DocumentWriter
 
             Dictionary<string, object?> record = new()
             {
-                [nameof(ChunkRecord<TKey>.Key)] = _keyProvider(chunk),
-                [nameof(ChunkRecord<TKey>.Content)] = chunk.Content,
-                [nameof(ChunkRecord<TKey>.Embedding)] = chunk.Content,
-                [nameof(ChunkRecord<TKey>.Context)] = chunk.Context,
-                [nameof(ChunkRecord<TKey>.DocumentId)] = document.Identifier,
+                [KeyStorageName] = _keyProvider(chunk),
+                [ContentStorageName] = chunk.Content,
+                [EmbeddingStorageName] = chunk.Content,
+                [ContextStorageName] = chunk.Context,
+                [DocumentIdStorageName] = document.Identifier,
             };
     
             foreach (var metadata in chunk.Metadata)
@@ -110,26 +117,16 @@ public sealed class DynamicChunkRecordWriter<TKey> : DocumentWriter
         {
             Properties =
             {
-                new VectorStoreKeyProperty(nameof(ChunkRecord<TKey>.Key), typeof(TKey))
+                new VectorStoreKeyProperty(KeyStorageName, typeof(TKey)),
+                // By using string as the type here we allow the vector store to handle the conversion from string to the actual vector type it supports.
+                new VectorStoreVectorProperty(EmbeddingStorageName, typeof(string), dimensionCount)
                 {
-                    StorageName = ChunkRecord<TKey>.KeyStorageName
-                },
-                new VectorStoreVectorProperty(nameof(ChunkRecord<TKey>.Embedding), typeof(string), dimensionCount)
-                {
-                    StorageName = ChunkRecord<TKey>.EmbeddingStorageName,
                     DistanceFunction = distanceFunction
                 },
-                new VectorStoreDataProperty(nameof(ChunkRecord<TKey>.Content), typeof(string))
+                new VectorStoreDataProperty(ContentStorageName, typeof(string)),
+                new VectorStoreDataProperty(ContextStorageName, typeof(string)),
+                new VectorStoreDataProperty(DocumentIdStorageName, typeof(string))
                 {
-                    StorageName = ChunkRecord<TKey>.ContentStorageName
-                },
-                new VectorStoreDataProperty(nameof(ChunkRecord<TKey>.Context), typeof(string))
-                {
-                    StorageName = ChunkRecord<TKey>.ContextStorageName
-                },
-                new VectorStoreDataProperty(nameof(ChunkRecord<TKey>.DocumentId), typeof(string))
-                {
-                    StorageName = ChunkRecord<TKey>.DocumentIdStorageName,
                     IsIndexed = true
                 }
             }
@@ -140,6 +137,7 @@ public sealed class DynamicChunkRecordWriter<TKey> : DocumentWriter
             Type propertyType = metadata.Value.GetType();
             definition.Properties.Add(new VectorStoreDataProperty(metadata.Key, propertyType)
             {
+                // We use lowercase storage names to ensure compatibility with various vector stores.
                 StorageName = metadata.Key.ToLowerInvariant()
                 // We could consider indexing for certain keys like classification etc. but for now we leave it as non-indexed.
                 // The reason is that not every DB supports it, moreover we would need to expose the ability to configure it.
