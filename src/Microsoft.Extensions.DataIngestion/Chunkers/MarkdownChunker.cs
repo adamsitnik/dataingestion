@@ -31,9 +31,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            DocumentFlattener flattener = new();
-            Document flatDoc = flattener.ProcessAsync(document).Result;
-            List<DocumentElement> elements = flatDoc.Sections.Single().Elements;
+            List<DocumentElement> elements = document.Where(element => element is not DocumentSection).ToList();
             elements.Reverse();
             var sectionStack = new Stack<DocumentElement>(elements);
 

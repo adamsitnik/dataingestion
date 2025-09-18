@@ -2,7 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,7 +26,7 @@ public class DocumentFlattener : DocumentProcessor
             Markdown = document.Markdown,
         };
 
-        FlattenAndKeepOrder(document.Sections, rootSection.Elements);
+        rootSection.Elements.AddRange(document.Where(element => element is not DocumentSection));
 
         Document flat = new(document.Identifier)
         {
@@ -35,36 +35,5 @@ public class DocumentFlattener : DocumentProcessor
         };
 
         return new(flat);
-    }
-
-    private static void FlattenAndKeepOrder(List<DocumentSection> sections, List<DocumentElement> targetElements)
-    {
-        Stack<DocumentElement> elementsToProcess = new();
-        
-        for (int sectionIndex = sections.Count - 1; sectionIndex >= 0; sectionIndex--)
-        {
-            DocumentSection section = sections[sectionIndex];
-            for (int elementIndex = section.Elements.Count - 1; elementIndex >= 0; elementIndex--)
-            {
-                elementsToProcess.Push(section.Elements[elementIndex]);
-            }
-        }
-
-        while (elementsToProcess.Count > 0)
-        {
-            DocumentElement currentElement = elementsToProcess.Pop();
-            
-            if (currentElement is DocumentSection nestedSection)
-            {
-                for (int i = nestedSection.Elements.Count - 1; i >= 0; i--)
-                {
-                    elementsToProcess.Push(nestedSection.Elements[i]);
-                }
-            }
-            else
-            {
-                targetElements.Add(currentElement);
-            }
-        }
     }
 }
