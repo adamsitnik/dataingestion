@@ -60,33 +60,29 @@ public class DocumentPipelineTests
     public async Task CanProcessDocuments(string[] filePaths, DocumentReader reader, DocumentChunker chunker)
     {
         DocumentProcessor[] documentProcessors = [new DocumentFlattener()];
-        List<object> ids = [];
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using VectorStoreWriter<Guid> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount, keyProvider: chunk =>
-        {
-            Guid recordId = Guid.NewGuid();
-            ids.Add(recordId);
-            return recordId;
-        });
+        using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
         DocumentPipeline pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
         await pipeline.ProcessAsync(filePaths);
 
-        Assert.NotEmpty(ids);
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
 
-        Dictionary<string, object?>[] retrieved = await vectorStoreWriter.VectorStoreCollection.GetAsync(ids).ToArrayAsync();
-        Assert.Equal(ids.Count, retrieved.Length);
+        Dictionary<string, object?>[] retrieved = await vectorStoreWriter.VectorStoreCollection
+            .GetAsync(record => filePaths.Contains(record["documentid"]), top: 1000)
+            .ToArrayAsync();
+
+        Assert.NotEmpty(retrieved);
         for (int i = 0; i < retrieved.Length; i++)
         {
-            Assert.Equal(ids[i], retrieved[i]["key"]);
+            Assert.NotEmpty((string)retrieved[i]["key"]!);
             Assert.NotEmpty((string)retrieved[i]["content"]!);
-            Assert.NotEmpty((string)retrieved[i]["documentid"]!);
+            Assert.Contains((string)retrieved[i]["documentid"]!, filePaths);
         }
     }
 
@@ -97,19 +93,13 @@ public class DocumentPipelineTests
     public async Task CanProcessDocumentsInDirectory(DocumentReader reader)
     {
         DocumentChunker documentChunker = new DummyChunker();
-        List<object> ids = [];
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using VectorStoreWriter<Guid> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount, keyProvider: chunk =>
-        {
-            Guid recordId = Guid.NewGuid();
-            ids.Add(recordId);
-            return recordId;
-        });
+        using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
         DocumentPipeline pipeline = new(reader, [], documentChunker, [], vectorStoreWriter);
 
@@ -121,16 +111,18 @@ public class DocumentPipelineTests
         };
         await pipeline.ProcessAsync(directory, searchPattern);
 
-        Assert.NotEmpty(ids);
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
 
-        Dictionary<string, object?>[] retrieved = await vectorStoreWriter.VectorStoreCollection.GetAsync(keys: ids).ToArrayAsync();
-        Assert.Equal(ids.Count, retrieved.Length);
+        Dictionary<string, object?>[] retrieved = await vectorStoreWriter.VectorStoreCollection
+            .GetAsync(record => ((string)record["documentid"]!).StartsWith(directory.FullName), top: 1000)
+            .ToArrayAsync();
+
+        Assert.NotEmpty(retrieved);
         for (int i = 0; i < retrieved.Length; i++)
         {
-            Assert.Equal(ids[i], retrieved[i]["key"]);
+            Assert.NotEmpty((string)retrieved[i]["key"]!);
             Assert.NotEmpty((string)retrieved[i]["content"]!);
-            Assert.NotEmpty((string)retrieved[i]["documentid"]!);
+            Assert.StartsWith(directory.FullName, (string)retrieved[i]["documentid"]!);
         }
     }
 
