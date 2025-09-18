@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public class DocumentFlattener : DocumentProcessor
+public class DocumentFlattener : IDocumentProcessor
 {
-    public override ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

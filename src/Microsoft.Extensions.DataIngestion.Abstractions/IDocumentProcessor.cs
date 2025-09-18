@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public abstract class DocumentProcessor
+public interface IDocumentProcessor
 {
-    // Design notes: plenty of processors will be sync, hence the usage of ValueTask.
-    public abstract ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default);
+    ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default);
 }

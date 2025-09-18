@@ -3,7 +3,6 @@
 
 using Microsoft.Extensions.AI;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +10,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion;
 
 // This name is not final, we need to find a better one.
-public sealed class AlternativeTextEnricher : DocumentProcessor
+public sealed class AlternativeTextEnricher : IDocumentProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -22,7 +21,7 @@ public sealed class AlternativeTextEnricher : DocumentProcessor
         _chatOptions = chatOptions;
     }
 
-    public override async ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public async ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

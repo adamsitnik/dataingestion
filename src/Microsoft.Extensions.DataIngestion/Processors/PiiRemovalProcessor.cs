@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <summary>
 /// This processor removes Personally Identifiable Information (PII) from document chunks using an AI chat model.
 /// </summary>
-// Design note: it's IChunkProcessor, rather than DocumentProcessor, because if we were dealing with Document,
+// Design note: it's IChunkProcessor, rather than IDocumentProcessor, because if we were dealing with Document,
 // we would need to update not just the Markdown of every DocumentElement, but also Text.
 // And the Markdown of entire Document itself. Which could exceed the token limit of the AI model.
 // Moreover, there are fewer chunks than elements, so processing chunks is more efficient.

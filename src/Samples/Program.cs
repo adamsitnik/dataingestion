@@ -30,7 +30,7 @@ namespace Samples
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
             DocumentReader reader = CreateReader(readerId, extractImages);
-            DocumentProcessor[] processors = CreateDocumentProcessors(extractImages);
+            IDocumentProcessor[] processors = CreateDocumentProcessors(extractImages);
             IChunkProcessor[] chunkProcessors = CreateChunkProcessors();
 
             IDocumentChunker chunker = new HeaderChunker(
@@ -76,7 +76,7 @@ namespace Samples
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
             DocumentReader reader = CreateReader(readerId, extractImages: false);
-            DocumentProcessor[] processors = CreateDocumentProcessors(extractImages: false);
+            IDocumentProcessor[] processors = CreateDocumentProcessors(extractImages: false);
 
             IDocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
@@ -146,7 +146,7 @@ namespace Samples
                 _ => throw new NotSupportedException($"The specified reader '{readerId}' is not supported.")
             };
 
-        private static DocumentProcessor[] CreateDocumentProcessors(bool extractImages)
+        private static IDocumentProcessor[] CreateDocumentProcessors(bool extractImages)
         {
             if (!extractImages)
             {

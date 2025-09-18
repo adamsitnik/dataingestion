@@ -59,7 +59,7 @@ public class DocumentPipelineTests
     [MemberData(nameof(FilesAndReaders))]
     public async Task CanProcessDocuments(string[] filePaths, DocumentReader reader, IDocumentChunker chunker)
     {
-        DocumentProcessor[] documentProcessors = [new DocumentFlattener()];
+        IDocumentProcessor[] documentProcessors = [new DocumentFlattener()];
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {

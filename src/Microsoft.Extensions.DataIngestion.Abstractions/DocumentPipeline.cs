@@ -15,7 +15,7 @@ public class DocumentPipeline
 {
     public DocumentPipeline(
         DocumentReader reader,
-        IReadOnlyList<DocumentProcessor> documentProcessors,
+        IReadOnlyList<IDocumentProcessor> documentProcessors,
         IDocumentChunker chunker,
         IReadOnlyList<IChunkProcessor> chunkProcessors,
         IDocumentWriter writer,
@@ -31,7 +31,7 @@ public class DocumentPipeline
 
     public DocumentReader Reader { get; }
 
-    public IReadOnlyList<DocumentProcessor> Processors { get; }
+    public IReadOnlyList<IDocumentProcessor> Processors { get; }
 
     public IDocumentChunker Chunker { get; }
 
@@ -110,7 +110,7 @@ public class DocumentPipeline
 
     private async Task ProcessAsync(Document document, CancellationToken cancellationToken)
     {
-        foreach (DocumentProcessor processor in Processors)
+        foreach (IDocumentProcessor processor in Processors)
         {
             Logger?.LogInformation("Processing document '{DocumentId}' with '{Processor}'.", document.Identifier, GetShortName(processor));
             document = await processor.ProcessAsync(document, cancellationToken);
