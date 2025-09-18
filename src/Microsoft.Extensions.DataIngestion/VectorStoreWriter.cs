@@ -42,8 +42,7 @@ public sealed class VectorStoreWriter : DocumentWriter
         // Qdrant: https://github.com/microsoft/semantic-kernel/blob/28ea2f4df872e8fd03ef0792ebc9e1989b4be0ee/dotnet/src/VectorData/Qdrant/QdrantCollection.cs#L104
         // When https://github.com/microsoft/semantic-kernel/issues/13141 gets released,
         // we are going to support Guid keys as well.
-        _keysAreStrings = true;
-
+        _keysAreStrings = vectorStore.GetType().Name != "QdrantVectorStore";
     }
 
     public VectorStoreCollection<object, Dictionary<string, object?>> VectorStoreCollection
