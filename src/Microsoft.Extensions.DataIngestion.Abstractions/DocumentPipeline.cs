@@ -16,7 +16,7 @@ public class DocumentPipeline
     public DocumentPipeline(
         DocumentReader reader,
         IReadOnlyList<DocumentProcessor> documentProcessors,
-        DocumentChunker chunker,
+        IDocumentChunker chunker,
         IReadOnlyList<IChunkProcessor> chunkProcessors,
         IDocumentWriter writer,
         ILoggerFactory? loggerFactory = default)
@@ -33,7 +33,7 @@ public class DocumentPipeline
 
     public IReadOnlyList<DocumentProcessor> Processors { get; }
 
-    public DocumentChunker Chunker { get; }
+    public IDocumentChunker Chunker { get; }
 
     public IReadOnlyList<IChunkProcessor> ChunkProcessors { get; }
 

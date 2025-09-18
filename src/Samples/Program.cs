@@ -33,7 +33,7 @@ namespace Samples
             DocumentProcessor[] processors = CreateDocumentProcessors(extractImages);
             IChunkProcessor[] chunkProcessors = CreateChunkProcessors();
 
-            DocumentChunker chunker = new HeaderChunker(
+            IDocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
                 // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
                 maxTokensPerParagraph: 2000,
@@ -78,7 +78,7 @@ namespace Samples
             DocumentReader reader = CreateReader(readerId, extractImages: false);
             DocumentProcessor[] processors = CreateDocumentProcessors(extractImages: false);
 
-            DocumentChunker chunker = new HeaderChunker(
+            IDocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
                 // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
                 maxTokensPerParagraph: 2000,

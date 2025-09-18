@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
@@ -17,7 +16,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
     /// <remarks>This class is designed to parse a Markdown document and divide it into logical chunks based
     /// on the specified header level. Each chunk represents a section of the document, and the headers can be
     /// optionally stripped from the output. The splitting behavior is controlled by the header level. </remarks>
-    public sealed class MarkdownChunker : DocumentChunker
+    public sealed class MarkdownChunker : IDocumentChunker
     {
         private readonly int _headerLevelToSplitOn;
         private readonly bool _stripHeaders;
@@ -28,7 +27,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _stripHeaders = stripHeaders;
         }
 
-        public override ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 

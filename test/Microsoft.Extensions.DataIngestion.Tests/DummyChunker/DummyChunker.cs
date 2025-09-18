@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public class DummyChunker : DocumentChunker
+public class DummyChunker : IDocumentChunker
 {
-    public override ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         if (document is null) throw new ArgumentNullException(nameof(document));
 

@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-// design notes: it could become an interface if using abstract class does not bring any value.
-public abstract class DocumentChunker
+public interface IDocumentChunker
 {
-    public abstract ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default);
+    ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default);
 }

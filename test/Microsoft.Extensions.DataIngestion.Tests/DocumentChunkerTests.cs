@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 {
     public abstract class DocumentChunkerTests
     {
-        protected abstract DocumentChunker CreateDocumentChunker();
+        protected abstract IDocumentChunker CreateDocumentChunker();
 
         [Fact]
         public async Task ProcessAsync_ThrowsArgumentNullException_WhenDocumentIsNull()
@@ -25,7 +25,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
         public async Task EmptyDocument()
         {
             Document emptyDoc = new("emptyDoc");
-            DocumentChunker chunker = CreateDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
 
             List<DocumentChunk> chunks = await chunker.ProcessAsync(emptyDoc);
             Assert.Empty(chunks);
@@ -43,7 +43,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
                 }
             });
 
-            DocumentChunker chunker = CreateDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
 
             List<DocumentChunk> chunks = await chunker.ProcessAsync(emptyDoc);
             Assert.Empty(chunks);
