@@ -18,7 +18,7 @@ public class DocumentPipeline
         IReadOnlyList<DocumentProcessor> documentProcessors,
         DocumentChunker chunker,
         IReadOnlyList<IChunkProcessor> chunkProcessors,
-        DocumentWriter writer,
+        IDocumentWriter writer,
         ILoggerFactory? loggerFactory = default)
     {
         Reader = reader ?? throw new ArgumentNullException(nameof(reader));
@@ -37,7 +37,7 @@ public class DocumentPipeline
 
     public IReadOnlyList<IChunkProcessor> ChunkProcessors { get; }
 
-    public DocumentWriter Writer { get; }
+    public IDocumentWriter Writer { get; }
 
     protected ILogger? Logger { get; }
 
