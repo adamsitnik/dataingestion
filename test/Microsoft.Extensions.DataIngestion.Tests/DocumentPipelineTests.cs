@@ -113,9 +113,8 @@ public class DocumentPipelineTests
 
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
 
-
         Dictionary<string, object?>[] retrieved = await vectorStoreWriter.VectorStoreCollection
-            .GetAsync(record => ((string)record["key"]!).StartsWith(directory.FullName), top: 1000)
+            .GetAsync(record => ((string)record["documentid"]!).StartsWith(directory.FullName), top: 1000)
             .ToArrayAsync();
 
         Assert.NotEmpty(retrieved);
