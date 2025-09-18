@@ -38,6 +38,8 @@ public class ClassificationEnricher : ChunkProcessor
         _request = CreateLlmRequest(predefinedClasses, fallbackClass);
     }
 
+    public static string MetadataKey => "classification";
+
     public override async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -58,7 +60,7 @@ public class ClassificationEnricher : ChunkProcessor
                 ])
             ], _chatOptions, cancellationToken: cancellationToken);
 
-            chunk.Metadata["Classification"] = response.Text;
+            chunk.Metadata[MetadataKey] = response.Text;
         }
 
         return chunks;

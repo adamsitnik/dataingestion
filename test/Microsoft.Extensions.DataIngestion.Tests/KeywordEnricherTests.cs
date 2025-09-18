@@ -19,10 +19,8 @@ public class KeywordEnricherTests : ChatClientTestBase
 
         Assert.Same(chunks, got);
         DocumentChunk chunk = Assert.Single(chunks);
-        Assert.NotEmpty((string[])chunk.Metadata["Keywords"]!);
-        Assert.NotEmpty((double[])chunk.Metadata["KeywordsConfidenceScores"]!);
-        Assert.Contains((string[])chunk.Metadata["Keywords"]!, keyword => keyword.Contains("artificial intelligence") || keyword.Contains("AI"));
-        Assert.All((double[])chunk.Metadata["KeywordsConfidenceScores"]!, score => Assert.InRange(score, 0.5, 1.0));
+        Assert.NotEmpty((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
+        Assert.Contains((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!, keyword => keyword.Contains("artificial intelligence") || keyword.Contains("AI"));
     }
 
     [Fact]
@@ -35,13 +33,11 @@ public class KeywordEnricherTests : ChatClientTestBase
 
         Assert.Same(chunks, got);
         DocumentChunk chunk = Assert.Single(chunks);
-        Assert.NotEmpty((string[])chunk.Metadata["Keywords"]!);
-        Assert.NotEmpty((double[])chunk.Metadata["KeywordsConfidenceScores"]!);
-        Assert.Contains("AI", (string[])chunk.Metadata["Keywords"]!);
-        Assert.Contains(".NET", (string[])chunk.Metadata["Keywords"]!);
-        Assert.DoesNotContain("Animals", (string[])chunk.Metadata["Keywords"]!);
-        Assert.DoesNotContain("Rabbits", (string[])chunk.Metadata["Keywords"]!);
-        Assert.All((double[])chunk.Metadata["KeywordsConfidenceScores"]!, score => Assert.InRange(score, 0.6, 1.0));
+        Assert.NotEmpty((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
+        Assert.Contains("AI", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
+        Assert.Contains(".NET", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
+        Assert.DoesNotContain("Animals", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
+        Assert.DoesNotContain("Rabbits", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
     }
 
     private static List<DocumentChunk> CreateChunks() =>

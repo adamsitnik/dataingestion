@@ -19,9 +19,9 @@ public class ClassificationEnricherTests : ChatClientTestBase
 
         Assert.Same(chunks, got);
         Assert.Equal(3, chunks.Count);
-        Assert.Equal("AI", chunks[0].Metadata["Classification"]);
-        Assert.Equal("Animals", chunks[1].Metadata["Classification"]);
-        Assert.Equal("UFO", chunks[2].Metadata["Classification"]);
+        Assert.Equal("AI", chunks[0].Metadata[ClassificationEnricher.MetadataKey]);
+        Assert.Equal("Animals", chunks[1].Metadata[ClassificationEnricher.MetadataKey]);
+        Assert.Equal("UFO", chunks[2].Metadata[ClassificationEnricher.MetadataKey]);
     }
 
     private static List<DocumentChunk> CreateChunks() =>

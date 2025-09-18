@@ -13,20 +13,27 @@ namespace Microsoft.Extensions.DataIngestion;
 /// Enriches chunks with sentiment analysis using an AI chat model.
 /// </summary>
 /// <remarks>
-/// It adds the following metadata to each chunk:
-/// <para>"Sentiment": The sentiment of the chunk (Positive, Negative, Neutral).</para>
-/// <para>"SentimentConfidenceScore": A confidence score (0.0-1.0) indicating the certainty of the sentiment analysis.</para>
+/// It adds "sentiment" metadata to each chunk. It can be Positive, Negative, Neutral or Unknown when confidence score is below the threshold.
 /// </remarks>
 public sealed class SentimentEnricher : ChunkProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
+    private readonly double _confidenceThreshold;
 
-    public SentimentEnricher(IChatClient chatClient, ChatOptions? chatOptions = null)
+    public SentimentEnricher(IChatClient chatClient, ChatOptions? chatOptions = null, double confidenceThreshold = 0.7)
     {
+        if (confidenceThreshold < 0.0 || confidenceThreshold > 1.0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(confidenceThreshold), "The confidence threshold must be between 0.0 and 1.0.");
+        }
+
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
         _chatOptions = chatOptions;
+        _confidenceThreshold = confidenceThreshold;
     }
+
+    public static string MetadataKey => "sentiment";
 
     public override async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
@@ -39,26 +46,18 @@ public sealed class SentimentEnricher : ChunkProcessor
 
         foreach (DocumentChunk chunk in chunks)
         {
-            ChatResponse<SentimentWithScore> response = await _chatClient.GetResponseAsync<SentimentWithScore>(
+            var response = await _chatClient.GetResponseAsync(
             [
                 new(ChatRole.User,
                 [
-                    new TextContent("You are a sentiment analysis expert. Analyze the sentiment of the given text and return a response with sentiment (Positive/Negative/Neutral) and confidence score (0.0-1.0)."),
+                    new TextContent($"You are a sentiment analysis expert. Analyze the sentiment of the given text and return Positive/Negative/Neutral or Unknown when confidence score is below {_confidenceThreshold}. Return just the value of the sentiment."),
                     new TextContent(chunk.Content),
                 ])
             ], _chatOptions, cancellationToken: cancellationToken);
 
-            chunk.Metadata[nameof(SentimentWithScore.Sentiment)] = response.Result.Sentiment;
-            chunk.Metadata[nameof(SentimentWithScore.SentimentConfidenceScore)] = response.Result.SentimentConfidenceScore;
+            chunk.Metadata[MetadataKey] = response.Text;
         }
 
         return chunks;
-    }
-
-    private class SentimentWithScore
-    {
-        public string Sentiment { get; set; } = string.Empty;
-        // This name contains "Sentiment" prefix to avoid collisions with other "ConfidenceScore" keys.
-        public double SentimentConfidenceScore { get; set; }
     }
 }

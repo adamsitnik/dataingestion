@@ -13,7 +13,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// Enriches chunks with summary text using an AI chat model.
 /// </summary>
 /// <remarks>
-/// It adds "Summary" text metadata to each chunk.
+/// It adds "summary" text metadata to each chunk.
 /// </remarks>
 public sealed class SummaryEnricher : ChunkProcessor
 {
@@ -27,6 +27,8 @@ public sealed class SummaryEnricher : ChunkProcessor
         _chatOptions = chatOptions;
         _maxWordCount = maxWordCount > 0 ? maxWordCount : throw new ArgumentOutOfRangeException(nameof(maxWordCount));
     }
+
+    public static string MetadataKey => "summary";
 
     public override async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
@@ -48,7 +50,7 @@ public sealed class SummaryEnricher : ChunkProcessor
                 ])
             ], _chatOptions, cancellationToken: cancellationToken);
 
-            chunk.Metadata["Summary"] = response.Text;
+            chunk.Metadata[MetadataKey] = response.Text;
         }
 
         return chunks;
