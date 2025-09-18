@@ -39,7 +39,7 @@ public class PiiRemovalProcessorTests : ChatClientTestBase
         PiiRemovalProcessor sut = new(ChatClient);
         List<DocumentChunk> chunks = new()
         {
-            new("PII removal needs to be the first step in the pipeline, otherwise some Metada may contain PII. Example: Summary")
+            new("PII removal needs to be the first step in the pipeline, otherwise some Metadata may contain PII. Example: Summary")
             {
                 Metadata = { { "MakeSure", "MetadataIsPreserved" } },
             },
