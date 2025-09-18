@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion;
 
 /// <summary>
-/// A <see cref="DocumentChunker"/> that splits documents into chunks based on headers and their corresponding levels, preserving the header context.
+/// A <see cref="IDocumentChunker"/> that splits documents into chunks based on headers and their corresponding levels, preserving the header context.
 /// </summary>
-public sealed class HeaderChunker : DocumentChunker
+public sealed class HeaderChunker : IDocumentChunker
 {
     private const int MaxHeaderLevel = 10;
     private readonly Tokenizer _tokenizer;
@@ -28,7 +28,7 @@ public sealed class HeaderChunker : DocumentChunker
         _overlapTokens = overlapTokens >= 0 ? overlapTokens : throw new ArgumentOutOfRangeException(nameof(overlapTokens));
     }
 
-    public override ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         List<DocumentChunk> chunks = new();
         string?[] headers = new string?[MaxHeaderLevel + 1];

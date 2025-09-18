@@ -14,11 +14,9 @@ namespace Microsoft.Extensions.DataIngestion;
 /// Enriches chunks with keyword extraction using an AI chat model.
 /// </summary>
 /// <remarks>
-/// It adds the following metadata to each chunk:
-/// <para>"Keywords": A list of extracted keywords.</para>
-/// <para>"KeywordsConfidenceScores": Confidence scores (0.0-1.0) for each keyword.</para>
+/// It adds "keywords" metadata to each chunk. It's an array of strings representing the extracted keywords.
 /// </remarks>
-public sealed class KeywordEnricher : ChunkProcessor
+public sealed class KeywordEnricher : IChunkProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -27,7 +25,7 @@ public sealed class KeywordEnricher : ChunkProcessor
     // API design: predefinedKeywords needs to be provided in explicit way, so the user is encouraged to think about it.
     // And for example provide a closed set, so the results are more predictable.
     public KeywordEnricher(IChatClient chatClient, string[]? predefinedKeywords,
-        ChatOptions? chatOptions = null, int maxKeywords = 5, double confidenceThreshold = 0.5)
+        ChatOptions? chatOptions = null, int maxKeywords = 5, double confidenceThreshold = 0.7)
     {
         if (confidenceThreshold < 0.0 || confidenceThreshold > 1.0)
         {
@@ -39,7 +37,9 @@ public sealed class KeywordEnricher : ChunkProcessor
         _request = CreateLlmRequest(maxKeywords, predefinedKeywords, confidenceThreshold);
     }
 
-    public override async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public static string MetadataKey => "keywords";
+
+    public async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -50,7 +50,7 @@ public sealed class KeywordEnricher : ChunkProcessor
 
         foreach (DocumentChunk chunk in chunks)
         {
-            ChatResponse<KeywordsWithScores> response = await _chatClient.GetResponseAsync<KeywordsWithScores>(
+            ChatResponse<string[]> response = await _chatClient.GetResponseAsync<string[]>(
             [
                 new(ChatRole.User,
                 [
@@ -59,9 +59,7 @@ public sealed class KeywordEnricher : ChunkProcessor
                 ])
             ], _chatOptions, cancellationToken: cancellationToken);
 
-            chunk.Metadata[nameof(KeywordsWithScores.Keywords)] = response.Result.Keywords;
-            // This name contains "Keywords" prefix to avoid collisions with other "ConfidenceScore" keys.
-            chunk.Metadata[nameof(KeywordsWithScores.KeywordsConfidenceScores)] = response.Result.KeywordsConfidenceScores;
+            chunk.Metadata[MetadataKey] = response.Result;
         }
 
         return chunks;
@@ -69,7 +67,7 @@ public sealed class KeywordEnricher : ChunkProcessor
 
     private static TextContent CreateLlmRequest(int maxKeywords, string[]? predefinedKeywords, double confidenceThreshold)
     {
-        StringBuilder sb = new($"You are a keyword extraction expert. Analyze the given text and extract up to {maxKeywords} most relevant keywords with confidence scores (0.0-1.0).");
+        StringBuilder sb = new($"You are a keyword extraction expert. Analyze the given text and extract up to {maxKeywords} most relevant keywords.");
 
         if (predefinedKeywords is not null && predefinedKeywords.Length > 0)
         {
@@ -79,11 +77,5 @@ public sealed class KeywordEnricher : ChunkProcessor
         sb.Append($" Exclude keywords with confidence score below {confidenceThreshold}.");
         
         return new(sb.ToString());
-    }
-
-    private class KeywordsWithScores
-    {
-        public string[] Keywords { get; set; } = [];
-        public double[] KeywordsConfidenceScores { get; set; } = [];
     }
 }

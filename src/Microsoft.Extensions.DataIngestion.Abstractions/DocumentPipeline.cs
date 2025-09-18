@@ -15,10 +15,10 @@ public class DocumentPipeline
 {
     public DocumentPipeline(
         DocumentReader reader,
-        IReadOnlyList<DocumentProcessor> documentProcessors,
-        DocumentChunker chunker,
-        IReadOnlyList<ChunkProcessor> chunkProcessors,
-        DocumentWriter writer,
+        IReadOnlyList<IDocumentProcessor> documentProcessors,
+        IDocumentChunker chunker,
+        IReadOnlyList<IChunkProcessor> chunkProcessors,
+        IDocumentWriter writer,
         ILoggerFactory? loggerFactory = default)
     {
         Reader = reader ?? throw new ArgumentNullException(nameof(reader));
@@ -31,13 +31,13 @@ public class DocumentPipeline
 
     public DocumentReader Reader { get; }
 
-    public IReadOnlyList<DocumentProcessor> Processors { get; }
+    public IReadOnlyList<IDocumentProcessor> Processors { get; }
 
-    public DocumentChunker Chunker { get; }
+    public IDocumentChunker Chunker { get; }
 
-    public IReadOnlyList<ChunkProcessor> ChunkProcessors { get; }
+    public IReadOnlyList<IChunkProcessor> ChunkProcessors { get; }
 
-    public DocumentWriter Writer { get; }
+    public IDocumentWriter Writer { get; }
 
     protected ILogger? Logger { get; }
 
@@ -110,7 +110,7 @@ public class DocumentPipeline
 
     private async Task ProcessAsync(Document document, CancellationToken cancellationToken)
     {
-        foreach (DocumentProcessor processor in Processors)
+        foreach (IDocumentProcessor processor in Processors)
         {
             Logger?.LogInformation("Processing document '{DocumentId}' with '{Processor}'.", document.Identifier, GetShortName(processor));
             document = await processor.ProcessAsync(document, cancellationToken);
@@ -121,7 +121,7 @@ public class DocumentPipeline
         List<DocumentChunk> chunks = await Chunker.ProcessAsync(document, cancellationToken);
         Logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
 
-        foreach (ChunkProcessor processor in ChunkProcessors)
+        foreach (IChunkProcessor processor in ChunkProcessors)
         {
             Logger?.LogInformation("Processing {ChunkCount} chunks for document '{DocumentId}' with '{Processor}'.", chunks.Count, document.Identifier, GetShortName(processor));
             chunks = await processor.ProcessAsync(chunks, cancellationToken);

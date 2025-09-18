@@ -30,10 +30,10 @@ namespace Samples
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
             DocumentReader reader = CreateReader(readerId, extractImages);
-            DocumentProcessor[] processors = CreateDocumentProcessors(extractImages);
-            ChunkProcessor[] chunkProcessors = CreateChunkProcessors();
+            IDocumentProcessor[] processors = CreateDocumentProcessors(extractImages);
+            IChunkProcessor[] chunkProcessors = CreateChunkProcessors();
 
-            DocumentChunker chunker = new HeaderChunker(
+            IDocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
                 // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
                 maxTokensPerParagraph: 2000,
@@ -76,9 +76,9 @@ namespace Samples
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
             DocumentReader reader = CreateReader(readerId, extractImages: false);
-            DocumentProcessor[] processors = CreateDocumentProcessors(extractImages: false);
+            IDocumentProcessor[] processors = CreateDocumentProcessors(extractImages: false);
 
-            DocumentChunker chunker = new HeaderChunker(
+            IDocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
                 // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
                 maxTokensPerParagraph: 2000,
@@ -146,7 +146,7 @@ namespace Samples
                 _ => throw new NotSupportedException($"The specified reader '{readerId}' is not supported.")
             };
 
-        private static DocumentProcessor[] CreateDocumentProcessors(bool extractImages)
+        private static IDocumentProcessor[] CreateDocumentProcessors(bool extractImages)
         {
             if (!extractImages)
             {
@@ -157,7 +157,7 @@ namespace Samples
             return [new AlternativeTextEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];
         }
 
-        private static ChunkProcessor[] CreateChunkProcessors()
+        private static IChunkProcessor[] CreateChunkProcessors()
         {
             AzureOpenAIClient openAIClient = CreateOpenAiClient();
             return [new SummaryEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];

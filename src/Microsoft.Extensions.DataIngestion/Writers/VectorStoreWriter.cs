@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public sealed class VectorStoreWriter : DocumentWriter
+public sealed class VectorStoreWriter : IDocumentWriter
 {
     // The names are lowercase with no special characters to ensure compatibility with various vector stores.
     private const string KeyName = "key";
@@ -48,13 +48,13 @@ public sealed class VectorStoreWriter : DocumentWriter
     public VectorStoreCollection<object, Dictionary<string, object?>> VectorStoreCollection
         => _vectorStoreCollection ?? throw new InvalidOperationException("The collection has not been initialized yet. Call WriteAsync first.");
 
-    public override void Dispose()
+    public void Dispose()
     {
         _vectorStore.Dispose();
         _vectorStoreCollection?.Dispose();
     }
 
-    public override async Task WriteAsync(Document document, List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public async Task WriteAsync(Document document, List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

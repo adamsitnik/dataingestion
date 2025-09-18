@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -9,7 +10,7 @@ using System.Linq;
 namespace Microsoft.Extensions.DataIngestion;
 
 [DebuggerDisplay("{Markdown}")]
-public sealed class Document
+public sealed class Document : IEnumerable<DocumentElement>
 {
     private string? _markdown;
 
@@ -27,6 +28,36 @@ public sealed class Document
         get => _markdown ??= string.Join("", Sections.Select(section => section.Markdown));
         set => _markdown = value;
     }
+
+    /// <summary>
+    /// Iterate over all elements in the document, including those in nested sections.
+    /// </summary>
+    public IEnumerator<DocumentElement> GetEnumerator()
+    {
+        Stack<DocumentElement> elementsToProcess = new();
+
+        for (int sectionIndex = Sections.Count - 1; sectionIndex >= 0; sectionIndex--)
+        {
+            elementsToProcess.Push(Sections[sectionIndex]);
+        }
+
+        while (elementsToProcess.Count > 0)
+        {
+            DocumentElement currentElement = elementsToProcess.Pop();
+
+            yield return currentElement;
+
+            if (currentElement is DocumentSection nestedSection)
+            {
+                for (int i = nestedSection.Elements.Count - 1; i >= 0; i--)
+                {
+                    elementsToProcess.Push(nestedSection.Elements[i]);
+                }
+            }
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
 [DebuggerDisplay("{GetType().Name}: {Markdown}")]

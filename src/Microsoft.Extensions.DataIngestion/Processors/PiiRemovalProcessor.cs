@@ -12,8 +12,13 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <summary>
 /// This processor removes Personally Identifiable Information (PII) from document chunks using an AI chat model.
 /// </summary>
-/// design note: It could be a DocumentProcessor as well, with accurate token count, but at a cost of some tradeoffs like complexity and performance.
-public sealed class PiiRemovalProcessor : ChunkProcessor
+// Design note: it's IChunkProcessor, rather than IDocumentProcessor, because if we were dealing with Document,
+// we would need to update not just the Markdown of every DocumentElement, but also Text.
+// And the Markdown of entire Document itself. Which could exceed the token limit of the AI model.
+// Moreover, there are fewer chunks than elements, so processing chunks is more efficient.
+// And when processing chunks, the LLM gets more context, which helps with identifying PII.
+// The disadvantage of this approach is that this needs to be the first processor in the pipeline, otherwise the PII could become part of the Metadata of the chunk (for example: the Summary), which we do not process here.
+public sealed class PiiRemovalProcessor : IChunkProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -24,7 +29,7 @@ public sealed class PiiRemovalProcessor : ChunkProcessor
         _chatOptions = chatOptions;
     }
 
-    public override async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -36,6 +41,11 @@ public sealed class PiiRemovalProcessor : ChunkProcessor
         List<DocumentChunk> result = new(chunks.Count);
         foreach (DocumentChunk chunk in chunks)
         {
+            if (chunk.Metadata.Count > 0)
+            {
+                throw new InvalidOperationException("PiiRemovalProcessor does not support chunks with metadata. It should be the first processor in the pipeline, so it ensures that PII is removed before further processing.");
+            }
+
             var response = await _chatClient.GetResponseAsync(
             [
                 new(ChatRole.User,

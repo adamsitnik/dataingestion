@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class MarkdownChunkerTests : DocumentChunkerTests
     {
-        override protected DocumentChunker CreateDocumentChunker()
+        override protected IDocumentChunker CreateDocumentChunker()
         {
             return new MarkdownChunker();
         }
@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                 }
             });
 
-            DocumentChunker chunker = CreateDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(noHeaerDoc);
             Assert.True(chunks.Count == 1);
 
@@ -60,7 +60,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                 }
             });
 
-            DocumentChunker chunker = CreateDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(singleHeaderDoc);
             Assert.Single(chunks);
             DocumentChunk chunk = chunks.First();
@@ -92,7 +92,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                     }
                 }
             });
-            DocumentChunker chunker = CreateDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(singleHeaderTwoParagraphDoc);
             Assert.Single(chunks);
             DocumentChunk chunk = chunks.First();
@@ -131,7 +131,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                     }
                 }
             });
-            DocumentChunker chunker = new MarkdownChunker();
+            IDocumentChunker chunker = new MarkdownChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(multiHeaderDoc);
             Assert.Equal(2, chunks.Count);
 
@@ -174,7 +174,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                     }
                 }
             });
-            DocumentChunker chunker = CreateDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(twoHeaderDoc);
             Assert.Equal(2, chunks.Count);
 
@@ -237,7 +237,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                     }
                 }
             });
-            DocumentChunker chunker = CreateDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
 
             List<DocumentChunk> chunks = await chunker.ProcessAsync(complexDoc);
             Assert.Equal(4, chunks.Count);
@@ -309,7 +309,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                     }
                 }
             });
-            DocumentChunker chunker = new MarkdownChunker(2);
+            IDocumentChunker chunker = new MarkdownChunker(2);
 
             List<DocumentChunk> chunks = await chunker.ProcessAsync(complexDoc);
             Assert.Equal(3, chunks.Count);

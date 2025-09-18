@@ -3,14 +3,14 @@
 
 using Microsoft.Extensions.AI;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
 // This name is not final, we need to find a better one.
-public sealed class AlternativeTextEnricher : DocumentProcessor
+public sealed class AlternativeTextEnricher : IDocumentProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -21,7 +21,7 @@ public sealed class AlternativeTextEnricher : DocumentProcessor
         _chatOptions = chatOptions;
     }
 
-    public override async ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public async ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -30,7 +30,7 @@ public sealed class AlternativeTextEnricher : DocumentProcessor
             throw new ArgumentNullException(nameof(document));
         }
 
-        foreach (DocumentImage image in GetImages(document))
+        foreach (DocumentImage image in document.OfType<DocumentImage>())
         {
             if (image.Content is not null && !string.IsNullOrEmpty(image.MediaType)
                 && string.IsNullOrEmpty(image.AlternativeText))
@@ -49,35 +49,5 @@ public sealed class AlternativeTextEnricher : DocumentProcessor
         }
 
         return document;
-    }
-
-    private IEnumerable<DocumentImage> GetImages(Document document)
-    {
-        // For this particular processor the order does not matter, but since we already
-        // use Stack<T> in other places, we will use it here as well.
-        Stack<DocumentSection> sectionsToProcess = new();
-        for (int sectionIndex = document.Sections.Count - 1; sectionIndex >= 0; sectionIndex--)
-        {
-            sectionsToProcess.Push(document.Sections[sectionIndex]);
-        }
-
-        while (sectionsToProcess.Count > 0)
-        {
-            DocumentSection currentSection = sectionsToProcess.Pop();
-
-            for (int elementIndex = currentSection.Elements.Count - 1; elementIndex >= 0; elementIndex--)
-            {
-                DocumentElement currentElement = currentSection.Elements[elementIndex];
-
-                if (currentElement is DocumentSection nestedSection)
-                {
-                    sectionsToProcess.Push(nestedSection);
-                }
-                else if (currentElement is DocumentImage image)
-                {
-                    yield return image;
-                }
-            }
-        }
     }
 }

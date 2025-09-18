@@ -23,6 +23,6 @@ public class SummaryEnricherTests : ChatClientTestBase
         await sut.ProcessAsync(chunks);
 
         Assert.Equal(2, chunks.Count);
-        Assert.All(chunks, chunk => Assert.NotEmpty((string)chunk.Metadata["Summary"]!));
+        Assert.All(chunks, chunk => Assert.NotEmpty((string)chunk.Metadata[SummaryEnricher.MetadataKey]!));
     }
 }

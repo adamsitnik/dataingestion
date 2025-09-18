@@ -18,7 +18,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
     /// <remarks>This class uses a tokenizer to convert the document's content into tokens and then splits the
     /// tokens into chunks of a specified size, with a configurable overlap between consecutive chunks. The resulting
     /// chunks are returned as a list of <see cref="Chunk"/> objects.</remarks>
-    public sealed class DocumentTokenChunker : DocumentChunker
+    public sealed class DocumentTokenChunker : IDocumentChunker
     {
         private readonly Tokenizer _tokenizer;
         private readonly int _chunkSize;
@@ -34,7 +34,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _chunkOverlap = chunkOverlap >= 0 ? chunkOverlap : throw new ArgumentOutOfRangeException(nameof(chunkOverlap));
         }
 
-        public override ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 

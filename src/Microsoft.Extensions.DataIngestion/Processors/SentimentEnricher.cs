@@ -1,0 +1,63 @@
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using Microsoft.Extensions.AI;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Microsoft.Extensions.DataIngestion;
+
+/// <summary>
+/// Enriches chunks with sentiment analysis using an AI chat model.
+/// </summary>
+/// <remarks>
+/// It adds "sentiment" metadata to each chunk. It can be Positive, Negative, Neutral or Unknown when confidence score is below the threshold.
+/// </remarks>
+public sealed class SentimentEnricher : IChunkProcessor
+{
+    private readonly IChatClient _chatClient;
+    private readonly ChatOptions? _chatOptions;
+    private readonly double _confidenceThreshold;
+
+    public SentimentEnricher(IChatClient chatClient, ChatOptions? chatOptions = null, double confidenceThreshold = 0.7)
+    {
+        if (confidenceThreshold < 0.0 || confidenceThreshold > 1.0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(confidenceThreshold), "The confidence threshold must be between 0.0 and 1.0.");
+        }
+
+        _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
+        _chatOptions = chatOptions;
+        _confidenceThreshold = confidenceThreshold;
+    }
+
+    public static string MetadataKey => "sentiment";
+
+    public async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (chunks is null)
+        {
+            throw new ArgumentNullException(nameof(chunks));
+        }
+
+        foreach (DocumentChunk chunk in chunks)
+        {
+            var response = await _chatClient.GetResponseAsync(
+            [
+                new(ChatRole.User,
+                [
+                    new TextContent($"You are a sentiment analysis expert. Analyze the sentiment of the given text and return Positive/Negative/Neutral or Unknown when confidence score is below {_confidenceThreshold}. Return just the value of the sentiment."),
+                    new TextContent(chunk.Content),
+                ])
+            ], _chatOptions, cancellationToken: cancellationToken);
+
+            chunk.Metadata[MetadataKey] = response.Text;
+        }
+
+        return chunks;
+    }
+}

@@ -18,7 +18,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DocumentPipelineTests
 {
-    public static TheoryData<string[], DocumentReader, DocumentChunker> FilesAndReaders
+    public static TheoryData<string[], DocumentReader, IDocumentChunker> FilesAndReaders
     {
         get
         {
@@ -34,9 +34,9 @@ public class DocumentPipelineTests
             };
 
             List<DocumentReader> documentReaders = CreateReaders();
-            List<DocumentChunker> documentChunkers = CreateChunkers();
+            List<IDocumentChunker> documentChunkers = CreateChunkers();
 
-            TheoryData<string[], DocumentReader, DocumentChunker> theoryData = new();
+            TheoryData<string[], DocumentReader, IDocumentChunker> theoryData = new();
             foreach (DocumentReader reader in documentReaders)
             {
                 string[] filePaths = reader switch
@@ -45,7 +45,7 @@ public class DocumentPipelineTests
                     _ => nonMarkdownFiles
                 };
 
-                foreach (DocumentChunker chunker in documentChunkers)
+                foreach (IDocumentChunker chunker in documentChunkers)
                 {
                     theoryData.Add(filePaths, reader, chunker);
                 }
@@ -57,9 +57,9 @@ public class DocumentPipelineTests
 
     [Theory]
     [MemberData(nameof(FilesAndReaders))]
-    public async Task CanProcessDocuments(string[] filePaths, DocumentReader reader, DocumentChunker chunker)
+    public async Task CanProcessDocuments(string[] filePaths, DocumentReader reader, IDocumentChunker chunker)
     {
-        DocumentProcessor[] documentProcessors = [new DocumentFlattener()];
+        IDocumentProcessor[] documentProcessors = [new DocumentFlattener()];
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -92,7 +92,7 @@ public class DocumentPipelineTests
     [MemberData(nameof(Readers))]
     public async Task CanProcessDocumentsInDirectory(DocumentReader reader)
     {
-        DocumentChunker documentChunker = new DummyChunker();
+        IDocumentChunker documentChunker = new DummyChunker();
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -157,7 +157,7 @@ public class DocumentPipelineTests
         return readers;
     }
 
-    private static List<DocumentChunker> CreateChunkers() => [
+    private static List<IDocumentChunker> CreateChunkers() => [
         new DummyChunker(),
         // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
         new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"), 2000, 500)

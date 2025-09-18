@@ -13,8 +13,6 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public abstract class DocumentReaderConformanceTests
 {
-    private static readonly DocumentFlattener _documentFlattener = new();
-
     protected abstract DocumentReader CreateDocumentReader(bool extractImages = false);
 
     public static IEnumerable<object[]> Sources
@@ -34,7 +32,7 @@ public abstract class DocumentReaderConformanceTests
         Assert.NotEmpty(document.Sections);
         Assert.NotEmpty(document.Markdown);
 
-        var elements = Flatten(document).ToArray();
+        var elements = document.ToArray();
         Assert.Contains(elements, element => element is DocumentHeader);
         Assert.Contains(elements, element => element is DocumentParagraph);
         Assert.Contains(elements, element => element is DocumentTable);
@@ -89,7 +87,7 @@ public abstract class DocumentReaderConformanceTests
         var document = await reader.ReadAsync(filePath);
 
         SimpleAsserts(document, filePath, filePath);
-        var elements = Flatten(document).ToArray();
+        var elements = document.ToArray();
         Assert.Contains(elements, element => element is DocumentImage img && img.Content is not null && !string.IsNullOrEmpty(img.MediaType));
     }
 
@@ -133,16 +131,5 @@ public abstract class DocumentReaderConformanceTests
         {
             File.Delete(filePath);
         }
-    }
-
-    protected static IEnumerable<DocumentElement> Flatten(Document document)
-    {
-        ValueTask<Document> job = _documentFlattener.ProcessAsync(document);
-
-        Assert.True(job.IsCompletedSuccessfully);
-        Document flattenedDocument = job.Result;
-        Assert.Single(flattenedDocument.Sections); // We expect only one section in the flattened document
-
-        return flattenedDocument.Sections.Single().Elements;
     }
 }
