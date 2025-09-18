@@ -158,20 +158,25 @@ public sealed class VectorStoreWriter : DocumentWriter
         // Each Vector Store has a different max top count limit, so we use low value and loop.
         const int MaxTopCount = 1_000;
 
-        List<object> keys = new();
+        List<object>? keys = null;
+        int insertedCount;
         do
         {
-            keys.Clear();
+            insertedCount = 0;
 
             await foreach (var record in _vectorStoreCollection!.GetAsync(
                 filter: record => (string)record[DocumentIdName]! == document.Identifier,
                 top: MaxTopCount,
                 cancellationToken: cancellationToken))
             {
-                keys.Add(record[KeyName]!);
+                (keys ??= new()).Add(record[KeyName]!);
+                insertedCount++;
             }
+        } while (insertedCount == MaxTopCount);
 
+        if (keys is not null)
+        {
             await _vectorStoreCollection.DeleteAsync(keys, cancellationToken).ConfigureAwait(false);
-        } while (keys.Count == MaxTopCount);
+        }
     }
 }
