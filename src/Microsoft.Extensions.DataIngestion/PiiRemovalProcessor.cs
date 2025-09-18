@@ -12,13 +12,13 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <summary>
 /// This processor removes Personally Identifiable Information (PII) from document chunks using an AI chat model.
 /// </summary>
-// Design note: it's ChunkProcessor, rather than DocumentProcessor, because if we were dealing with Document,
+// Design note: it's IChunkProcessor, rather than DocumentProcessor, because if we were dealing with Document,
 // we would need to update not just the Markdown of every DocumentElement, but also Text.
 // And the Markdown of entire Document itself. Which could exceed the token limit of the AI model.
 // Moreover, there are fewer chunks than elements, so processing chunks is more efficient.
 // And when processing chunks, the LLM gets more context, which helps with identifying PII.
 // The disadvantage of this approach is that this needs to be the first processor in the pipeline, otherwise the PII could become part of the Metadata of the chunk (for example: the Summary), which we do not process here.
-public sealed class PiiRemovalProcessor : ChunkProcessor
+public sealed class PiiRemovalProcessor : IChunkProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -29,7 +29,7 @@ public sealed class PiiRemovalProcessor : ChunkProcessor
         _chatOptions = chatOptions;
     }
 
-    public override async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

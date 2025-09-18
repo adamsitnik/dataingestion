@@ -17,7 +17,7 @@ public class DocumentPipeline
         DocumentReader reader,
         IReadOnlyList<DocumentProcessor> documentProcessors,
         DocumentChunker chunker,
-        IReadOnlyList<ChunkProcessor> chunkProcessors,
+        IReadOnlyList<IChunkProcessor> chunkProcessors,
         DocumentWriter writer,
         ILoggerFactory? loggerFactory = default)
     {
@@ -35,7 +35,7 @@ public class DocumentPipeline
 
     public DocumentChunker Chunker { get; }
 
-    public IReadOnlyList<ChunkProcessor> ChunkProcessors { get; }
+    public IReadOnlyList<IChunkProcessor> ChunkProcessors { get; }
 
     public DocumentWriter Writer { get; }
 
@@ -121,7 +121,7 @@ public class DocumentPipeline
         List<DocumentChunk> chunks = await Chunker.ProcessAsync(document, cancellationToken);
         Logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
 
-        foreach (ChunkProcessor processor in ChunkProcessors)
+        foreach (IChunkProcessor processor in ChunkProcessors)
         {
             Logger?.LogInformation("Processing {ChunkCount} chunks for document '{DocumentId}' with '{Processor}'.", chunks.Count, document.Identifier, GetShortName(processor));
             chunks = await processor.ProcessAsync(chunks, cancellationToken);

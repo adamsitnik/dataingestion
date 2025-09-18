@@ -31,7 +31,7 @@ namespace Samples
 
             DocumentReader reader = CreateReader(readerId, extractImages);
             DocumentProcessor[] processors = CreateDocumentProcessors(extractImages);
-            ChunkProcessor[] chunkProcessors = CreateChunkProcessors();
+            IChunkProcessor[] chunkProcessors = CreateChunkProcessors();
 
             DocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
@@ -157,7 +157,7 @@ namespace Samples
             return [new AlternativeTextEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];
         }
 
-        private static ChunkProcessor[] CreateChunkProcessors()
+        private static IChunkProcessor[] CreateChunkProcessors()
         {
             AzureOpenAIClient openAIClient = CreateOpenAiClient();
             return [new SummaryEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];

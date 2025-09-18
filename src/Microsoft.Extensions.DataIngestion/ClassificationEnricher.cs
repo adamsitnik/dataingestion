@@ -15,7 +15,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <remarks>This class uses a chat-based language model to analyze the content of document chunks and assign a
 /// single, most relevant classification label. The classification is performed using a predefined set of classes, with
 /// an optional fallback class for cases where no suitable classification can be determined.</remarks>
-public class ClassificationEnricher : ChunkProcessor
+public class ClassificationEnricher : IChunkProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -40,7 +40,7 @@ public class ClassificationEnricher : ChunkProcessor
 
     public static string MetadataKey => "classification";
 
-    public override async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

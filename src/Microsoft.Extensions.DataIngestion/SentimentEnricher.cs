@@ -15,7 +15,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <remarks>
 /// It adds "sentiment" metadata to each chunk. It can be Positive, Negative, Neutral or Unknown when confidence score is below the threshold.
 /// </remarks>
-public sealed class SentimentEnricher : ChunkProcessor
+public sealed class SentimentEnricher : IChunkProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -35,7 +35,7 @@ public sealed class SentimentEnricher : ChunkProcessor
 
     public static string MetadataKey => "sentiment";
 
-    public override async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
