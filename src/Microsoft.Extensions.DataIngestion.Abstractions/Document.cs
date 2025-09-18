@@ -38,11 +38,7 @@ public sealed class Document : IEnumerable<DocumentElement>
 
         for (int sectionIndex = Sections.Count - 1; sectionIndex >= 0; sectionIndex--)
         {
-            DocumentSection section = Sections[sectionIndex];
-            for (int elementIndex = section.Elements.Count - 1; elementIndex >= 0; elementIndex--)
-            {
-                elementsToProcess.Push(section.Elements[elementIndex]);
-            }
+            elementsToProcess.Push(Sections[sectionIndex]);
         }
 
         while (elementsToProcess.Count > 0)
