@@ -19,7 +19,7 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
         Assert.NotEmpty(document.Sections);
         Assert.NotEmpty(document.Markdown);
 
-        var elements = Flatten(document).ToArray();
+        var elements = document.ToArray();
         
         bool isPdf = source.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
         if (!isPdf)
