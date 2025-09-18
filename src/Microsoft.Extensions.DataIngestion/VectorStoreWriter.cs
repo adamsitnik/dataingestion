@@ -11,17 +11,16 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public sealed class VectorStoreWriter : DocumentWriter
 {
-    // The storage names are hardcoded and lowercase with no special characters to ensure compatibility with various vector stores.
-    private const string KeyStorageName = "key";
-    private const string EmbeddingStorageName = "embedding";
-    private const string ContentStorageName = "content";
-    private const string ContextStorageName = "context";
-    private const string DocumentIdStorageName = "documentid";
+    // The names are lowercase with no special characters to ensure compatibility with various vector stores.
+    private const string KeyName = "key";
+    private const string EmbeddingName = "embedding";
+    private const string ContentName = "content";
+    private const string ContextName = "context";
+    private const string DocumentIdName = "documentid";
 
     private readonly VectorStore _vectorStore;
     private readonly int _dimensionCount;
-    private readonly string? _distanceFunction;
-    private readonly string _collectionName;
+    private readonly VectorStoreWriterOptions _options;
     private readonly bool _keysAreStrings;
 
     private VectorStoreCollection<object, Dictionary<string, object?>>? _vectorStoreCollection;
@@ -31,16 +30,14 @@ public sealed class VectorStoreWriter : DocumentWriter
     /// </summary>
     /// <param name="vectorStore">The <see cref="VectorStore"/> to use to store the <see cref="DocumentChunk"/> instances.</param>
     /// <param name="dimensionCount">The number of dimensions that the vector has. This value is required when creating collections.</param>
-    /// <param name="distanceFunction">The distance function to use when creating the collection. When not provided, the default specific to given database will be used. Check <see cref="DistanceFunction"/> for available values.</param>
-    /// <param name="collectionName">The name of the collection.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="vectorStore"/> or <paramref name="collectionName"/> are null.</exception>
+    /// <param name="options">The options for the vector store writer.</param>
+    /// <exception cref="ArgumentNullException">When <paramref name="vectorStore"/> is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">When <paramref name="dimensionCount"/> is less or equal zero.</exception>
-    public VectorStoreWriter(VectorStore vectorStore, int dimensionCount, string? distanceFunction = null, string? collectionName = "chunks")
+    public VectorStoreWriter(VectorStore vectorStore, int dimensionCount, VectorStoreWriterOptions? options = default)
     {
         _vectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
         _dimensionCount = dimensionCount > 0 ? dimensionCount : throw new ArgumentOutOfRangeException(nameof(dimensionCount));
-        _collectionName = string.IsNullOrEmpty(collectionName) ? throw new ArgumentNullException(nameof(collectionName)) : collectionName!;
-        _distanceFunction = distanceFunction;
+        _options = options ?? new VectorStoreWriterOptions();
         // Not all vector store support string as the key type, examples:
         // Qdrant: https://github.com/microsoft/semantic-kernel/blob/28ea2f4df872e8fd03ef0792ebc9e1989b4be0ee/dotnet/src/VectorData/Qdrant/QdrantCollection.cs#L104
         // When https://github.com/microsoft/semantic-kernel/issues/13141 gets released,
@@ -81,10 +78,12 @@ public sealed class VectorStoreWriter : DocumentWriter
             // We assume that every chunk has the same metadata schema so we use the first chunk as representative.
             DocumentChunk representativeChunk = chunks[0];
 
-            _vectorStoreCollection = _vectorStore.GetDynamicCollection(_collectionName, GetVectorStoreRecordDefinition(representativeChunk));
+            _vectorStoreCollection = _vectorStore.GetDynamicCollection(_options.CollectionName, GetVectorStoreRecordDefinition(representativeChunk));
 
             await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        await DeletePreExistingChunksForGivenDocument(document, cancellationToken).ConfigureAwait(false);
 
         foreach (DocumentChunk chunk in chunks)
         {
@@ -93,18 +92,18 @@ public sealed class VectorStoreWriter : DocumentWriter
             Guid key = Guid.NewGuid();
             Dictionary<string, object?> record = new()
             {
-                [KeyStorageName] = _keysAreStrings ? key.ToString() : key,
-                [ContentStorageName] = chunk.Content,
-                [EmbeddingStorageName] = chunk.Content,
-                [ContextStorageName] = chunk.Context,
-                [DocumentIdStorageName] = document.Identifier,
+                [KeyName] = _keysAreStrings ? key.ToString() : key,
+                [ContentName] = chunk.Content,
+                [EmbeddingName] = chunk.Content,
+                [ContextName] = chunk.Context,
+                [DocumentIdName] = document.Identifier,
             };
-    
+
             foreach (var metadata in chunk.Metadata)
             {
                 record[metadata.Key] = metadata.Value;
             }
-    
+
             await _vectorStoreCollection.UpsertAsync(record, cancellationToken).ConfigureAwait(false);
         }
     }
@@ -115,15 +114,16 @@ public sealed class VectorStoreWriter : DocumentWriter
         {
             Properties =
             {
-                new VectorStoreKeyProperty(KeyStorageName, _keysAreStrings ? typeof(string) : typeof(Guid)),
-                // By using string as the type here we allow the vector store to handle the conversion from string to the actual vector type it supports.
-                new VectorStoreVectorProperty(EmbeddingStorageName, typeof(string), _dimensionCount)
+                new VectorStoreKeyProperty(KeyName, _keysAreStrings ? typeof(string) : typeof(Guid)),
+                // By using string as the type here we allow the vector store
+                // to handle the conversion from string to the actual vector type it supports.
+                new VectorStoreVectorProperty(EmbeddingName, typeof(string), _dimensionCount)
                 {
-                    DistanceFunction = _distanceFunction
+                    DistanceFunction = _options.DistanceFunction
                 },
-                new VectorStoreDataProperty(ContentStorageName, typeof(string)),
-                new VectorStoreDataProperty(ContextStorageName, typeof(string)),
-                new VectorStoreDataProperty(DocumentIdStorageName, typeof(string))
+                new VectorStoreDataProperty(ContentName, typeof(string)),
+                new VectorStoreDataProperty(ContextName, typeof(string)),
+                new VectorStoreDataProperty(DocumentIdName, typeof(string))
                 {
                     IsIndexed = true
                 }
@@ -143,5 +143,36 @@ public sealed class VectorStoreWriter : DocumentWriter
         }
 
         return definition;
+    }
+
+    /// <summary>
+    /// We are about to insert new chunks for the given document, so we need to delete the existing ones first.
+    /// By doing that, we ensure that there are no duplicates and that the chunks are up-to-date.
+    /// </summary>
+    private async Task DeletePreExistingChunksForGivenDocument(Document document, CancellationToken cancellationToken)
+    {
+        if (!_options.IncrementalIngestion)
+        {
+            return;
+        }
+
+        // Each Vector Store has a different max top count limit, so we use low value and loop.
+        const int MaxTopCount = 1_000;
+
+        List<object> keys = new();
+        do
+        {
+            keys.Clear();
+
+            await foreach (var record in _vectorStoreCollection!.GetAsync(
+                filter: record => (string)record[DocumentIdName]! == document.Identifier,
+                top: MaxTopCount,
+                cancellationToken: cancellationToken))
+            {
+                keys.Add(record[KeyName]!);
+            }
+
+            await _vectorStoreCollection.DeleteAsync(keys, cancellationToken).ConfigureAwait(false);
+        } while (keys.Count == MaxTopCount);
     }
 }

@@ -36,14 +36,11 @@ public class VectorStoreWriterTests
     [MemberData(nameof(VectorStoreTestData))]
     public async Task CanGenerateDynamicSchema(VectorStore vectorStore, TestEmbeddingGenerator testEmbeddingGenerator)
     {
-        const string CollectionName = "chunks";
         string documentId = Guid.NewGuid().ToString();
-        string dbFilePath = Path.GetTempFileName();
 
         using VectorStoreWriter writer = new(
             vectorStore,
-            dimensionCount: TestEmbeddingGenerator.DimensionCount,
-            collectionName: CollectionName);
+            dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
         Document document = new(documentId);
         List<DocumentChunk> chunks = new()
@@ -63,7 +60,7 @@ public class VectorStoreWriterTests
         Assert.False(testEmbeddingGenerator.WasCalled);
         await writer.WriteAsync(document, chunks);
 
-        Dictionary<string, object?>? record = await writer.VectorStoreCollection
+        Dictionary<string, object?> record = await writer.VectorStoreCollection
             .GetAsync(filter: record => (string)record["documentid"]! == documentId, top: 1)
             .SingleAsync();
 
@@ -77,5 +74,64 @@ public class VectorStoreWriterTests
             Assert.True(record.ContainsKey(kvp.Key), $"Record does not contain key '{kvp.Key}'");
             Assert.Equal(kvp.Value, record[kvp.Key]);
         }
+    }
+
+    [Theory]
+    [MemberData(nameof(VectorStoreTestData))]
+    public async Task DoesSupportIncrementalIngestion(VectorStore vectorStore, TestEmbeddingGenerator _)
+    {
+        string documentId = Guid.NewGuid().ToString();
+
+        using VectorStoreWriter writer = new(
+            vectorStore,
+            dimensionCount: TestEmbeddingGenerator.DimensionCount,
+            options: new()
+            {
+                IncrementalIngestion = true,
+            });
+
+        Document document = new(documentId);
+        List<DocumentChunk> chunks = new()
+        {
+            new DocumentChunk("first chunk")
+            {
+                Metadata =
+                {
+                    { "key1", "value1" }
+                }
+            },
+            new DocumentChunk("second chunk")
+        };
+
+        await writer.WriteAsync(document, chunks);
+
+        int recordCount = await writer.VectorStoreCollection
+            .GetAsync(filter: record => (string)record["documentid"]! == documentId, top: 100)
+            .CountAsync();
+        Assert.Equal(chunks.Count, recordCount);
+
+        // Now we will do an incremental ingestion that updates the chunk(s).
+        List<DocumentChunk> updatedChunks = new()
+        {
+            new DocumentChunk("different content")
+            {
+                Metadata =
+                {
+                    { "key1", "value2" },
+                }
+            }
+        };
+
+        await writer.WriteAsync(document, updatedChunks);
+
+        // We ask for 100 records, but we expect only 1 as the previous 2 should have been deleted.
+        Dictionary<string, object?> record = await writer.VectorStoreCollection
+            .GetAsync(filter: record => (string)record["documentid"]! == documentId, top: 100)
+            .SingleAsync();
+
+        Assert.NotNull(record);
+        Assert.NotNull(record["key"]);
+        Assert.Equal("different content", record["content"]);
+        Assert.Equal("value2", record["key1"]);
     }
 }
