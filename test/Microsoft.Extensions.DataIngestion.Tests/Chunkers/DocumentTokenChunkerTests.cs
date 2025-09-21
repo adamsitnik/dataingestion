@@ -13,7 +13,12 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class DocumentTokenChunkerTests : DocumentChunkerTests
     {
-        protected override IDocumentChunker CreateDocumentChunker()
+        protected override IEnumerable<IDocumentChunker> GetTestedChunkers()
+        {
+            return [CreateDocumentTokenChunker(), CreateNoOverlapTokenChunker()];
+        }
+
+        private DocumentTokenChunker CreateDocumentTokenChunker()
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
             int chunkSize = 512;
@@ -21,7 +26,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             return new DocumentTokenChunker(tokenizer, chunkSize, chunkOverlap);
         }
 
-        private DocumentTokenChunker CreateNoOverlapTokenChkunker()
+        private DocumentTokenChunker CreateNoOverlapTokenChunker()
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
             int chunkSize = 512;
@@ -42,7 +47,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                 }
             });
 
-            IDocumentChunker chunker = CreateDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentTokenChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Single(chunks);
             DocumentChunk chunk = chunks.First();
@@ -61,7 +66,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                     new DocumentParagraph(text)
                 }
             });
-            IDocumentChunker chunker = CreateNoOverlapTokenChkunker();
+            IDocumentChunker chunker = CreateNoOverlapTokenChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(2, chunks.Count);
             Assert.True(chunks[0].Content.Split(' ').Length <= 512);

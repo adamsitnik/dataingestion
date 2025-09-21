@@ -11,9 +11,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class DummyChunkerTests : DocumentChunkerTests
     {
-        protected override IDocumentChunker CreateDocumentChunker()
+        protected override IEnumerable<IDocumentChunker> GetTestedChunkers()
         {
-            return new DummyChunker();
+            return [new DummyChunker()];
         }
     }
 }
