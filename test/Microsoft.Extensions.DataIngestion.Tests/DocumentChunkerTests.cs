@@ -32,21 +32,10 @@ namespace Microsoft.Extensions.DataIngestion.Tests
         }
 
         [Fact]
-        public async Task EmptyParagraphDocument()
+        public void EmptyParagraphDocumentCantBeCreated()
         {
-            Document emptyDoc = new("emptyDoc");
-            emptyDoc.Sections.Add(new DocumentSection
-            {
-                Elements =
-                {
-                    new DocumentParagraph()
-                }
-            });
-
-            IDocumentChunker chunker = CreateDocumentChunker();
-
-            List<DocumentChunk> chunks = await chunker.ProcessAsync(emptyDoc);
-            Assert.Empty(chunks);
+            Assert.Throws<ArgumentNullException>(() => new DocumentParagraph(null!));
+            Assert.Throws<ArgumentNullException>(() => new DocumentParagraph(""));
         }
     }
 }

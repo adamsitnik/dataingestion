@@ -17,22 +17,21 @@ public class HeaderChunkerTests
         Document doc = new("nonTrivial");
         doc.Sections.Add(new DocumentSection
         {
-            Markdown = "first section",
             Elements =
             {
-                new DocumentHeader { Markdown = "Header 1", Level = 1 },
-                    new DocumentHeader { Markdown = "Header 1_1", Level = 2 },
-                        new DocumentParagraph { Markdown = "Paragraph 1_1_1" },
-                        new DocumentHeader { Markdown = "Header 1_1_1", Level = 3 },
-                            new DocumentParagraph { Markdown = "Paragraph 1_1_1_1" },
-                            new DocumentParagraph { Markdown = "Paragraph 1_1_1_2" },
-                        new DocumentHeader { Markdown = "Header 1_1_2", Level = 3 },
-                            new DocumentParagraph { Markdown = "Paragraph 1_1_2_1" },
-                            new DocumentParagraph { Markdown = "Paragraph 1_1_2_2" },
-                    new DocumentHeader { Markdown = "Header 1_2", Level = 2 },
-                        new DocumentParagraph { Markdown = "Paragraph 1_2_1" },
-                        new DocumentHeader { Markdown = "Header 1_2_1", Level = 3 },
-                            new DocumentParagraph { Markdown = "Paragraph 1_2_1_1" },
+                new DocumentHeader("Header 1") { Level = 1 },
+                    new DocumentHeader("Header 1_1") { Level = 2 },
+                        new DocumentParagraph("Paragraph 1_1_1"),
+                        new DocumentHeader("Header 1_1_1") { Level = 3 },
+                            new DocumentParagraph("Paragraph 1_1_1_1"),
+                            new DocumentParagraph("Paragraph 1_1_1_2"),
+                        new DocumentHeader("Header 1_1_2") { Level = 3 },
+                            new DocumentParagraph("Paragraph 1_1_2_1"),
+                            new DocumentParagraph("Paragraph 1_1_2_2"),
+                    new DocumentHeader("Header 1_2") { Level = 2 },
+                        new DocumentParagraph("Paragraph 1_2_1"),
+                        new DocumentHeader("Header 1_2_1") { Level = 3 },
+                            new DocumentParagraph("Paragraph 1_2_1_1"),
             }
         });
 

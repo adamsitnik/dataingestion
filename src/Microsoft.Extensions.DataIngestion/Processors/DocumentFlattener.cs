@@ -19,12 +19,9 @@ public class DocumentFlattener : IDocumentProcessor
             throw new ArgumentNullException(nameof(document));
         }
 
-        DocumentSection rootSection = new()
-        {
-            // Since we have a single section that contains all elements,
-            // we can treat the Markdown of the whole Document as the section's Markdown.
-            Markdown = document.Markdown,
-        };
+        // Since we have a single section that contains all elements,
+        // we can treat the Markdown of the whole Document as the section's Markdown.
+        DocumentSection rootSection = new(document.Markdown);
 
         rootSection.Elements.AddRange(document.Where(element => element is not DocumentSection));
 

@@ -24,10 +24,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentParagraph
-                    {
-                        Markdown = "This is a document without headers.".ReplaceLineEndings()
-                    }
+                    new DocumentParagraph("This is a document without headers.")
                 }
             });
 
@@ -48,15 +45,11 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentHeader
+                    new DocumentHeader("# Header 1")
                     {
-                        Markdown = "# Header 1",
                         Level = 1
                     },
-                    new DocumentParagraph
-                    {
-                        Markdown = "This is the content under header 1.".ReplaceLineEndings()
-                    }
+                    new DocumentParagraph("This is the content under header 1.")
                 }
             });
 
@@ -77,19 +70,12 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentHeader
+                    new DocumentHeader("# Header 1")
                     {
-                        Markdown = "# Header 1",
                         Level = 1
                     },
-                    new DocumentParagraph
-                    {
-                        Markdown = "This is the first paragraph."
-                    },
-                    new DocumentParagraph
-                    {
-                        Markdown = "This is the second paragraph."
-                    }
+                    new DocumentParagraph("This is the first paragraph."),
+                    new DocumentParagraph("This is the second paragraph.")
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker();
@@ -111,24 +97,16 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentHeader
+                    new DocumentHeader("# Header 1")
                     {
-                        Markdown = "# Header 1",
                         Level = 1
                     },
-                    new DocumentParagraph
+                    new DocumentParagraph(content1),
+                    new DocumentHeader("## Header 2")
                     {
-                        Markdown = content1
-                    },
-                    new DocumentHeader
-                    {
-                        Markdown = "## Header 2",
                         Level = 2
                     },
-                    new DocumentParagraph
-                    {
-                        Markdown = content2
-                    }
+                    new DocumentParagraph(content2)
                 }
             });
             IDocumentChunker chunker = new MarkdownChunker();
@@ -154,24 +132,16 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentHeader
+                    new DocumentHeader("# Header 1")
                     {
-                        Markdown = "# Header 1",
                         Level = 1
                     },
-                    new DocumentParagraph
+                    new DocumentParagraph(content1),
+                    new DocumentHeader("# Header 2")
                     {
-                        Markdown = content1
-                    },
-                    new DocumentHeader
-                    {
-                        Markdown = "# Header 2",
                         Level = 1
                     },
-                    new DocumentParagraph
-                    {
-                        Markdown = content2
-                    }
+                    new DocumentParagraph(content2)
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker();
@@ -199,42 +169,26 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentHeader
+                    new DocumentHeader("# Header 1")
                     {
-                        Markdown = "# Header 1",
                         Level = 1
                     },
-                    new DocumentParagraph
+                    new DocumentParagraph(content1),
+                    new DocumentHeader("## Header 2")
                     {
-                        Markdown = content1
-                    },
-                    new DocumentHeader
-                    {
-                        Markdown = "## Header 2",
                         Level = 2
                     },
-                    new DocumentParagraph
+                    new DocumentParagraph(content2),
+                    new DocumentHeader("### Header 3")
                     {
-                        Markdown = content2
-                    },
-                    new DocumentHeader
-                    {
-                        Markdown = "### Header 3",
                         Level = 3
                     },
-                    new DocumentParagraph
+                    new DocumentParagraph(content3),
+                    new DocumentHeader("## Header 4")
                     {
-                        Markdown = content3
-                    },
-                    new DocumentHeader
-                    {
-                        Markdown = "## Header 4",
                         Level = 2
                     },
-                    new DocumentParagraph
-                    {
-                        Markdown = content4
-                    }
+                    new DocumentParagraph(content4)
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker();
@@ -271,42 +225,26 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentHeader
+                    new DocumentHeader("# Header 1")
                     {
-                        Markdown = "# Header 1",
                         Level = 1
                     },
-                    new DocumentParagraph
+                    new DocumentParagraph(content1),
+                    new DocumentHeader("## Header 2")
                     {
-                        Markdown = content1
-                    },
-                    new DocumentHeader
-                    {
-                        Markdown = "## Header 2",
                         Level = 2
                     },
-                    new DocumentParagraph
+                    new DocumentParagraph(content2),
+                    new DocumentHeader("### Header 3")
                     {
-                        Markdown = content2
-                    },
-                    new DocumentHeader
-                    {
-                        Markdown = "### Header 3",
                         Level = 3
                     },
-                    new DocumentParagraph
+                    new DocumentParagraph(content3),
+                    new DocumentHeader("## Header 4")
                     {
-                        Markdown = content3
-                    },
-                    new DocumentHeader
-                    {
-                        Markdown = "## Header 4",
                         Level = 2
                     },
-                    new DocumentParagraph
-                    {
-                        Markdown = content4
-                    }
+                    new DocumentParagraph(content4)
                 }
             });
             IDocumentChunker chunker = new MarkdownChunker(2);

@@ -63,11 +63,20 @@ public sealed class Document : IEnumerable<DocumentElement>
 [DebuggerDisplay("{GetType().Name}: {Markdown}")]
 public abstract class DocumentElement
 {
+    protected string _markdown;
+
+    protected DocumentElement(string markdown)
+    {
+        _markdown = string.IsNullOrEmpty(markdown) ? throw new ArgumentNullException(nameof(markdown)) : markdown;
+    }
+
+    protected internal DocumentElement() => _markdown = null!;
+
     private Dictionary<string, object?>? _metadata;
 
     public string Text { get; set; } = string.Empty;
 
-    public virtual string Markdown { get; set; } = string.Empty;
+    public virtual string Markdown => _markdown;
 
     public int? PageNumber { get; set; }
 
@@ -79,28 +88,41 @@ public abstract class DocumentElement
 /// </summary>
 public sealed class DocumentSection : DocumentElement
 {
-    private string? _markdown;
+    public DocumentSection(string markdown) : base(markdown)
+    {
+    }
+
+    // the user is not providing the Markdown, we will compute it from the elements
+    public DocumentSection() : base()
+    {
+    }
 
     public List<DocumentElement> Elements { get; } = [];
 
-    public override string Markdown
-    {
-        get => _markdown ??= string.Join("", Elements.Select(e => e.Markdown));
-        set => _markdown = value;
-    }
+    public override string Markdown => _markdown ??= string.Join("", Elements.Select(e => e.Markdown));
 }
 
 public sealed class DocumentParagraph : DocumentElement
 {
+    public DocumentParagraph(string markdown) : base(markdown)
+    {
+    }
 }
 
 public sealed class DocumentHeader : DocumentElement
 {
+    public DocumentHeader(string markdown) : base(markdown)
+    {
+    }
+
     public int? Level { get; set; }
 }
 
 public sealed class DocumentFooter : DocumentElement
 {
+    public DocumentFooter(string markdown) : base(markdown)
+    {
+    }
 }
 
 public sealed class DocumentTable : DocumentElement
@@ -108,10 +130,17 @@ public sealed class DocumentTable : DocumentElement
     // So far, we only support Markdown representation of the table
     // because "LLMs speak Markdown" and there was no need to access
     // individual rows/columns/cells.
+    public DocumentTable(string markdown) : base(markdown)
+    {
+    }
 }
 
 public sealed class DocumentImage : DocumentElement
 {
+    public DocumentImage(string markdown) : base(markdown)
+    {
+    }
+
     public BinaryData? Content { get; set; }
 
     public string? MediaType { get; set; }

@@ -38,7 +38,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentParagraph { Markdown = text }
+                    new DocumentParagraph(text)
                 }
             });
 
@@ -58,7 +58,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentParagraph { Markdown = text }
+                    new DocumentParagraph(text)
                 }
             });
             IDocumentChunker chunker = CreateNoOverlapTokenChkunker();
@@ -83,7 +83,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentParagraph { Markdown = text }
+                    new DocumentParagraph(text)
                 }
             });
 
