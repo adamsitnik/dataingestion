@@ -69,10 +69,7 @@ public sealed class MarkdownReader : DocumentReader
 
     private static Document Map(MarkdownDocument markdownDocument, string outputContent, string identifier)
     {
-        DocumentSection rootSection = new()
-        {
-            Markdown = outputContent
-        };
+        DocumentSection rootSection = new(outputContent);
         Document result = new(identifier)
         {
             Markdown = outputContent,
@@ -111,33 +108,33 @@ public sealed class MarkdownReader : DocumentReader
 
     private static DocumentElement MapBlock(string outputContent, bool previousWasBreak, Block block)
     {
+        string elementMarkdown = outputContent.Substring(block.Span.Start, block.Span.Length);
+
         DocumentElement element = block switch
         {
-            LeafBlock leafBlock => MapLeafBlockToElement(leafBlock, previousWasBreak),
-            ListBlock listBlock => MapListBlock(listBlock, previousWasBreak, outputContent),
-            QuoteBlock quoteBlock => MapQuoteBlock(quoteBlock, previousWasBreak, outputContent),
-            Markdig.Extensions.Tables.Table table => new DocumentTable(),
+            LeafBlock leafBlock => MapLeafBlockToElement(leafBlock, previousWasBreak, elementMarkdown),
+            ListBlock listBlock => MapListBlock(listBlock, previousWasBreak, outputContent, elementMarkdown),
+            QuoteBlock quoteBlock => MapQuoteBlock(quoteBlock, previousWasBreak, outputContent, elementMarkdown),
+            Markdig.Extensions.Tables.Table table => new DocumentTable(elementMarkdown),
             _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
         };
-
-        element.Markdown = outputContent.Substring(block.Span.Start, block.Span.Length);
 
         return element;
     }
 
-    private static DocumentElement MapLeafBlockToElement(LeafBlock block, bool previousWasBreak)
+    private static DocumentElement MapLeafBlockToElement(LeafBlock block, bool previousWasBreak, string elementMarkdown)
         => block switch
         {
-            HeadingBlock heading => new DocumentHeader
+            HeadingBlock heading => new DocumentHeader(elementMarkdown)
             {
                 Text = GetText(heading.Inline),
                 Level = heading.Level
             },
-            ParagraphBlock footer when previousWasBreak => new DocumentFooter
+            ParagraphBlock footer when previousWasBreak => new DocumentFooter(elementMarkdown)
             {
                 Text = GetText(footer.Inline),
             },
-            ParagraphBlock image when image.Inline!.FirstChild is LinkInline link && link.IsImage => new DocumentImage
+            ParagraphBlock image when image.Inline!.FirstChild is LinkInline link && link.IsImage => new DocumentImage(elementMarkdown)
             {
                 // ![Alt text](data:image/png;base64,...)
                 AlternativeText = link.FirstChild is LiteralInline literal ? literal.Content.ToString() : null,
@@ -148,21 +145,21 @@ public sealed class MarkdownReader : DocumentReader
                     ? "image/png"
                     : null // we may implement it in the future if needed
             },
-            ParagraphBlock paragraph => new DocumentParagraph
+            ParagraphBlock paragraph => new DocumentParagraph(elementMarkdown)
             {
                 Text = GetText(paragraph.Inline),
             },
-            CodeBlock codeBlock => new DocumentParagraph
+            CodeBlock codeBlock => new DocumentParagraph(elementMarkdown)
             {
                 Text = GetText(codeBlock.Inline),
             },
             _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
         };
 
-    private static DocumentSection MapListBlock(ListBlock listBlock, bool previousWasBreak, string outputContent)
+    private static DocumentSection MapListBlock(ListBlock listBlock, bool previousWasBreak, string outputContent, string listMarkdown)
     {
         // So far Sections were only pages (LP) or sections for ADI. Now they can also represent lists.
-        DocumentSection list = new();
+        DocumentSection list = new(listMarkdown);
         foreach (ListItemBlock item in listBlock)
         {
             foreach (LeafBlock child in item)
@@ -172,8 +169,8 @@ public sealed class MarkdownReader : DocumentReader
                     continue; // Skip empty blocks in lists
                 }
 
-                DocumentElement element = MapLeafBlockToElement(child, previousWasBreak);
-                element.Markdown = outputContent.Substring(child.Span.Start, child.Span.Length);
+                string childMarkdown = outputContent.Substring(child.Span.Start, child.Span.Length);
+                DocumentElement element = MapLeafBlockToElement(child, previousWasBreak, childMarkdown);
                 list.Elements.Add(element);
             }
         }
@@ -181,10 +178,10 @@ public sealed class MarkdownReader : DocumentReader
         return list;
     }
 
-    private static DocumentSection MapQuoteBlock(QuoteBlock quoteBlock, bool previousWasBreak, string outputContent)
+    private static DocumentSection MapQuoteBlock(QuoteBlock quoteBlock, bool previousWasBreak, string outputContent, string elementMarkdown)
     {
         // So far Sections were only pages (LP) or sections for ADI. Now they can also represent quotes.
-        DocumentSection quote = new();
+        DocumentSection quote = new(elementMarkdown);
         foreach (Block child in quoteBlock)
         {
             if (IsEmptyBlock(child))

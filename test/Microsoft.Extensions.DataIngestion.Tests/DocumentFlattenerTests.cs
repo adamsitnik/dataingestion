@@ -17,30 +17,27 @@ public class DocumentFlattenerTests
         };
         doc.Sections.Add(new DocumentSection
         {
-            Markdown = "first section",
             Elements =
             {
-                new DocumentHeader { Markdown = "header" },
-                new DocumentParagraph { Markdown = "paragraph" },
-                new DocumentTable { Markdown = "table" },
+                new DocumentHeader("header"),
+                new DocumentParagraph("paragraph"),
+                new DocumentTable("table"),
                 new DocumentSection
                 {
-                    Markdown = "nested section",
                     Elements =
                     {
-                        new DocumentHeader { Markdown = "nested header" },
-                        new DocumentParagraph { Markdown = "nested paragraph" }
+                        new DocumentHeader("nested header"),
+                        new DocumentParagraph("nested paragraph")
                     }
                 }
             }
         });
         doc.Sections.Add(new DocumentSection
         {
-            Markdown = "second section",
             Elements =
             {
-                new DocumentHeader { Markdown = "header 2" },
-                new DocumentParagraph { Markdown = "paragraph 2" }
+                new DocumentHeader("header 2"),
+                new DocumentParagraph("paragraph 2")
             }
         });
 

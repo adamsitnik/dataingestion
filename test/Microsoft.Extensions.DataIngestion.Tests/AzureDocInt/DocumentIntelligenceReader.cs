@@ -158,7 +158,6 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                         var parsedParagraph = parsed.Paragraphs[index];
                         var markdown = GetMarkdown(parsedParagraph.Spans, entireContent);
                         var paragraph = MapToElement(parsedParagraph, markdown);
-                        paragraph.Markdown = markdown;
                         paragraph.PageNumber = GetPageNumber(parsedParagraph.BoundingRegions);
                         paragraph.Metadata[nameof(AdiParagraph.BoundingRegions)] = parsedParagraph.BoundingRegions;
                         paragraph.Metadata[nameof(AdiParagraph.Role)] = parsedParagraph.Role;
@@ -167,10 +166,9 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                         break;
                     case "table":
                         var parsedTable = parsed.Tables[index];
-                        section.Elements.Add(new DocumentTable()
+                        section.Elements.Add(new DocumentTable(GetMarkdown(parsedTable.Spans, entireContent))
                         {
                             PageNumber = GetPageNumber(parsedTable.BoundingRegions),
-                            Markdown = GetMarkdown(parsedTable.Spans, entireContent),
                             Metadata =
                             {
                                 { nameof(parsedTable.RowCount), parsedTable.RowCount },
@@ -184,13 +182,12 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                     case "figure":
                         var figure = parsed.Figures[index];
                         BinaryData? content = figures.TryGetValue(figure.Id, out var data) ? data : null;
-                        section.Elements.Add(new DocumentImage
+                        section.Elements.Add(new DocumentImage(GetMarkdown(figure.Spans, entireContent))
                         {
                             Content = content,
                             MediaType = content?.MediaType ?? "image/png",
                             PageNumber = GetPageNumber(figure.BoundingRegions),
                             Text = figure.Caption?.Content ?? "",
-                            Markdown = GetMarkdown(figure.Spans, entireContent),
                             Metadata =
                             {
                                 { nameof(figure.Id), figure.Id },
@@ -244,7 +241,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
     {
         if (parsedParagraph.Role is null)
         {
-            return new DocumentParagraph
+            return new DocumentParagraph(markdown)
             {
                 Text = parsedParagraph.Content,
             };
@@ -253,7 +250,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
             || parsedParagraph.Role.Equals(ParagraphRole.SectionHeading) // If other parsers expose similar information, we could extend DocumentSection with DocumentHeader property.
             || parsedParagraph.Role.Equals(ParagraphRole.Title)) // Same as DocumentHeader, but for Presentations.
         {
-            return new DocumentHeader()
+            return new DocumentHeader(markdown)
             {
                 Text = parsedParagraph.Content,
                 Level = GetLevel(markdown)
@@ -262,7 +259,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         else if (parsedParagraph.Role.Equals(ParagraphRole.PageFooter)
             || parsedParagraph.Role.Equals(ParagraphRole.Footnote)) // Same as DocumentFooter, but for Presentations.
         {
-            return new DocumentFooter()
+            return new DocumentFooter(markdown)
             {
                 Text = parsedParagraph.Content,
             };

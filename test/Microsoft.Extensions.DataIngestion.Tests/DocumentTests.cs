@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Linq;
 using Xunit;
 
@@ -15,32 +16,29 @@ public class DocumentTests
         {
             Markdown = "same",
         };
-        doc.Sections.Add(new DocumentSection
+        doc.Sections.Add(new DocumentSection("first section")
         {
-            Markdown = "first section",
             Elements =
             {
-                new DocumentHeader { Markdown = "header" },
-                new DocumentParagraph { Markdown = "paragraph" },
-                new DocumentTable { Markdown = "table" },
-                new DocumentSection
+                new DocumentHeader("header"),
+                new DocumentParagraph("paragraph"),
+                new DocumentTable("table"),
+                new DocumentSection("nested section")
                 {
-                    Markdown = "nested section",
                     Elements =
                     {
-                        new DocumentHeader { Markdown = "nested header" },
-                        new DocumentParagraph { Markdown = "nested paragraph" }
+                        new DocumentHeader("nested header"),
+                        new DocumentParagraph("nested paragraph")
                     }
                 }
             }
         });
-        doc.Sections.Add(new DocumentSection
+        doc.Sections.Add(new DocumentSection("second section")
         {
-            Markdown = "second section",
             Elements =
             {
-                new DocumentHeader { Markdown = "header 2" },
-                new DocumentParagraph { Markdown = "paragraph 2" }
+                new DocumentHeader("header 2"),
+                new DocumentParagraph("paragraph 2")
             }
         });
 
@@ -67,4 +65,22 @@ public class DocumentTests
         Assert.IsType<DocumentParagraph>(flatElements[9]);
         Assert.Equal("paragraph 2", flatElements[9].Markdown);
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void EmptyParagraphDocumentCantBeCreated(string? input)
+        => Assert.Throws<ArgumentNullException>(() => new DocumentParagraph(input!));
+
+    [Fact]
+    public void EmptyMarkdownIsNotBeingCached()
+    {
+        Document doc = new("sut");
+        Assert.Empty(doc.Markdown);
+
+        doc.Sections.Add(new DocumentSection("section markdown"));
+        Assert.Equal(doc.Markdown, doc.Sections[0].Markdown);
+    }
+
+
 }

@@ -25,7 +25,16 @@ public sealed class Document : IEnumerable<DocumentElement>
 
     public string Markdown
     {
-        get => _markdown ??= string.Join("", Sections.Select(section => section.Markdown));
+        get
+        {
+            // In case there are no Sections, we don't want to cache an empty string.
+            if (string.IsNullOrEmpty(_markdown))
+            {
+                _markdown = string.Join("", Sections.Select(section => section.Markdown));
+            }
+
+            return _markdown!;
+        }
         set => _markdown = value;
     }
 
@@ -63,11 +72,20 @@ public sealed class Document : IEnumerable<DocumentElement>
 [DebuggerDisplay("{GetType().Name}: {Markdown}")]
 public abstract class DocumentElement
 {
+    protected string _markdown;
+
+    protected DocumentElement(string markdown)
+    {
+        _markdown = string.IsNullOrEmpty(markdown) ? throw new ArgumentNullException(nameof(markdown)) : markdown;
+    }
+
+    protected internal DocumentElement() => _markdown = null!;
+
     private Dictionary<string, object?>? _metadata;
 
     public string Text { get; set; } = string.Empty;
 
-    public virtual string Markdown { get; set; } = string.Empty;
+    public virtual string Markdown => _markdown;
 
     public int? PageNumber { get; set; }
 
@@ -79,28 +97,53 @@ public abstract class DocumentElement
 /// </summary>
 public sealed class DocumentSection : DocumentElement
 {
-    private string? _markdown;
+    public DocumentSection(string markdown) : base(markdown)
+    {
+    } 
+
+    // the user is not providing the Markdown, we will compute it from the elements
+    public DocumentSection() : base()
+    {
+    }
 
     public List<DocumentElement> Elements { get; } = [];
 
     public override string Markdown
     {
-        get => _markdown ??= string.Join("", Elements.Select(e => e.Markdown));
-        set => _markdown = value;
+        get
+        {
+            // In case there are no Elements, we don't want to cache an empty string.
+            if (string.IsNullOrEmpty(_markdown))
+            {
+                _markdown = string.Join("", Elements.Select(e => e.Markdown));
+            }
+
+            return _markdown;
+        }
     }
 }
 
 public sealed class DocumentParagraph : DocumentElement
 {
+    public DocumentParagraph(string markdown) : base(markdown)
+    {
+    }
 }
 
 public sealed class DocumentHeader : DocumentElement
 {
+    public DocumentHeader(string markdown) : base(markdown)
+    {
+    }
+
     public int? Level { get; set; }
 }
 
 public sealed class DocumentFooter : DocumentElement
 {
+    public DocumentFooter(string markdown) : base(markdown)
+    {
+    }
 }
 
 public sealed class DocumentTable : DocumentElement
@@ -108,10 +151,17 @@ public sealed class DocumentTable : DocumentElement
     // So far, we only support Markdown representation of the table
     // because "LLMs speak Markdown" and there was no need to access
     // individual rows/columns/cells.
+    public DocumentTable(string markdown) : base(markdown)
+    {
+    }
 }
 
 public sealed class DocumentImage : DocumentElement
 {
+    public DocumentImage(string markdown) : base(markdown)
+    {
+    }
+
     public BinaryData? Content { get; set; }
 
     public string? MediaType { get; set; }

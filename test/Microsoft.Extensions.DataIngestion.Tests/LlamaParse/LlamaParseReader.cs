@@ -117,10 +117,9 @@ public class LlamaParseReader : DocumentReader
     {
         foreach (var parsedPage in document.Pages)
         {
-            DocumentSection page = new()
+            DocumentSection page = new(parsedPage.Markdown)
             {
                 Text = parsedPage.Text,
-                Markdown = parsedPage.Markdown,
                 PageNumber = parsedPage.PageNumber,
                 Metadata =
                 {
@@ -132,11 +131,10 @@ public class LlamaParseReader : DocumentReader
 
             if (!string.IsNullOrEmpty(parsedPage.PageHeaderMarkdown))
             {
-                page.Elements.Add(new DocumentHeader()
+                page.Elements.Add(new DocumentHeader(parsedPage.PageHeaderMarkdown)
                 {
                     // It's weird: Page Header is exposed as Markdown, but not as Text.
                     Text = parsedPage.PageHeaderMarkdown.TrimStart('#'),
-                    Markdown = parsedPage.PageHeaderMarkdown
                 });
             }
 
@@ -144,23 +142,19 @@ public class LlamaParseReader : DocumentReader
             {
                 DocumentElement element = item switch
                 {
-                    TextPageItem text => new DocumentParagraph()
+                    TextPageItem text => new DocumentParagraph(item.Markdown)
                     {
                         Text = text.Value,
                     },
-                    HeadingPageItem heading => new DocumentHeader()
+                    HeadingPageItem heading => new DocumentHeader(item.Markdown)
                     {
                         Text = heading.Value,
                         Level = heading.Level,
                     },
-                    TablePageItem table => new DocumentTable()
-                    {
-                        Markdown = table.Markdown
-                    },
+                    TablePageItem table => new DocumentTable(table.Markdown),
                     _ => throw new InvalidOperationException()
                 };
                 element.PageNumber = parsedPage.PageNumber;
-                element.Markdown = item.Markdown;
                 element.Metadata[nameof(PageItem.BoundingBox)] = item.BoundingBox;
 
                 page.Elements.Add(element);
@@ -175,7 +169,7 @@ public class LlamaParseReader : DocumentReader
                 // the Base64 string might become the standard instead of BinaryData.
                 BinaryData binaryData = BinaryData.FromBytes(Convert.FromBase64String(image.Image!));
 
-                DocumentImage documentImage = new()
+                DocumentImage documentImage = new($"![]({image.ImageUrl})")
                 {
                     Content = binaryData,
                     MediaType = image.ImageMimetype,
@@ -193,11 +187,10 @@ public class LlamaParseReader : DocumentReader
 
             if (!string.IsNullOrEmpty(parsedPage.PageFooterMarkdown))
             {
-                page.Elements.Add(new DocumentFooter()
+                page.Elements.Add(new DocumentFooter(parsedPage.PageFooterMarkdown)
                 {
                     // It's weird: Page Footer is exposed as Markdown, but not as Text.
                     Text = parsedPage.PageFooterMarkdown.TrimStart('#'),
-                    Markdown = parsedPage.PageFooterMarkdown
                 });
             }
 

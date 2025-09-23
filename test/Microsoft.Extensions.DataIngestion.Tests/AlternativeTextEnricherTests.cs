@@ -14,9 +14,10 @@ public class AlternativeTextEnricherTests : ChatClientTestBase
     public async Task CanGenerateImageAltText()
     {
         AlternativeTextEnricher sut = new(ChatClient);
-        ReadOnlyMemory<byte> imageContent = await File.ReadAllBytesAsync(Path.Combine("TestFiles", "SampleImage.png"));
+        string imagePath = Path.Combine("TestFiles", "SampleImage.png");
+        ReadOnlyMemory<byte> imageContent = await File.ReadAllBytesAsync(imagePath);
 
-        DocumentImage documentImage = new()
+        DocumentImage documentImage = new($"![]({imagePath})")
         {
             AlternativeText = null,
             Content = BinaryData.FromBytes(imageContent),
