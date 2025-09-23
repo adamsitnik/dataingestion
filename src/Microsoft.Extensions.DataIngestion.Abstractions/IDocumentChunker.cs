@@ -9,5 +9,5 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public interface IDocumentChunker
 {
-    ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default);
+    Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default);
 }

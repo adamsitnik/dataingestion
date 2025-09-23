@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _stripHeaders = stripHeaders;
         }
 
-        public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
@@ -35,7 +35,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             elements.Reverse();
             var sectionStack = new Stack<DocumentElement>(elements);
 
-            return new(ParseLevel(sectionStack, 1));
+            return Task.FromResult(ParseLevel(sectionStack, 1));
         }
 
         private List<DocumentChunk> ParseLevel(Stack<DocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)

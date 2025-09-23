@@ -28,7 +28,7 @@ public sealed class HeaderChunker : IDocumentChunker
         _overlapTokens = overlapTokens >= 0 ? overlapTokens : throw new ArgumentOutOfRangeException(nameof(overlapTokens));
     }
 
-    public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         List<DocumentChunk> chunks = new();
         string?[] headers = new string?[MaxHeaderLevel + 1];
@@ -42,7 +42,7 @@ public sealed class HeaderChunker : IDocumentChunker
         // take care of any remaining paragraphs
         SplitIntoChunks(chunks, headers, paragraphs);
 
-        return new(chunks);
+        return Task.FromResult(chunks);
     }
 
     private void Process(DocumentSection section, List<DocumentChunk> chunks, string?[] headers, List<string> paragraphs)

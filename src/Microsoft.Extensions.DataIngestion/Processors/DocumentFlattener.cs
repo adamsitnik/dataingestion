@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public class DocumentFlattener : IDocumentProcessor
 {
-    public ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public Task<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -31,6 +31,6 @@ public class DocumentFlattener : IDocumentProcessor
             Sections = { rootSection }
         };
 
-        return new(flat);
+        return Task.FromResult(flat);
     }
 }

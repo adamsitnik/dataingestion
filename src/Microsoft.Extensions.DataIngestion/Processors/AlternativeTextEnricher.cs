@@ -21,7 +21,7 @@ public sealed class AlternativeTextEnricher : IDocumentProcessor
         _chatOptions = chatOptions;
     }
 
-    public async ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public async Task<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
