@@ -8,5 +8,5 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public interface IDocumentProcessor
 {
-    ValueTask<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default);
+    Task<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default);
 }

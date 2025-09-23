@@ -34,7 +34,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _chunkOverlap = chunkOverlap >= 0 ? chunkOverlap : throw new ArgumentOutOfRangeException(nameof(chunkOverlap));
         }
 
-        public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
@@ -42,7 +42,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
             List<DocumentChunk> textGroups = tokenGroups.Select(GroupToChunk).ToList();
 
-            return new(textGroups);
+            return Task.FromResult(textGroups);
         }
 
         private List<ArraySegment<int>> CreateGroups(int[] tokens)

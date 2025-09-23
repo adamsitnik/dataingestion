@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DummyChunker : IDocumentChunker
 {
-    public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         if (document is null) throw new ArgumentNullException(nameof(document));
 
@@ -19,7 +19,7 @@ public class DummyChunker : IDocumentChunker
         {
             Add(section, chunks);
         }
-        return new(chunks);
+        return Task.FromResult(chunks);
     }
 
     private static void Add(DocumentSection section, List<DocumentChunk> chunks)
