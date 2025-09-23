@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Linq;
 using Xunit;
 
@@ -64,4 +65,22 @@ public class DocumentTests
         Assert.IsType<DocumentParagraph>(flatElements[9]);
         Assert.Equal("paragraph 2", flatElements[9].Markdown);
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void EmptyParagraphDocumentCantBeCreated(string? input)
+        => Assert.Throws<ArgumentNullException>(() => new DocumentParagraph(input!));
+
+    [Fact]
+    public void EmptyMarkdownIsNotBeingCached()
+    {
+        Document doc = new("sut");
+        Assert.Empty(doc.Markdown);
+
+        doc.Sections.Add(new DocumentSection("section markdown"));
+        Assert.Equal(doc.Markdown, doc.Sections[0].Markdown);
+    }
+
+
 }

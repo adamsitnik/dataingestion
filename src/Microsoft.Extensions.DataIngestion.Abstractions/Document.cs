@@ -25,7 +25,16 @@ public sealed class Document : IEnumerable<DocumentElement>
 
     public string Markdown
     {
-        get => _markdown ??= string.Join("", Sections.Select(section => section.Markdown));
+        get
+        {
+            // In case there are no Sections, we don't want to cache an empty string.
+            if (string.IsNullOrEmpty(_markdown))
+            {
+                _markdown = string.Join("", Sections.Select(section => section.Markdown));
+            }
+
+            return _markdown!;
+        }
         set => _markdown = value;
     }
 
@@ -90,7 +99,7 @@ public sealed class DocumentSection : DocumentElement
 {
     public DocumentSection(string markdown) : base(markdown)
     {
-    }
+    } 
 
     // the user is not providing the Markdown, we will compute it from the elements
     public DocumentSection() : base()
@@ -99,7 +108,19 @@ public sealed class DocumentSection : DocumentElement
 
     public List<DocumentElement> Elements { get; } = [];
 
-    public override string Markdown => _markdown ??= string.Join("", Elements.Select(e => e.Markdown));
+    public override string Markdown
+    {
+        get
+        {
+            // In case there are no Elements, we don't want to cache an empty string.
+            if (string.IsNullOrEmpty(_markdown))
+            {
+                _markdown = string.Join("", Elements.Select(e => e.Markdown));
+            }
+
+            return _markdown;
+        }
+    }
 }
 
 public sealed class DocumentParagraph : DocumentElement

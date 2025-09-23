@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -29,13 +27,6 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 
             List<DocumentChunk> chunks = await chunker.ProcessAsync(emptyDoc);
             Assert.Empty(chunks);
-        }
-
-        [Fact]
-        public void EmptyParagraphDocumentCantBeCreated()
-        {
-            Assert.Throws<ArgumentNullException>(() => new DocumentParagraph(null!));
-            Assert.Throws<ArgumentNullException>(() => new DocumentParagraph(""));
         }
     }
 }
