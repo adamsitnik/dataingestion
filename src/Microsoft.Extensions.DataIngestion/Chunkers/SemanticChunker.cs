@@ -8,6 +8,7 @@ using System.Linq;
 using System.Numerics.Tensors;
 using System.Threading;
 using System.Threading.Tasks;
+using static Microsoft.Extensions.DataIngestion.ElementUtils;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
@@ -25,7 +26,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             IEnumerable<DocumentElement> elements = document.Where(element => element is not DocumentSection);
-            IEnumerable<string> units = elements.Select(e => e.Markdown); // Needs extension to work with all element types
+            IEnumerable<string> units = elements.Select(GetSemanticContent);
             Task<List<(string, float)>> sentenceDistances = CalculateDistances(units.ToArray());
 
             return MakeChunks(await sentenceDistances);
