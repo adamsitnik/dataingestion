@@ -75,7 +75,7 @@ public sealed class KeywordEnricher : IChunkProcessor
         }
 
         sb.Append($" Exclude keywords with confidence score below {confidenceThreshold}.");
-        
+
         return new(sb.ToString());
     }
 }

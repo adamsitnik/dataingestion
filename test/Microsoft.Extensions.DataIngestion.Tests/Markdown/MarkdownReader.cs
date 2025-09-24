@@ -104,7 +104,7 @@ public sealed class MarkdownReader : DocumentReader
     }
 
     private static bool IsEmptyBlock(Block block) // Block with no text. Sample: QuoteBlock the next block is a quote.
-        =>  block is LeafBlock emptyLeafBlock && (emptyLeafBlock.Inline is null || emptyLeafBlock.Inline.FirstChild is null);
+        => block is LeafBlock emptyLeafBlock && (emptyLeafBlock.Inline is null || emptyLeafBlock.Inline.FirstChild is null);
 
     private static DocumentElement MapBlock(string outputContent, bool previousWasBreak, Block block)
     {

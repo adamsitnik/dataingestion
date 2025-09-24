@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics.Tensors;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,16 +22,16 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _tresholdPercentile = tresholdPercentile;
         }
 
-        public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             IEnumerable<DocumentElement> elements = document.Where(element => element is not DocumentSection);
             IEnumerable<string> units = elements.Select(e => e.Markdown); // Needs extension to work with all element types
-            List<(string, float)> sentenceDistances = CalculateDistances(units.ToArray());
+            Task<List<(string, float)>> sentenceDistances = CalculateDistances(units.ToArray());
 
-            return Task.FromResult(MakeChunks(sentenceDistances));
+            return MakeChunks(await sentenceDistances);
         }
 
-        private List<(string, float)> CalculateDistances(string[] elements)
+        private async Task<List<(string, float)>> CalculateDistances(string[] elements)
         {
             List<(string, float)> sentenceDistance = new();
             if (!elements.Any(e => !String.IsNullOrEmpty(e)))
@@ -40,7 +39,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 return sentenceDistance;
             }
 
-            ReadOnlyMemory<float>[] embeddings = _embeddingGenerator.GenerateAsync(elements).Result.Select(e => e.Vector).ToArray();
+            ReadOnlyMemory<float>[] embeddings = (await _embeddingGenerator.GenerateAsync(elements)).Select(e => e.Vector).ToArray();
 
             for (int i = 0; i < elements.Length - 1; i++)
             {
@@ -71,7 +70,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 }
             }
 
-            if(elementAccumulator.Count > 0)
+            if (elementAccumulator.Count > 0)
             {
                 DocumentChunk chunk = new(String.Join(" ", elementAccumulator));
                 chunks.Add(chunk);

@@ -99,7 +99,7 @@ public sealed class DocumentSection : DocumentElement
 {
     public DocumentSection(string markdown) : base(markdown)
     {
-    } 
+    }
 
     // the user is not providing the Markdown, we will compute it from the elements
     public DocumentSection() : base()
