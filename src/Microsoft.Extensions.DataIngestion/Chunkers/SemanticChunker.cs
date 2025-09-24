@@ -16,38 +16,20 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
     {
         private IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
         private float _tresholdPercentile;
-        private SemanticChunkerMode _semanticChunkerMode;
 
-        public SemanticChunker(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, float tresholdPercentile = 95.0f, SemanticChunkerMode semanticChunkerMode = SemanticChunkerMode.DocumentElements)
+        public SemanticChunker(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, float tresholdPercentile = 95.0f)
         {
             _embeddingGenerator = embeddingGenerator;
             _tresholdPercentile = tresholdPercentile;
-            _semanticChunkerMode = semanticChunkerMode;
         }
 
-        public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             IEnumerable<DocumentElement> elements = document.Where(element => element is not DocumentSection);
-            IEnumerable<string> units;
-            switch (_semanticChunkerMode)
-            {
-                case SemanticChunkerMode.Sentence:
-                    units = elements.SelectMany(SplitSentences);
-                    break;
-                case SemanticChunkerMode.DocumentElements:
-                    units = elements.Select(e => e.Markdown); // Needs extension to work with all element types
-                    break;
-                default:
-                    throw new NotSupportedException($"The specified SemanticChunkerMode '{_semanticChunkerMode}' is not supported.");
-            }
+            IEnumerable<string> units = elements.Select(e => e.Markdown); // Needs extension to work with all element types
             List<(string, float)> sentenceDistances = CalculateDistances(units.ToArray());
 
-            return new(MakeChunks(sentenceDistances));
-        }
-
-        private IEnumerable<string> SplitSentences(DocumentElement element)
-        {
-            return Regex.Split(element.Markdown, @"(?<=[.!?])\s+(?=\p{Lu})").Where(s => !String.IsNullOrEmpty(s));
+            return Task.FromResult(MakeChunks(sentenceDistances));
         }
 
         private List<(string, float)> CalculateDistances(string[] elements)
@@ -116,11 +98,5 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             int i1 = Math.Min(i0 + 1, sorted.Length - 1);
             return sorted[i0] + (i - i0) * (sorted[i1] - sorted[i0]);
         }
-    }
-
-    public enum SemanticChunkerMode
-    {
-        Sentence,
-        DocumentElements
     }
 }

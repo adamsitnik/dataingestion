@@ -8,7 +8,6 @@ using OpenAI.Embeddings;
 using System;
 using System.ClientModel;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -16,13 +15,10 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class SemanticChunkerTests : DocumentChunkerTests
     {
-        protected override IEnumerable<IDocumentChunker> GetTestedChunkers()
+        protected override IDocumentChunker CreateDocumentChunker()
         {
-            return
-            [
-                CreateElementBasedDocumentChunker(),
-                CreateSentenceBasedDocumentChunker()
-            ];
+            EmbeddingClient embeddingClient = CreateEmbeddingClient();
+            return new SemanticChunker(embeddingClient.AsIEmbeddingGenerator());
         }
 
         private EmbeddingClient CreateEmbeddingClient()
@@ -40,43 +36,6 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             );
         }
 
-        private IDocumentChunker CreateSentenceBasedDocumentChunker()
-        {
-            EmbeddingClient embeddingClient = CreateEmbeddingClient();
-            return new SemanticChunker(embeddingClient.AsIEmbeddingGenerator(), semanticChunkerMode: SemanticChunkerMode.Sentence);
-        }
-
-        private IDocumentChunker CreateElementBasedDocumentChunker()
-        {
-            EmbeddingClient embeddingClient = CreateEmbeddingClient();
-            return new SemanticChunker(embeddingClient.AsIEmbeddingGenerator(), semanticChunkerMode: SemanticChunkerMode.DocumentElements);
-        }
-
-        [Fact]
-        public async Task TwoTopicsOneParagraph()
-        {
-            string text = ".NET is a free, cross-platform, open-source developer platform for building many kinds of applications. It can run programs written in multiple languages, with C# being the most popular. It relies on a high-performance runtime that is used in production by many high-scale apps. Zeus is the chief deity of the Greek pantheon. He is a sky and thunder god in ancient Greek religion and mythology.";
-
-            Document doc = new Document("doc");
-            doc.Sections.Add(new DocumentSection
-            {
-                Elements =
-                {
-                    new DocumentParagraph
-                    {
-                        Markdown = text
-                    }
-                }
-            });
-
-            IDocumentChunker chunker = CreateSentenceBasedDocumentChunker();
-            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
-            Assert.Equal(2, chunks.Count);
-            Assert.Equal(".NET is a free, cross-platform, open-source developer platform for building many kinds of applications. It can run programs written in multiple languages, with C# being the most popular. It relies on a high-performance runtime that is used in production by many high-scale apps.", chunks[0].Content);
-            Assert.Equal("Zeus is the chief deity of the Greek pantheon. He is a sky and thunder god in ancient Greek religion and mythology.", chunks[1].Content);
-
-        }
-
         [Fact]
         public async Task SingleParagph()
         {
@@ -86,13 +45,10 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentParagraph
-                    {
-                        Markdown = text
-                    }
+                    new DocumentParagraph(text)
                 }
             });
-            IDocumentChunker chunker = CreateElementBasedDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Single(chunks);
             Assert.Equal(text, chunks[0].Content);
@@ -109,22 +65,13 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             {
                 Elements =
                 {
-                    new DocumentParagraph
-                    {
-                        Markdown = text1
-                    },
-                    new DocumentParagraph
-                    {
-                        Markdown = text2
-                    },
-                    new DocumentParagraph
-                    {
-                        Markdown = text3
-                    }
+                    new DocumentParagraph(text1),
+                    new DocumentParagraph(text2),
+                    new DocumentParagraph(text3)
                 }
             });
 
-            IDocumentChunker chunker = CreateElementBasedDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(2, chunks.Count);
             Assert.Equal(String.Join(" ", text1, text2), chunks[0].Content);
