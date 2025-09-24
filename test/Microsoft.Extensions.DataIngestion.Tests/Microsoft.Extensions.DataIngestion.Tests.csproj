@@ -42,14 +42,12 @@
     <!-- Do not run the tests when AZURE_OPENAI_ENDPOINT environment variable is not set -->
     <Compile Remove="**\*EnricherTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
     <Compile Remove="PiiRemovalProcessorTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
-    <Compile Remove="SemanticChunkerTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
+    <Compile Remove="SemanticChunkerTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == '' Or '$(AZURE_OPENAI_API_KEY)' == ''" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Workaround https://github.com/dotnet/project-system/issues/935 -->
     <None Include="**/*.cs" />
-    <None Remove="Chunkers\NoOverlapTokenChunkerTests.cs" />
-    <None Remove="Chunkers\OverlapTokenChunkerTests.cs" />
     <None Update="TestFiles\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
