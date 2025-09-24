@@ -24,6 +24,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _tresholdPercentile = tresholdPercentile;
             _semanticChunkerMode = semanticChunkerMode;
         }
+
         public ValueTask<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             IEnumerable<DocumentElement> elements = document.Where(element => element is not DocumentSection);
@@ -115,7 +116,6 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             int i1 = Math.Min(i0 + 1, sorted.Length - 1);
             return sorted[i0] + (i - i0) * (sorted[i1] - sorted[i0]);
         }
-
     }
 
     public enum SemanticChunkerMode
