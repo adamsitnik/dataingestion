@@ -13,10 +13,15 @@ using static Microsoft.Extensions.DataIngestion.DiagnosticsConstants;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public class DocumentPipeline : IDocumentPipeline
+public sealed class DocumentPipeline : IDocumentPipeline
 {
     private readonly ActivitySource _activitySource;
     private readonly ILogger? _logger;
+    private readonly DocumentReader _reader;
+    private readonly IReadOnlyList<IDocumentProcessor> _processors;
+    private readonly IDocumentChunker _chunker;
+    private readonly IReadOnlyList<IChunkProcessor> _chunkProcessors;
+    private readonly IDocumentWriter _writer;
 
     public DocumentPipeline(
         DocumentReader reader,
@@ -27,30 +32,20 @@ public class DocumentPipeline : IDocumentPipeline
         ILoggerFactory? loggerFactory = default,
         string? sourceName = default)
     {
-        Reader = reader ?? throw new ArgumentNullException(nameof(reader));
-        Processors = documentProcessors ?? throw new ArgumentNullException(nameof(documentProcessors));
-        Chunker = chunker ?? throw new ArgumentNullException(nameof(chunker));
-        ChunkProcessors = chunkProcessors ?? throw new ArgumentNullException(nameof(chunkProcessors));
-        Writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _reader = reader ?? throw new ArgumentNullException(nameof(reader));
+        _processors = documentProcessors ?? throw new ArgumentNullException(nameof(documentProcessors));
+        _chunker = chunker ?? throw new ArgumentNullException(nameof(chunker));
+        _chunkProcessors = chunkProcessors ?? throw new ArgumentNullException(nameof(chunkProcessors));
+        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _logger = loggerFactory?.CreateLogger<DocumentPipeline>();
         _activitySource = new ActivitySource(sourceName ?? ActivitySourceName);
     }
 
     public void Dispose()
     {
-        Writer.Dispose();
+        _writer.Dispose();
         _activitySource.Dispose();
     }
-
-    public DocumentReader Reader { get; }
-
-    public IReadOnlyList<IDocumentProcessor> Processors { get; }
-
-    public IDocumentChunker Chunker { get; }
-
-    public IReadOnlyList<IChunkProcessor> ChunkProcessors { get; }
-
-    public IDocumentWriter Writer { get; }
 
     public async Task ProcessAsync(DirectoryInfo directory, string searchPattern = "*.*", SearchOption searchOption = SearchOption.TopDirectoryOnly, CancellationToken cancellationToken = default)
     {
@@ -116,10 +111,10 @@ public class DocumentPipeline : IDocumentPipeline
 
                     using (Activity? readerActivity = StartActivity(ReadDocument.ActivityName, ActivityKind.Client, processFileActivity))
                     {
-                        readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(Reader));
-                        _logger?.LogInformation("Reading file '{FilePath}' using '{Reader}'.", filePath, GetShortName(Reader));
+                        readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(_reader));
+                        _logger?.LogInformation("Reading file '{FilePath}' using '{Reader}'.", filePath, GetShortName(_reader));
 
-                        document = await Reader.ReadAsync(filePath, cancellationToken);
+                        document = await _reader.ReadAsync(filePath, cancellationToken);
 
                         processFileActivity?.SetTag(ProcessSource.DocumentIdTagName, document.Identifier);
                         _logger?.LogInformation("Read document '{DocumentId}'.", document.Identifier);
@@ -160,10 +155,10 @@ public class DocumentPipeline : IDocumentPipeline
 
                     using (Activity? readerActivity = StartActivity(ReadDocument.ActivityName, ActivityKind.Client, processUriActivity))
                     {
-                        readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(Reader));
-                        _logger?.LogInformation("Reading URI '{Uri}' using '{Reader}'.", source, GetShortName(Reader));
+                        readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(_reader));
+                        _logger?.LogInformation("Reading URI '{Uri}' using '{Reader}'.", source, GetShortName(_reader));
 
-                        document = await Reader.ReadAsync(source, cancellationToken);
+                        document = await _reader.ReadAsync(source, cancellationToken);
 
                         processUriActivity?.SetTag(ProcessSource.DocumentIdTagName, document.Identifier);
                         _logger?.LogInformation("Read document '{DocumentId}''.", document.Identifier);
@@ -177,7 +172,7 @@ public class DocumentPipeline : IDocumentPipeline
 
     private async Task ProcessAsync(Document document, Activity? parentActivity, CancellationToken cancellationToken)
     {
-        foreach (IDocumentProcessor processor in Processors)
+        foreach (IDocumentProcessor processor in _processors)
         {
             using (Activity? processorActivity = StartActivity(ProcessDocument.ActivityName, parent: parentActivity))
             {
@@ -195,16 +190,16 @@ public class DocumentPipeline : IDocumentPipeline
         List<DocumentChunk>? chunks = null;
         using (Activity? chunkerActivity = StartActivity(ChunkDocument.ActivityName, parent: parentActivity))
         {
-            chunkerActivity?.SetTag(ChunkDocument.ChunkerTagName, GetShortName(Chunker));
-            _logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, GetShortName(Chunker));
+            chunkerActivity?.SetTag(ChunkDocument.ChunkerTagName, GetShortName(_chunker));
+            _logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, GetShortName(_chunker));
 
-            chunks = await Chunker.ProcessAsync(document, cancellationToken);
+            chunks = await _chunker.ProcessAsync(document, cancellationToken);
 
             parentActivity?.SetTag(ProcessSource.ChunkCountTagName, chunks.Count);
             _logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
         }
 
-        foreach (IChunkProcessor processor in ChunkProcessors)
+        foreach (IChunkProcessor processor in _chunkProcessors)
         {
             using (Activity? processorActivity = StartActivity(ProcessChunk.ActivityName, parent: parentActivity))
             {
@@ -221,10 +216,10 @@ public class DocumentPipeline : IDocumentPipeline
 
         using (Activity? writerActivity = StartActivity(WriteDocument.ActivityName, ActivityKind.Client, parentActivity))
         {
-            writerActivity?.SetTag(WriteDocument.WriterTagName, GetShortName(Reader));
-            _logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(Writer));
+            writerActivity?.SetTag(WriteDocument.WriterTagName, GetShortName(_reader));
+            _logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(_writer));
 
-            await Writer.WriteAsync(document, chunks, cancellationToken);
+            await _writer.WriteAsync(document, chunks, cancellationToken);
 
             _logger?.LogInformation("Persisted chunks for document '{DocumentId}'.", document.Identifier);
         }
