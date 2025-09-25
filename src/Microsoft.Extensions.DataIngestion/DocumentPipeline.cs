@@ -255,7 +255,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
 
         using (Activity? writerActivity = StartActivity(WriteDocument.ActivityName, ActivityKind.Client, parentActivity))
         {
-            writerActivity?.SetTag(WriteDocument.WriterTagName, GetShortName(_reader));
+            writerActivity?.SetTag(WriteDocument.WriterTagName, GetShortName(_writer));
             _logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(_writer));
 
             await TryAsync(() => _writer.WriteAsync(document, chunks, cancellationToken), writerActivity);
