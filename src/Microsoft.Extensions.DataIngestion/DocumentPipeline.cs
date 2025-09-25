@@ -11,8 +11,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public class DocumentPipeline
+public class DocumentPipeline : IDocumentPipeline
 {
+    private readonly ILogger? _logger;
+
     public DocumentPipeline(
         DocumentReader reader,
         IReadOnlyList<IDocumentProcessor> documentProcessors,
@@ -26,7 +28,7 @@ public class DocumentPipeline
         Chunker = chunker ?? throw new ArgumentNullException(nameof(chunker));
         ChunkProcessors = chunkProcessors ?? throw new ArgumentNullException(nameof(chunkProcessors));
         Writer = writer ?? throw new ArgumentNullException(nameof(writer));
-        Logger = loggerFactory?.CreateLogger<DocumentPipeline>();
+        _logger = loggerFactory?.CreateLogger<DocumentPipeline>();
     }
 
     public DocumentReader Reader { get; }
@@ -38,8 +40,6 @@ public class DocumentPipeline
     public IReadOnlyList<IChunkProcessor> ChunkProcessors { get; }
 
     public IDocumentWriter Writer { get; }
-
-    protected ILogger? Logger { get; }
 
     public async Task ProcessAsync(DirectoryInfo directory, string searchPattern = "*.*", SearchOption searchOption = SearchOption.TopDirectoryOnly, CancellationToken cancellationToken = default)
     {
@@ -58,13 +58,13 @@ public class DocumentPipeline
             throw new ArgumentOutOfRangeException(nameof(searchOption));
         }
 
-        Logger?.LogInformation("Starting to process files in directory '{Directory}' with search pattern '{SearchPattern}' and search option '{SearchOption}'.", directory.FullName, searchPattern, searchOption);
+        _logger?.LogInformation("Starting to process files in directory '{Directory}' with search pattern '{SearchPattern}' and search option '{SearchOption}'.", directory.FullName, searchPattern, searchOption);
 
         IEnumerable<string> filePaths = directory.EnumerateFiles(searchPattern, searchOption).Select(fileInfo => fileInfo.FullName);
         await ProcessAsync(filePaths, cancellationToken);
     }
 
-    public virtual async Task ProcessAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+    public async Task ProcessAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -75,18 +75,18 @@ public class DocumentPipeline
 
         foreach (string filePath in filePaths)
         {
-            Logger?.LogInformation("Processing file '{FilePath}' using '{Reader}'.", filePath, GetShortName(Reader));
+            _logger?.LogInformation("Processing file '{FilePath}' using '{Reader}'.", filePath, GetShortName(Reader));
 
             Document document = await Reader.ReadAsync(filePath, cancellationToken);
 
-            Logger?.LogInformation("Read document '{DocumentId}' from file '{FilePath}'.", document.Identifier, filePath);
-            Logger?.LogDebug("Document content: {Content}", document.Markdown);
+            _logger?.LogInformation("Read document '{DocumentId}' from file '{FilePath}'.", document.Identifier, filePath);
+            _logger?.LogDebug("Document content: {Content}", document.Markdown);
 
             await ProcessAsync(document, cancellationToken);
         }
     }
 
-    public virtual async Task ProcessAsync(IEnumerable<Uri> sources, CancellationToken cancellationToken = default)
+    public async Task ProcessAsync(IEnumerable<Uri> sources, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -97,12 +97,12 @@ public class DocumentPipeline
 
         foreach (Uri source in sources)
         {
-            Logger?.LogInformation("Processing link '{Link}' using '{Reader}'.", source, GetShortName(Reader));
+            _logger?.LogInformation("Processing link '{Link}' using '{Reader}'.", source, GetShortName(Reader));
 
             Document document = await Reader.ReadAsync(source, cancellationToken);
 
-            Logger?.LogInformation("Read document '{DocumentId}' from link '{Link}'.", document.Identifier, source);
-            Logger?.LogDebug("Document content: {Content}", document.Markdown);
+            _logger?.LogInformation("Read document '{DocumentId}' from link '{Link}'.", document.Identifier, source);
+            _logger?.LogDebug("Document content: {Content}", document.Markdown);
 
             await ProcessAsync(document, cancellationToken);
         }
@@ -112,25 +112,25 @@ public class DocumentPipeline
     {
         foreach (IDocumentProcessor processor in Processors)
         {
-            Logger?.LogInformation("Processing document '{DocumentId}' with '{Processor}'.", document.Identifier, GetShortName(processor));
+            _logger?.LogInformation("Processing document '{DocumentId}' with '{Processor}'.", document.Identifier, GetShortName(processor));
             document = await processor.ProcessAsync(document, cancellationToken);
-            Logger?.LogInformation("Processed document '{DocumentId}'.", document.Identifier);
+            _logger?.LogInformation("Processed document '{DocumentId}'.", document.Identifier);
         }
 
-        Logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, GetShortName(Chunker));
+        _logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, GetShortName(Chunker));
         List<DocumentChunk> chunks = await Chunker.ProcessAsync(document, cancellationToken);
-        Logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
+        _logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
 
         foreach (IChunkProcessor processor in ChunkProcessors)
         {
-            Logger?.LogInformation("Processing {ChunkCount} chunks for document '{DocumentId}' with '{Processor}'.", chunks.Count, document.Identifier, GetShortName(processor));
+            _logger?.LogInformation("Processing {ChunkCount} chunks for document '{DocumentId}' with '{Processor}'.", chunks.Count, document.Identifier, GetShortName(processor));
             chunks = await processor.ProcessAsync(chunks, cancellationToken);
-            Logger?.LogInformation("Processed chunks for document '{DocumentId}'.", document.Identifier);
+            _logger?.LogInformation("Processed chunks for document '{DocumentId}'.", document.Identifier);
         }
 
-        Logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(Writer));
+        _logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(Writer));
         await Writer.WriteAsync(document, chunks, cancellationToken);
-        Logger?.LogInformation("Persisted chunks for document '{DocumentId}'.", document.Identifier);
+        _logger?.LogInformation("Persisted chunks for document '{DocumentId}'.", document.Identifier);
     }
 
     private string GetShortName(object any)
