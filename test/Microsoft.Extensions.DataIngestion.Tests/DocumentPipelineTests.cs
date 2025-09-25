@@ -75,7 +75,7 @@ public class DocumentPipelineTests
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
-        DocumentPipeline pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
+        using DocumentPipeline pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
         await pipeline.ProcessAsync(filePaths);
 
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
@@ -114,7 +114,7 @@ public class DocumentPipelineTests
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
-        DocumentPipeline pipeline = new(reader, documentProcessors, documentChunker, [], vectorStoreWriter);
+        using DocumentPipeline pipeline = new(reader, documentProcessors, documentChunker, [], vectorStoreWriter);
 
         DirectoryInfo directory = new("TestFiles");
         string searchPattern = reader switch

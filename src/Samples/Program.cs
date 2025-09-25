@@ -47,7 +47,7 @@ namespace Samples
                 });
             using VectorStoreWriter writer = new(sqlServerVectorStore, 1536 /* text-embedding-3-small */);
 
-            DocumentPipeline pipeline = new(reader, processors, chunker, chunkProcessors, writer, loggerFactory);
+            using DocumentPipeline pipeline = new(reader, processors, chunker, chunkProcessors, writer, loggerFactory);
 
             if (files?.Length > 0)
             {
@@ -96,7 +96,7 @@ namespace Samples
 
             using QAWriter writer = new(collection, openAIClient.GetChatClient("gpt-4.1").AsIChatClient());
 
-            DocumentPipeline pipeline = new(reader, processors, chunker, [], writer, loggerFactory);
+            using DocumentPipeline pipeline = new(reader, processors, chunker, [], writer, loggerFactory);
 
             if (files?.Length > 0)
             {

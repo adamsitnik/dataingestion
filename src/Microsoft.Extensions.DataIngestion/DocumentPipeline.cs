@@ -36,6 +36,12 @@ public class DocumentPipeline : IDocumentPipeline
         _activitySource = new ActivitySource(sourceName ?? ActivitySourceName);
     }
 
+    public void Dispose()
+    {
+        Writer.Dispose();
+        _activitySource.Dispose();
+    }
+
     public DocumentReader Reader { get; }
 
     public IReadOnlyList<IDocumentProcessor> Processors { get; }
