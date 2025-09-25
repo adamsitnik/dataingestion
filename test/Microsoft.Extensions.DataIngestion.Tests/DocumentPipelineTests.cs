@@ -92,7 +92,7 @@ public class DocumentPipelineTests
             Assert.Contains((string)retrieved[i]["documentid"]!, filePaths);
         }
 
-        AssertActivities(activities);
+        AssertActivities(activities, "ProcessFiles");
     }
 
     public static TheoryData<DocumentReader> Readers => new(CreateReaders());
@@ -138,7 +138,7 @@ public class DocumentPipelineTests
             Assert.StartsWith(directory.FullName, (string)retrieved[i]["documentid"]!);
         }
 
-        AssertActivities(activities);
+        AssertActivities(activities, "ProcessDirectory");
     }
 
     [Fact]
@@ -216,11 +216,11 @@ public class DocumentPipelineTests
             .AddInMemoryExporter(activities)
             .Build();
 
-    private static void AssertActivities(List<Activity> activities)
+    private static void AssertActivities(List<Activity> activities, string rootActivityName)
     {
         Assert.NotEmpty(activities);
         Assert.All(activities, a => Assert.Equal("Experimental.Microsoft.Extensions.DataIngestion", a.Source.Name));
-        Assert.Single(activities, a => a.OperationName == "ProcessFiles");
+        Assert.Single(activities, a => a.OperationName == rootActivityName);
         Assert.Contains(activities, a => a.OperationName == "ProcessFile");
         Assert.Contains(activities, a => a.OperationName == "ReadDocument");
         Assert.Contains(activities, a => a.OperationName == "ProcessDocument");
