@@ -100,7 +100,6 @@ public abstract class DocumentReaderConformanceTests
         await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync(new Uri("https://www.microsoft.com/"), identifier: string.Empty));
         await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync("fileName.txt", identifier: null!));
         await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync("fileName.txt", identifier: string.Empty));
-
     }
 
     [Fact]
