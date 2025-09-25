@@ -141,6 +141,37 @@ public class DocumentPipelineTests
         AssertActivities(activities);
     }
 
+    [Fact]
+    public async Task CanTraceExceptions()
+    {
+        List<Activity> activities = [];
+        using TracerProvider tracerProvider = CreateTraceProvider(activities);
+
+        IDocumentProcessor[] documentProcessors = [new DocumentFlattener()];
+        IDocumentChunker documentChunker = new DummyChunker();
+        TestEmbeddingGenerator embeddingGenerator = new();
+        InMemoryVectorStoreOptions options = new()
+        {
+            EmbeddingGenerator = embeddingGenerator
+        };
+        using InMemoryVectorStore testVectorStore = new(options);
+        using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
+
+        using DocumentPipeline pipeline = new(new ThrowingReader(), documentProcessors, documentChunker, [], vectorStoreWriter);
+
+        await Assert.ThrowsAsync<ExpectedException>(() => pipeline.ProcessAsync(["ReaderWillThrowAnyway.cs"]));
+        AssertErrorActivities(activities);
+        activities.Clear();
+
+        await Assert.ThrowsAsync<ExpectedException>(() => pipeline.ProcessAsync([new Uri("https://readerwillthrow.anyway/")]));
+        AssertErrorActivities(activities);
+        activities.Clear();
+
+        await Assert.ThrowsAsync<ExpectedException>(() => pipeline.ProcessAsync(new DirectoryInfo(".")));
+        AssertErrorActivities(activities);
+        activities.Clear();
+    }
+
     private static List<DocumentReader> CreateReaders()
     {
         List<DocumentReader> readers = new()
@@ -195,5 +226,29 @@ public class DocumentPipelineTests
         Assert.Contains(activities, a => a.OperationName == "ProcessDocument");
         Assert.Contains(activities, a => a.OperationName == "ChunkDocument");
         Assert.Contains(activities, a => a.OperationName == "WriteDocument");
+    }
+
+    private static void AssertErrorActivities(List<Activity> activities)
+    {
+        Assert.NotEmpty(activities);
+        Assert.All(activities, a => Assert.Equal("Experimental.Microsoft.Extensions.DataIngestion", a.Source.Name));
+        Assert.All(activities, a => Assert.Equal(ActivityStatusCode.Error, a.Status));
+        Assert.All(activities, a => Assert.Equal(ExpectedException.ExceptionMessage, a.StatusDescription));
+    }
+
+    private class ThrowingReader : DocumentReader
+    {
+        public override Task<Document> ReadAsync(string filePath, string identifier, System.Threading.CancellationToken cancellationToken = default)
+            => throw new ExpectedException();
+
+        public override Task<Document> ReadAsync(Uri source, string identifier, System.Threading.CancellationToken cancellationToken = default)
+            => throw new ExpectedException();
+    }
+
+    private class ExpectedException : Exception
+    {
+        internal const string ExceptionMessage = "An expected exception occurred.";
+
+        public ExpectedException() : base(ExceptionMessage) { }
     }
 }

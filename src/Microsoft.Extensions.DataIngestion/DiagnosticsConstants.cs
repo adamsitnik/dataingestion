@@ -6,6 +6,7 @@ namespace Microsoft.Extensions.DataIngestion;
 internal static class DiagnosticsConstants
 {
     internal const string ActivitySourceName = "Experimental.Microsoft.Extensions.DataIngestion";
+    internal const string ErrorTypeTagName = "error.type";
 
     internal static class ProcessDirectory
     {

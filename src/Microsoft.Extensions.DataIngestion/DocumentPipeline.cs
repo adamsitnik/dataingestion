@@ -73,7 +73,19 @@ public sealed class DocumentPipeline : IDocumentPipeline
             _logger?.LogInformation("Starting to process files in directory '{Directory}' with search pattern '{SearchPattern}' and search option '{SearchOption}'.", directory.FullName, searchPattern, searchOption);
 
             IEnumerable<string> filePaths = directory.EnumerateFiles(searchPattern, searchOption).Select(fileInfo => fileInfo.FullName);
-            await ProcessAsync(filePaths, cancellationToken, rootActivity);
+
+            try
+            {
+                await ProcessAsync(filePaths, cancellationToken, rootActivity);
+            }
+            catch (Exception ex)
+            {
+                TraceException(rootActivity, ex);
+
+                _logger?.LogError(ex, "An error occurred while processing files in directory '{Directory}'.", directory.FullName);
+
+                throw;
+            }
         }
     }
 
@@ -86,10 +98,24 @@ public sealed class DocumentPipeline : IDocumentPipeline
             throw new ArgumentNullException(nameof(filePaths));
         }
 
-        await ProcessAsync(filePaths, cancellationToken, parent: default);
+        using (Activity? rootActivity = StartActivity(ProcessFiles.ActivityName, ActivityKind.Internal))
+        {
+            try
+            {
+                await ProcessAsync(filePaths, cancellationToken, rootActivity);
+            }
+            catch (Exception ex)
+            {
+                TraceException(rootActivity, ex);
+
+                _logger?.LogError(ex, "An error occurred while processing files.");
+
+                throw;
+            }
+        }
     }
 
-    private async Task ProcessAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken, Activity? parent = default)
+    private async Task ProcessAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken, Activity? rootActivity = default)
     {
         IReadOnlyList<string> filePathList = filePaths as IReadOnlyList<string> ?? filePaths.ToList();
         if (filePathList.Count == 0)
@@ -97,31 +123,28 @@ public sealed class DocumentPipeline : IDocumentPipeline
             return;
         }
 
-        using (Activity? rootActivity = StartActivity(ProcessFiles.ActivityName, ActivityKind.Internal, parent))
+        rootActivity?.SetTag(ProcessFiles.FileCountTagName, filePathList.Count);
+        _logger?.LogInformation("Processing {FileCount} files.", filePathList.Count);
+
+        foreach (string filePath in filePathList)
         {
-            rootActivity?.SetTag(ProcessFiles.FileCountTagName, filePathList.Count);
-            _logger?.LogInformation("Processing {FileCount} files.", filePathList.Count);
-
-            foreach (string filePath in filePathList)
+            using (Activity? processFileActivity = StartActivity(ProcessFile.ActivityName, parent: rootActivity))
             {
-                using (Activity? processFileActivity = StartActivity(ProcessFile.ActivityName, parent: rootActivity))
+                processFileActivity?.SetTag(ProcessFile.FilePathTagName, filePath);
+                Document? document = null;
+
+                using (Activity? readerActivity = StartActivity(ReadDocument.ActivityName, ActivityKind.Client, processFileActivity))
                 {
-                    processFileActivity?.SetTag(ProcessFile.FilePathTagName, filePath);
-                    Document? document = null;
+                    readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(_reader));
+                    _logger?.LogInformation("Reading file '{FilePath}' using '{Reader}'.", filePath, GetShortName(_reader));
 
-                    using (Activity? readerActivity = StartActivity(ReadDocument.ActivityName, ActivityKind.Client, processFileActivity))
-                    {
-                        readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(_reader));
-                        _logger?.LogInformation("Reading file '{FilePath}' using '{Reader}'.", filePath, GetShortName(_reader));
+                    document = await TryAsync(() => _reader.ReadAsync(filePath, cancellationToken), readerActivity, processFileActivity);
 
-                        document = await _reader.ReadAsync(filePath, cancellationToken);
-
-                        processFileActivity?.SetTag(ProcessSource.DocumentIdTagName, document.Identifier);
-                        _logger?.LogInformation("Read document '{DocumentId}'.", document.Identifier);
-                    }
-
-                    await ProcessAsync(document, processFileActivity, cancellationToken);
+                    processFileActivity?.SetTag(ProcessSource.DocumentIdTagName, document.Identifier);
+                    _logger?.LogInformation("Read document '{DocumentId}'.", document.Identifier);
                 }
+
+                await TryAsync(() => ProcessAsync(document, processFileActivity, cancellationToken), processFileActivity);
             }
         }
     }
@@ -146,6 +169,22 @@ public sealed class DocumentPipeline : IDocumentPipeline
             rootActivity?.SetTag(ProcessUris.UriCountTagName, sourcesList.Count);
             _logger?.LogInformation("Processing {UriCount} URIs.", sourcesList.Count);
 
+            try
+            {
+                await ProcessAsync(sourcesList, rootActivity, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                TraceException(rootActivity, ex);
+
+                _logger?.LogError(ex, "An error occurred while processing URIs.");
+
+                throw;
+            }
+        }
+
+        async Task ProcessAsync(IReadOnlyList<Uri> sourcesList, Activity? rootActivity, CancellationToken cancellationToken)
+        {
             foreach (Uri source in sourcesList)
             {
                 using (Activity? processUriActivity = StartActivity(ProcessUri.ActivityName, parent: rootActivity))
@@ -158,13 +197,13 @@ public sealed class DocumentPipeline : IDocumentPipeline
                         readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(_reader));
                         _logger?.LogInformation("Reading URI '{Uri}' using '{Reader}'.", source, GetShortName(_reader));
 
-                        document = await _reader.ReadAsync(source, cancellationToken);
+                        document = await TryAsync(() => _reader.ReadAsync(source, cancellationToken), readerActivity, processUriActivity);
 
                         processUriActivity?.SetTag(ProcessSource.DocumentIdTagName, document.Identifier);
-                        _logger?.LogInformation("Read document '{DocumentId}''.", document.Identifier);
+                        _logger?.LogInformation("Read document '{DocumentId}'.", document.Identifier);
                     }
 
-                    await ProcessAsync(document, processUriActivity, cancellationToken);
+                    await TryAsync(() => this.ProcessAsync(document, processUriActivity, cancellationToken), processUriActivity);
                 }
             }
         }
@@ -179,7 +218,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
                 processorActivity?.SetTag(ProcessDocument.ProcessorTagName, GetShortName(processor));
                 _logger?.LogInformation("Processing document '{DocumentId}' with '{Processor}'.", document.Identifier, GetShortName(processor));
 
-                document = await processor.ProcessAsync(document, cancellationToken);
+                document = await TryAsync(() => processor.ProcessAsync(document, cancellationToken), processorActivity);
 
                 // A DocumentProcessor might change the document identifier (for example by extracting it from its content), so update the ID tag.
                 parentActivity?.SetTag(ProcessSource.DocumentIdTagName, document.Identifier);
@@ -193,7 +232,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
             chunkerActivity?.SetTag(ChunkDocument.ChunkerTagName, GetShortName(_chunker));
             _logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, GetShortName(_chunker));
 
-            chunks = await _chunker.ProcessAsync(document, cancellationToken);
+            chunks = await TryAsync(() => _chunker.ProcessAsync(document, cancellationToken), chunkerActivity);
 
             parentActivity?.SetTag(ProcessSource.ChunkCountTagName, chunks.Count);
             _logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
@@ -206,7 +245,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
                 processorActivity?.SetTag(ProcessChunk.ProcessorTagName, GetShortName(processor));
                 _logger?.LogInformation("Processing {ChunkCount} chunks for document '{DocumentId}' with '{Processor}'.", chunks.Count, document.Identifier, GetShortName(processor));
 
-                chunks = await processor.ProcessAsync(chunks, cancellationToken);
+                chunks = await TryAsync(() => processor.ProcessAsync(chunks, cancellationToken), processorActivity);
 
                 // A ChunkProcessor might change the number of chunks, so update the chunk count tag.
                 parentActivity?.SetTag(ProcessSource.ChunkCountTagName, chunks.Count);
@@ -219,7 +258,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
             writerActivity?.SetTag(WriteDocument.WriterTagName, GetShortName(_reader));
             _logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(_writer));
 
-            await _writer.WriteAsync(document, chunks, cancellationToken);
+            await TryAsync(() => _writer.WriteAsync(document, chunks, cancellationToken), writerActivity);
 
             _logger?.LogInformation("Persisted chunks for document '{DocumentId}'.", document.Identifier);
         }
@@ -246,5 +285,40 @@ public sealed class DocumentPipeline : IDocumentPipeline
         }
 
         return _activitySource.StartActivity(name, activityKind, parent.Context);
+    }
+
+    private static async Task<T> TryAsync<T>(Func<Task<T>> func, Activity? activity, Activity? parentActivity = default)
+    {
+        try
+        {
+            return await func();
+        }
+        catch (Exception ex)
+        {
+            TraceException(activity, ex);
+            TraceException(parentActivity, ex);
+
+            throw;
+        }
+    }
+
+    private static async Task TryAsync(Func<Task> func, Activity? activity)
+    {
+        try
+        {
+            await func();
+        }
+        catch (Exception ex)
+        {
+            TraceException(activity, ex);
+
+            throw;
+        }
+    }
+
+    private static void TraceException(Activity? activity, Exception ex)
+    {
+        activity?.SetTag(ErrorTypeTagName, ex.GetType().FullName);
+        activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
     }
 }
