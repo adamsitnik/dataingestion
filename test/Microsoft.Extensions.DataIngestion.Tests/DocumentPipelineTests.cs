@@ -6,8 +6,12 @@ using Azure.AI.DocumentIntelligence;
 using LlamaParse;
 using Microsoft.ML.Tokenizers;
 using Microsoft.SemanticKernel.Connectors.InMemory;
+using OpenTelemetry;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -59,6 +63,9 @@ public class DocumentPipelineTests
     [MemberData(nameof(FilesAndReaders))]
     public async Task CanProcessDocuments(string[] filePaths, DocumentReader reader, IDocumentChunker chunker)
     {
+        List<Activity> activities = [];
+        using TracerProvider tracerProvider = CreateTraceProvider(activities);
+
         IDocumentProcessor[] documentProcessors = [new DocumentFlattener()];
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
@@ -84,6 +91,8 @@ public class DocumentPipelineTests
             Assert.NotEmpty((string)retrieved[i]["content"]!);
             Assert.Contains((string)retrieved[i]["documentid"]!, filePaths);
         }
+
+        AssertActivities(activities);
     }
 
     public static TheoryData<DocumentReader> Readers => new(CreateReaders());
@@ -92,6 +101,10 @@ public class DocumentPipelineTests
     [MemberData(nameof(Readers))]
     public async Task CanProcessDocumentsInDirectory(DocumentReader reader)
     {
+        List<Activity> activities = [];
+        using TracerProvider tracerProvider = CreateTraceProvider(activities);
+
+        IDocumentProcessor[] documentProcessors = [new DocumentFlattener()];
         IDocumentChunker documentChunker = new DummyChunker();
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
@@ -101,7 +114,7 @@ public class DocumentPipelineTests
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
-        DocumentPipeline pipeline = new(reader, [], documentChunker, [], vectorStoreWriter);
+        DocumentPipeline pipeline = new(reader, documentProcessors, documentChunker, [], vectorStoreWriter);
 
         DirectoryInfo directory = new("TestFiles");
         string searchPattern = reader switch
@@ -124,6 +137,8 @@ public class DocumentPipelineTests
             Assert.NotEmpty((string)retrieved[i]["content"]!);
             Assert.StartsWith(directory.FullName, (string)retrieved[i]["documentid"]!);
         }
+
+        AssertActivities(activities);
     }
 
     private static List<DocumentReader> CreateReaders()
@@ -162,4 +177,23 @@ public class DocumentPipelineTests
         // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
         new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"), 2000, 500)
     ];
+
+    private static TracerProvider CreateTraceProvider(List<Activity> activities)
+        => Sdk.CreateTracerProviderBuilder()
+            .AddSource("Experimental.Microsoft.Extensions.DataIngestion")
+            .ConfigureResource(r => r.AddService("inmemory-test"))
+            .AddInMemoryExporter(activities)
+            .Build();
+
+    private static void AssertActivities(List<Activity> activities)
+    {
+        Assert.NotEmpty(activities);
+        Assert.All(activities, a => Assert.Equal("Experimental.Microsoft.Extensions.DataIngestion", a.Source.Name));
+        Assert.Single(activities, a => a.OperationName == "ProcessFiles");
+        Assert.Contains(activities, a => a.OperationName == "ProcessFile");
+        Assert.Contains(activities, a => a.OperationName == "ReadDocument");
+        Assert.Contains(activities, a => a.OperationName == "ProcessDocument");
+        Assert.Contains(activities, a => a.OperationName == "ChunkDocument");
+        Assert.Contains(activities, a => a.OperationName == "WriteDocument");
+    }
 }
