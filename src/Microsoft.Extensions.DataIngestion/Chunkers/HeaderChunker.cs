@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static Microsoft.Extensions.DataIngestion.ElementUtils;
 
 namespace Microsoft.Extensions.DataIngestion;
 
@@ -77,18 +78,6 @@ public sealed class HeaderChunker : IDocumentChunker
                     break;
             }
         }
-    }
-
-    private static bool IsSimpleLeaf(DocumentSection leafSection)
-    {
-        foreach (DocumentElement element in leafSection.Elements)
-        {
-            if (element is not DocumentParagraph)
-            {
-                return false;
-            }
-        }
-        return true;
     }
 
     private void SplitIntoChunks(List<DocumentChunk> chunks, string?[] headers, List<string> paragraphs)

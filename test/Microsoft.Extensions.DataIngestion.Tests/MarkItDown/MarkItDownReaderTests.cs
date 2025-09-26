@@ -20,7 +20,7 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
         Assert.NotEmpty(document.Markdown);
 
         var elements = document.ToArray();
-        
+
         bool isPdf = source.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
         if (!isPdf)
         {

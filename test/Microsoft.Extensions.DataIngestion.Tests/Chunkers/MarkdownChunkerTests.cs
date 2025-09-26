@@ -1,11 +1,11 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Microsoft.Extensions.DataIngestion.Chunkers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.Extensions.DataIngestion.Chunkers;
 
 namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
@@ -64,7 +64,6 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         [Fact]
         public async Task SingleHeaderTwoParagraphDocument()
         {
-            
             Document singleHeaderTwoParagraphDoc = new Document("singleHeaderTwoParagraphDoc");
             singleHeaderTwoParagraphDoc.Sections.Add(new DocumentSection
             {
