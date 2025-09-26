@@ -12,13 +12,6 @@ public class DataIngestor(
     IChatClient chatClient,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
 {
-    public static async Task IngestDataAsync(IServiceProvider services, DirectoryInfo directory, string searchPattern)
-    {
-        using var scope = services.CreateScope();
-        var ingestor = scope.ServiceProvider.GetRequiredService<DataIngestor>();
-        await ingestor.IngestDataAsync(directory, searchPattern);
-    }
-
     public async Task IngestDataAsync(DirectoryInfo directory, string searchPattern)
     {
         using VectorStoreWriter writer = new(vectorStore, dimensionCount: IngestedChunk.VectorDimensions, new()

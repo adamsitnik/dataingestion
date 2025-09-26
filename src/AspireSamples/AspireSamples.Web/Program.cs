@@ -18,7 +18,11 @@ builder.AddOllamaApiClient("embeddings")
 builder.AddQdrantClient("vectordb");
 builder.Services.AddQdrantVectorStore();
 builder.Services.AddQdrantCollection<Guid, IngestedChunk>(IngestedChunk.CollectionName);
-builder.Services.AddScoped<DataIngestor>();
+builder.Services.AddSingleton<DataIngestor>();
+// By default, we ingest PDF files from the /wwwroot/Data directory.
+// Important: ensure that any content you ingest is trusted, as it may be reflected back
+// to users or could be a source of prompt injection risk.
+builder.Services.AddKeyedSingleton("ingestion_directory", new DirectoryInfo(Path.Combine(builder.Environment.WebRootPath, "Data")));
 builder.Services.AddSingleton<SemanticSearch>();
 
 var app = builder.Build();
@@ -39,13 +43,5 @@ app.UseAntiforgery();
 app.UseStaticFiles();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
-// By default, we ingest PDF files from the /wwwroot/Data directory.
-// Important: ensure that any content you ingest is trusted, as it may be reflected back
-// to users or could be a source of prompt injection risk.
-await DataIngestor.IngestDataAsync(
-    app.Services,
-    new DirectoryInfo(Path.Combine(builder.Environment.WebRootPath, "Data")),
-    "*.pdf");
 
 app.Run();
