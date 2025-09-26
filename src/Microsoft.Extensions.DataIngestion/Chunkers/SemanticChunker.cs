@@ -40,13 +40,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 return sentenceDistance;
             }
 
-            IEnumerable<ReadOnlyMemory<float>> embeddings = (await _embeddingGenerator.GenerateAsync(elements)).Select(e => e.Vector);
+            var embeddings = await _embeddingGenerator.GenerateAsync(elements).ConfigureAwait(false);
 
             for (int i = 0; i < elements.Length - 1; i++)
             {
                 string current = elements[i];
                 string next = elements[i + 1];
-                float distance = 1 - TensorPrimitives.CosineSimilarity(embeddings.ElementAt(i).Span, embeddings.ElementAt(i+1).Span);
+                float distance = 1 - TensorPrimitives.CosineSimilarity(embeddings[i].Vector.Span, embeddings[i + 1].Vector.Span);
                 sentenceDistance.Add((current, distance));
             }
 
