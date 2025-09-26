@@ -1,58 +1,42 @@
 ﻿using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DataIngestion;
+using Microsoft.Extensions.DataIngestion.Chunkers;
+using Microsoft.Extensions.DataIngestion.Tests;
 using Microsoft.Extensions.VectorData;
 
 namespace AspireSamples.Web.Services.Ingestion;
 
 public class DataIngestor(
-    ILogger<DataIngestor> logger,
-    VectorStoreCollection<Guid, IngestedChunk> chunksCollection,
-    VectorStoreCollection<Guid, IngestedDocument> documentsCollection)
+    ILoggerFactory loggerFactory,
+    VectorStore vectorStore,
+    IChatClient chatClient,
+    IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
 {
-    public static async Task IngestDataAsync(IServiceProvider services, IIngestionSource source)
+    public static async Task IngestDataAsync(IServiceProvider services, DirectoryInfo directory, string searchPattern)
     {
         using var scope = services.CreateScope();
         var ingestor = scope.ServiceProvider.GetRequiredService<DataIngestor>();
-        await ingestor.IngestDataAsync(source);
+        await ingestor.IngestDataAsync(directory, searchPattern);
     }
 
-    public async Task IngestDataAsync(IIngestionSource source)
+    public async Task IngestDataAsync(DirectoryInfo directory, string searchPattern)
     {
-        await chunksCollection.EnsureCollectionExistsAsync();
-        await documentsCollection.EnsureCollectionExistsAsync();
-
-        var sourceId = source.SourceId;
-        var documentsForSource = await documentsCollection.GetAsync(doc => doc.SourceId == sourceId, top: int.MaxValue).ToListAsync();
-
-        var deletedDocuments = await source.GetDeletedDocumentsAsync(documentsForSource);
-        foreach (var deletedDocument in deletedDocuments)
+        using VectorStoreWriter writer = new(vectorStore, dimensionCount: IngestedChunk.VectorDimensions, new()
         {
-            logger.LogInformation("Removing ingested data for {documentId}", deletedDocument.DocumentId);
-            await DeleteChunksForDocumentAsync(deletedDocument);
-            await documentsCollection.DeleteAsync(deletedDocument.Key);
-        }
+            CollectionName = IngestedChunk.CollectionName,
+            DistanceFunction = IngestedChunk.VectorDistanceFunction,
+            // Let's delete existing records for the same Document Id (by default it's the URI/file path), before inserting new ones.
+            IncrementalIngestion = true
+        });
 
-        var modifiedDocuments = await source.GetNewOrModifiedDocumentsAsync(documentsForSource);
-        foreach (var modifiedDocument in modifiedDocuments)
-        {
-            logger.LogInformation("Processing {documentId}", modifiedDocument.DocumentId);
-            await DeleteChunksForDocumentAsync(modifiedDocument);
+        using DocumentPipeline pipeline = new(
+            new MarkItDownReader(), // requires MarkItDown to be installed and in PATH
+            [], // no Document Processors for now (MarkItDown does not support images, so using AlternativeTextEnricher does not make sense here)
+            new SemanticChunker(embeddingGenerator),
+            [], // [new SummaryEnricher(chatClient)], takes too much time for samples
+            writer,
+            loggerFactory);
 
-            await documentsCollection.UpsertAsync(modifiedDocument);
-
-            var newRecords = await source.CreateChunksForDocumentAsync(modifiedDocument);
-            await chunksCollection.UpsertAsync(newRecords);
-        }
-
-        logger.LogInformation("Ingestion is up-to-date");
-
-        async Task DeleteChunksForDocumentAsync(IngestedDocument document)
-        {
-            var documentId = document.DocumentId;
-            var chunksToDelete = await chunksCollection.GetAsync(record => record.DocumentId == documentId, int.MaxValue).ToListAsync();
-            if (chunksToDelete.Any())
-            {
-                await chunksCollection.DeleteAsync(chunksToDelete.Select(r => r.Key));
-            }
-        }
+        await pipeline.ProcessAsync(directory, searchPattern);
     }
 }

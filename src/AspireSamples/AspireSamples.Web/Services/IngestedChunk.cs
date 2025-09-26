@@ -4,21 +4,22 @@ namespace AspireSamples.Web.Services;
 
 public class IngestedChunk
 {
-    private const int VectorDimensions = 384; // 384 is the default vector size for the all-minilm embedding model
-    private const string VectorDistanceFunction = DistanceFunction.CosineSimilarity;
+    public const int VectorDimensions = 384; // 384 is the default vector size for the all-minilm embedding model
+    public const string VectorDistanceFunction = DistanceFunction.CosineSimilarity;
+    public const string CollectionName = "aspiresamples-chunks";
 
-    [VectorStoreKey]
+    [VectorStoreKey(StorageName = "key")]
     public required Guid Key { get; set; }
 
-    [VectorStoreData(IsIndexed = true)]
+    [VectorStoreData(StorageName = "documentid")]
     public required string DocumentId { get; set; }
 
-    [VectorStoreData]
-    public int PageNumber { get; set; }
-
-    [VectorStoreData]
+    [VectorStoreData(StorageName = "content")]
     public required string Text { get; set; }
 
-    [VectorStoreVector(VectorDimensions, DistanceFunction = VectorDistanceFunction)]
+    [VectorStoreData(StorageName = "context")]
+    public string? Context { get; set; }
+
+    [VectorStoreVector(VectorDimensions, DistanceFunction = VectorDistanceFunction, StorageName = "embedding")]
     public string? Vector => Text;
 }
