@@ -45,7 +45,7 @@ public sealed class SummaryEnricher : IChunkProcessor
             [
                 new(ChatRole.User,
                 [
-                    new TextContent($"Write a summary text for this text with less than {_maxWordCount} words."),
+                    new TextContent($"Write a summary text for this text with less than {_maxWordCount} words. Return just the summary."),
                     new TextContent(chunk.Content),
                 ])
             ], _chatOptions, cancellationToken: cancellationToken);
