@@ -15,8 +15,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - dotnet-version: 8.x
-            framework: net8.0
+          - dotnet-version: 9.x
+            framework: net9.0
     steps:
       - uses: actions/checkout@v4
       - name: Setup .NET 9.x
