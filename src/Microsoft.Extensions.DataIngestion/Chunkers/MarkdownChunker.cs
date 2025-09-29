@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            IEnumerable<DocumentElement> elements = document.Where(element => element is not DocumentSection).Reverse();
+            IEnumerable<DocumentElement> elements = document.Reverse();
             var sectionStack = new Stack<DocumentElement>(elements);
 
             return Task.FromResult(ParseLevel(sectionStack, 1));

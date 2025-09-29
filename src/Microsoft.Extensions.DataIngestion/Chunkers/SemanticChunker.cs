@@ -37,8 +37,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 return [];
             }
 
-            IEnumerable<DocumentElement> elements = document.Where(element => element is not DocumentSection);
-            IEnumerable<string> units = elements.Select(GetSemanticContent);
+            IEnumerable<string> units = document.Select(GetSemanticContent);
             Task<List<(string, float)>> sentenceDistances = CalculateDistances(units.ToArray());
 
             return MakeChunks(await sentenceDistances);

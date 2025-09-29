@@ -23,7 +23,7 @@ public class DocumentFlattener : IDocumentProcessor
         // we can treat the Markdown of the whole Document as the section's Markdown.
         DocumentSection rootSection = new(document.Markdown);
 
-        rootSection.Elements.AddRange(document.Where(element => element is not DocumentSection));
+        rootSection.Elements.AddRange(document);
 
         Document flat = new(document.Identifier)
         {
