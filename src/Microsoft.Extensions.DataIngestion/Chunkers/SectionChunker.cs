@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using Microsoft.ML.Tokenizers;
-using Microsoft.SemanticKernel.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +17,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         private DocumentTokenChunker? _documentTokenChunker;
 
         public SectionChunker() { }
-        public SectionChunker(int maxTokensPerChunk, Tokenizer tokenizer) {
+        public SectionChunker(int maxTokensPerChunk, Tokenizer tokenizer)
+        {
             if (maxTokensPerChunk <= 0) throw new ArgumentOutOfRangeException(nameof(maxTokensPerChunk));
 
             _documentTokenChunker = new DocumentTokenChunker(tokenizer, maxTokensPerChunk, 0);
