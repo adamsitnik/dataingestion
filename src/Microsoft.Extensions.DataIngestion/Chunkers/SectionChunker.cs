@@ -1,6 +1,8 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Microsoft.ML.Tokenizers;
+using Microsoft.SemanticKernel.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,16 +15,34 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     public class SectionChunker : IDocumentChunker
     {
-        public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        private DocumentTokenChunker? _documentTokenChunker;
+
+        public SectionChunker() { }
+        public SectionChunker(int maxTokensPerChunk, Tokenizer tokenizer) {
+            if (maxTokensPerChunk <= 0) throw new ArgumentOutOfRangeException(nameof(maxTokensPerChunk));
+
+            _documentTokenChunker = new DocumentTokenChunker(tokenizer, maxTokensPerChunk, 0);
+        }
+        public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            List<DocumentChunk> chunks = document.Sections.Select(ProcessSection)
+            IEnumerable<Task<List<DocumentChunk>>> chunkTasks = document.Sections
+                .Select(ProcessSection)
                 .Where(text => !string.IsNullOrWhiteSpace(text))
-                .Select(text => new DocumentChunk(text))
-                .ToList();
+                .Select(CreateChunks);
 
-            return Task.FromResult(chunks);
+            var chunkLists = await Task.WhenAll(chunkTasks);
+            return chunkLists.SelectMany(list => list).ToList();
+        }
+
+        private async Task<List<DocumentChunk>> CreateChunks(string content)
+        {
+            if (_documentTokenChunker is not null)
+            {
+                return await _documentTokenChunker.ProcessAsync(content);
+            }
+            return [new DocumentChunk(content)];
         }
 
         private string ProcessSection(DocumentSection section)

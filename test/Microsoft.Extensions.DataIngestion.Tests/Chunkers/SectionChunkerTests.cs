@@ -1,12 +1,13 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Microsoft.Extensions.DataIngestion.Chunkers;
+using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DataIngestion.Chunkers;
 using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
@@ -16,6 +17,12 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         protected override IDocumentChunker CreateDocumentChunker()
         {
             return new SectionChunker();
+        }
+
+        private IDocumentChunker CreateSizeLimitedChunker()
+        {
+            var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
+            return new SectionChunker(512, tokenizer);
         }
 
         [Fact]
@@ -106,6 +113,26 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             Assert.Single(chunks);
             string expectedResult = "This is a paragraph in section 1.\nThis is another paragraph in section 1.\nThis is a paragraph in subsection 1.1.\nThis is another paragraph in subsection 1.1.\n";
             Assert.Equal(expectedResult, chunks.First().Content, ignoreLineEndingDifferences: true);
+        }
+
+        [Fact]
+        public async Task SizeLimit_TwoChunks()
+        {
+            string text = string.Join(" ", Enumerable.Repeat("word", 600)); // each word is 1 token
+            Document doc = new Document("twoChunksNoOverlapDoc");
+            doc.Sections.Add(new DocumentSection
+            {
+                Elements =
+                {
+                    new DocumentParagraph(text)
+                }
+            });
+            IDocumentChunker chunker = CreateSizeLimitedChunker();
+            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+            Assert.Equal(2, chunks.Count);
+            Assert.True(chunks[0].Content.Split(' ').Length <= 512);
+            Assert.True(chunks[1].Content.Split(' ').Length <= 512);
+            Assert.Equal(text + "\n", string.Join("", chunks.Select(c => c.Content)), ignoreLineEndingDifferences: true);
         }
     }
 }
