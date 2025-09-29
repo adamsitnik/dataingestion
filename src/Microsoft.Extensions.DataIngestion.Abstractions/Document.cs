@@ -41,6 +41,9 @@ public sealed class Document : IEnumerable<DocumentElement>
     /// <summary>
     /// Iterate over all elements in the document, including those in nested sections.
     /// </summary>
+    /// <remarks>
+    /// Sections themselves are not included.
+    /// </remarks>
     public IEnumerator<DocumentElement> GetEnumerator()
     {
         Stack<DocumentElement> elementsToProcess = new();
@@ -54,9 +57,11 @@ public sealed class Document : IEnumerable<DocumentElement>
         {
             DocumentElement currentElement = elementsToProcess.Pop();
 
-            yield return currentElement;
-
-            if (currentElement is DocumentSection nestedSection)
+            if (currentElement is not DocumentSection nestedSection)
+            {
+                yield return currentElement;
+            }
+            else
             {
                 for (int i = nestedSection.Elements.Count - 1; i >= 0; i--)
                 {

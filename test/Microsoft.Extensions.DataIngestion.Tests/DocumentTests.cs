@@ -44,26 +44,20 @@ public class DocumentTests
 
         DocumentElement[] flatElements = doc.ToArray();
 
-        Assert.IsType<DocumentSection>(flatElements[0]);
-        Assert.Equal("first section", flatElements[0].Markdown);
-        Assert.IsType<DocumentHeader>(flatElements[1]);
-        Assert.Equal("header", flatElements[1].Markdown);
-        Assert.IsType<DocumentParagraph>(flatElements[2]);
-        Assert.Equal("paragraph", flatElements[2].Markdown);
-        Assert.IsType<DocumentTable>(flatElements[3]);
-        Assert.Equal("table", flatElements[3].Markdown);
-        Assert.IsType<DocumentSection>(flatElements[4]);
-        Assert.Equal("nested section", flatElements[4].Markdown);
+        Assert.IsType<DocumentHeader>(flatElements[0]);
+        Assert.Equal("header", flatElements[0].Markdown);
+        Assert.IsType<DocumentParagraph>(flatElements[1]);
+        Assert.Equal("paragraph", flatElements[1].Markdown);
+        Assert.IsType<DocumentTable>(flatElements[2]);
+        Assert.Equal("table", flatElements[2].Markdown);
+        Assert.IsType<DocumentHeader>(flatElements[3]);
+        Assert.Equal("nested header", flatElements[3].Markdown);
+        Assert.IsType<DocumentParagraph>(flatElements[4]);
+        Assert.Equal("nested paragraph", flatElements[4].Markdown);
         Assert.IsType<DocumentHeader>(flatElements[5]);
-        Assert.Equal("nested header", flatElements[5].Markdown);
+        Assert.Equal("header 2", flatElements[5].Markdown);
         Assert.IsType<DocumentParagraph>(flatElements[6]);
-        Assert.Equal("nested paragraph", flatElements[6].Markdown);
-        Assert.IsType<DocumentSection>(flatElements[7]);
-        Assert.Equal("second section", flatElements[7].Markdown);
-        Assert.IsType<DocumentHeader>(flatElements[8]);
-        Assert.Equal("header 2", flatElements[8].Markdown);
-        Assert.IsType<DocumentParagraph>(flatElements[9]);
-        Assert.Equal("paragraph 2", flatElements[9].Markdown);
+        Assert.Equal("paragraph 2", flatElements[6].Markdown);
     }
 
     [Theory]
