@@ -25,6 +25,18 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
         public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (document is null)
+            {
+                throw new ArgumentNullException(nameof(document));
+            }
+
+            if (document.Sections.Count == 0)
+            {
+                return [];
+            }
+
             IEnumerable<DocumentElement> elements = document.Where(element => element is not DocumentSection);
             IEnumerable<string> units = elements.Select(GetSemanticContent);
             Task<List<(string, float)>> sentenceDistances = CalculateDistances(units.ToArray());
@@ -35,10 +47,6 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         private async Task<List<(string, float)>> CalculateDistances(string[] elements)
         {
             List<(string, float)> sentenceDistance = new();
-            if (!elements.Any(e => !String.IsNullOrEmpty(e)))
-            {
-                return sentenceDistance;
-            }
 
             var embeddings = await _embeddingGenerator.GenerateAsync(elements).ConfigureAwait(false);
 

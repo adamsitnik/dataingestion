@@ -71,8 +71,6 @@ public sealed class HeaderChunker : IDocumentChunker
                 case DocumentImage image:
                     paragraphs.Add(image.AlternativeText ?? image.Text);
                     break;
-                case DocumentFooter footer:
-                    break;
                 default:
                     paragraphs.Add(element.Markdown);
                     break;
