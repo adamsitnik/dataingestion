@@ -66,7 +66,7 @@ public class DocumentPipelineTests
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IDocumentProcessor[] documentProcessors = [new DocumentFlattener()];
+        IDocumentProcessor[] documentProcessors = [new DocumentFlattener(), RemovalProcessor.Footers, RemovalProcessor.EmptySections];
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -104,7 +104,7 @@ public class DocumentPipelineTests
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IDocumentProcessor[] documentProcessors = [new DocumentFlattener()];
+        IDocumentProcessor[] documentProcessors = [new DocumentFlattener(), RemovalProcessor.Footers, RemovalProcessor.EmptySections];
         IDocumentChunker documentChunker = new DummyChunker();
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()

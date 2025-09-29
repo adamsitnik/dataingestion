@@ -31,13 +31,8 @@ public class DummyChunker : IDocumentChunker
                 case DocumentSection nested:
                     Add(nested, chunks); // Recursively add nested sections
                     break;
-                case DocumentFooter footer:
-                    break; // We don't care about footers (they usually contain page numbers or similar)
                 default:
-                    if (!string.IsNullOrEmpty(element.Markdown))
-                    {
-                        chunks.Add(new DocumentChunk(element.Markdown));
-                    }
+                    chunks.Add(new DocumentChunk(element.Markdown));
                     break;
             }
         }

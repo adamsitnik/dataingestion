@@ -1,7 +1,6 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System.Linq;
 using System.Text;
 
 namespace Microsoft.Extensions.DataIngestion
@@ -14,8 +13,6 @@ namespace Microsoft.Extensions.DataIngestion
             {
                 case DocumentImage image:
                     return image.AlternativeText ?? image.Text;
-                case DocumentFooter footer:
-                    return string.Empty; // Footers are typically not relevant for semantic content
                 case DocumentSection simple when IsSimpleLeaf(simple):
                     return simple.Markdown;
                 case DocumentSection nestedSection:

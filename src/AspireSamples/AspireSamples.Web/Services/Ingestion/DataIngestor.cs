@@ -24,7 +24,7 @@ public class DataIngestor(
 
         using DocumentPipeline pipeline = new(
             new MarkItDownReader(), // requires MarkItDown to be installed and in PATH
-            [], // no Document Processors for now (MarkItDown does not support images, so using AlternativeTextEnricher does not make sense here)
+            [RemovalProcessor.Footers, RemovalProcessor.EmptySections],
             new SemanticChunker(embeddingGenerator),
             [], // [new SummaryEnricher(chatClient)], takes too much time for samples
             writer,
