@@ -36,13 +36,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return chunkLists.SelectMany(list => list).ToList();
         }
 
-        private async Task<List<DocumentChunk>> CreateChunks(string content)
+        private Task<List<DocumentChunk>> CreateChunks(string content)
         {
             if (_documentTokenChunker is not null)
             {
-                return await _documentTokenChunker.ProcessAsync(content);
+                return _documentTokenChunker.ProcessAsync(content);
             }
-            return [new DocumentChunk(content)];
+            return Task.FromResult(new List<DocumentChunk> { new DocumentChunk(content) });
         }
 
         private string ProcessSection(DocumentSection section)
