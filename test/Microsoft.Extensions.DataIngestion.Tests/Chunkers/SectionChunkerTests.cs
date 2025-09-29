@@ -34,7 +34,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Single(chunks);
             string expectedResult = "This is a paragraph.\nThis is another paragraph.\n";
-            Assert.Equal(expectedResult, chunks[0].Content, ignoreLineEndingDifferences:true);
+            Assert.Equal(expectedResult, chunks[0].Content, ignoreLineEndingDifferences: true);
         }
 
         [Fact]
