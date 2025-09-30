@@ -32,7 +32,7 @@ public sealed class AlternativeTextEnricher : IDocumentProcessor
 
         foreach (DocumentImage image in document.OfType<DocumentImage>())
         {
-            if (image.Content is not null && !string.IsNullOrEmpty(image.MediaType)
+            if (image.Content.HasValue && !string.IsNullOrEmpty(image.MediaType)
                 && string.IsNullOrEmpty(image.AlternativeText))
             {
                 var response = await _chatClient.GetResponseAsync(
@@ -40,7 +40,7 @@ public sealed class AlternativeTextEnricher : IDocumentProcessor
                     new(ChatRole.User,
                     [
                         new TextContent("Write a detailed alternative text for this image with less than 50 words."),
-                        new DataContent(image.Content.ToMemory(), image.MediaType!),
+                        new DataContent(image.Content.Value, image.MediaType!),
                     ])
                 ], _chatOptions, cancellationToken: cancellationToken);
 

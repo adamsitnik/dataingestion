@@ -167,7 +167,7 @@ public sealed class DocumentImage : DocumentElement
     {
     }
 
-    public BinaryData? Content { get; set; }
+    public ReadOnlyMemory<byte>? Content { get; set; }
 
     public string? MediaType { get; set; }
 

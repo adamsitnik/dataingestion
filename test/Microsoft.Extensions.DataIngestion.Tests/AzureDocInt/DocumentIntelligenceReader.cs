@@ -184,7 +184,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                         BinaryData? content = figures.TryGetValue(figure.Id, out var data) ? data : null;
                         section.Elements.Add(new DocumentImage(GetMarkdown(figure.Spans, entireContent))
                         {
-                            Content = content,
+                            Content = content?.ToMemory(),
                             MediaType = content?.MediaType ?? "image/png",
                             PageNumber = GetPageNumber(figure.BoundingRegions),
                             Text = figure.Caption?.Content ?? "",
