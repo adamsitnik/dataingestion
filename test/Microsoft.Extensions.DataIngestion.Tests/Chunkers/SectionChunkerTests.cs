@@ -14,13 +14,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
     {
         protected override IDocumentChunker CreateDocumentChunker()
         {
-            return new SectionChunker();
-        }
-
-        private IDocumentChunker CreateSizeLimitedChunker()
-        {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
-            return new SectionChunker(512, tokenizer);
+            return new SectionChunker(tokenizer, 512, 0);
         }
 
         [Fact]
@@ -125,12 +120,33 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                     new DocumentParagraph(text)
                 }
             });
-            IDocumentChunker chunker = CreateSizeLimitedChunker();
+            IDocumentChunker chunker = CreateDocumentChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(2, chunks.Count);
             Assert.True(chunks[0].Content.Split(' ').Length <= 512);
             Assert.True(chunks[1].Content.Split(' ').Length <= 512);
             Assert.Equal(text + "\n", string.Join("", chunks.Select(c => c.Content)), ignoreLineEndingDifferences: true);
+        }
+
+        [Fact]
+        public async Task SectionWithHeader()
+        {
+            Document doc = new Document("doc");
+            doc.Sections.Add(new DocumentSection
+            {
+                Elements =
+                {
+                    new DocumentHeader("Section 1"),
+                    new DocumentParagraph("This is a paragraph in section 1."),
+                    new DocumentParagraph("This is another paragraph in section 1.")
+                }
+            });
+            IDocumentChunker chunker = CreateDocumentChunker();
+            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+            Assert.Single(chunks);
+            string expectedResult = "Section 1\nThis is a paragraph in section 1.\nThis is another paragraph in section 1.\n";
+            Assert.Equal(expectedResult, chunks[0].Content, ignoreLineEndingDifferences: true);
+            Assert.Equal("Section 1", chunks[0].Context);
         }
     }
 }

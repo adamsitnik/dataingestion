@@ -14,45 +14,42 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     public class SectionChunker : IDocumentChunker
     {
-        private DocumentTokenChunker? _documentTokenChunker;
-
-        public SectionChunker() { }
-        public SectionChunker(int maxTokensPerChunk, Tokenizer tokenizer)
+        private DocumentTokenChunker _documentTokenChunker;
+        public SectionChunker(Tokenizer tokenizer, int maxTokensPerChunk, int chunkOverlap)
         {
             if (maxTokensPerChunk <= 0) throw new ArgumentOutOfRangeException(nameof(maxTokensPerChunk));
 
-            _documentTokenChunker = new DocumentTokenChunker(tokenizer, maxTokensPerChunk, 0);
+            _documentTokenChunker = new DocumentTokenChunker(tokenizer, maxTokensPerChunk, chunkOverlap);
         }
-        public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+
+        public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            IEnumerable<Task<List<DocumentChunk>>> chunkTasks = document.Sections
-                .Select(ProcessSection)
-                .Where(text => !string.IsNullOrWhiteSpace(text))
-                .Select(CreateChunks);
+            List<DocumentChunk> chunks = document.Sections.Select(ProcessSection)
+                .Where(x => !string.IsNullOrWhiteSpace(x.content))
+                .SelectMany(x =>_documentTokenChunker.ProcessText(x.content, x.context))
+                .ToList();
 
-            var chunkLists = await Task.WhenAll(chunkTasks);
-            return chunkLists.SelectMany(list => list).ToList();
+            return Task.FromResult(chunks);
         }
 
-        private Task<List<DocumentChunk>> CreateChunks(string content)
+        private (string content, string? context) ProcessSection(DocumentSection section)
         {
-            if (_documentTokenChunker is not null)
-            {
-                return _documentTokenChunker.ProcessAsync(content);
-            }
-            return Task.FromResult(new List<DocumentChunk> { new DocumentChunk(content) });
-        }
-
-        private string ProcessSection(DocumentSection section)
-        {
-            StringBuilder sectionText = new StringBuilder();
+            StringBuilder sectionText = new();
             foreach (var element in section.Elements)
             {
-                sectionText.AppendLine(GetSemanticContent(element));
+                sectionText.AppendLine(GetSemanticContent(element)); // No special handling for nested sections
             }
-            return sectionText.ToString();
+
+            string? context = null;
+            DocumentElement? firstElement = section.Elements.FirstOrDefault();
+            if (firstElement is DocumentHeader)
+            {
+                context = firstElement.Markdown;
+            }
+
+            return (sectionText.ToString(), context);
         }
     }
 }
