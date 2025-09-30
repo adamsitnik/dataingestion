@@ -167,7 +167,7 @@ public class LlamaParseReader : DocumentReader
             {
                 // Based on what we learn from the further steps like using the image with IChatClient,
                 // the Base64 string might become the standard instead of BinaryData.
-                BinaryData binaryData = BinaryData.FromBytes(Convert.FromBase64String(image.Image!));
+                ReadOnlyMemory<byte> binaryData = Convert.FromBase64String(image.Image!);
 
                 DocumentImage documentImage = new($"![]({image.ImageUrl})")
                 {

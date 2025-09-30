@@ -20,7 +20,7 @@ public class AlternativeTextEnricherTests : ChatClientTestBase
         DocumentImage documentImage = new($"![]({imagePath})")
         {
             AlternativeText = null,
-            Content = BinaryData.FromBytes(imageContent),
+            Content = imageContent,
             MediaType = "image/png"
         };
 

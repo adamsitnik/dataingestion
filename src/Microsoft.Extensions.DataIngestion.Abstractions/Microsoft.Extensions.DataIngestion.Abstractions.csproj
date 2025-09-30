@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Memory.Data" Version="8.0.1" />
+    <PackageReference Include="System.Memory" Version="4.6.3" Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'" />
   </ItemGroup>
 
 </Project>

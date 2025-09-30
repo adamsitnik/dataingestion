@@ -88,7 +88,7 @@ public abstract class DocumentReaderConformanceTests
 
         SimpleAsserts(document, filePath, filePath);
         var elements = document.ToArray();
-        Assert.Contains(elements, element => element is DocumentImage img && img.Content is not null && !string.IsNullOrEmpty(img.MediaType));
+        Assert.Contains(elements, element => element is DocumentImage img && img.Content.HasValue && !string.IsNullOrEmpty(img.MediaType));
     }
 
     [Fact]

@@ -139,7 +139,7 @@ public sealed class MarkdownReader : DocumentReader
                 // ![Alt text](data:image/png;base64,...)
                 AlternativeText = link.FirstChild is LiteralInline literal ? literal.Content.ToString() : null,
                 Content = link.Url is not null && link.Url.StartsWith("data:image/png;base64,", StringComparison.Ordinal)
-                    ? BinaryData.FromBytes(Convert.FromBase64String(link.Url.Substring("data:image/png;base64,".Length)), "image/png")
+                    ? Convert.FromBase64String(link.Url.Substring("data:image/png;base64,".Length))
                     : null, // we may implement it in the future if needed
                 MediaType = link.Url is not null && link.Url.StartsWith("data:image/png;base64,", StringComparison.Ordinal)
                     ? "image/png"
