@@ -1,14 +1,13 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Microsoft.Extensions.DataIngestion.Chunkers;
 using Microsoft.ML.Tokenizers;
-using Microsoft.SemanticKernel.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static Microsoft.Extensions.DataIngestion.ElementUtils;
 
 namespace Microsoft.Extensions.DataIngestion;
 
@@ -18,78 +17,48 @@ namespace Microsoft.Extensions.DataIngestion;
 public sealed class HeaderChunker : IDocumentChunker
 {
     private const int MaxHeaderLevel = 10;
-    private readonly Tokenizer _tokenizer;
-    private readonly int _maxTokensPerParagraph;
-    private readonly int _overlapTokens;
+    private readonly ElementsChunker _elementsChunker;
 
-    public HeaderChunker(Tokenizer tokenizer, int maxTokensPerParagraph, int overlapTokens = 0)
-    {
-        _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
-        _maxTokensPerParagraph = maxTokensPerParagraph > 0 ? maxTokensPerParagraph : throw new ArgumentOutOfRangeException(nameof(maxTokensPerParagraph));
-        _overlapTokens = overlapTokens >= 0 ? overlapTokens : throw new ArgumentOutOfRangeException(nameof(overlapTokens));
-    }
+    public HeaderChunker(Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int overlapTokens = 0)
+        => _elementsChunker = new(tokenizer, maxTokensPerChunk, overlapTokens);
 
     public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {
         List<DocumentChunk> chunks = new();
+        List<DocumentElement> elements = new(20);
         string?[] headers = new string?[MaxHeaderLevel + 1];
-        List<string> paragraphs = new();
 
-        foreach (DocumentSection section in document.Sections)
+        foreach (DocumentElement element in document)
         {
-            Process(section, chunks, headers, paragraphs);
+            if (element is DocumentHeader header)
+            {
+                SplitIntoChunks(chunks, headers, elements);
+
+                int headerLevel = header.Level.GetValueOrDefault();
+                headers[headerLevel] = header.Markdown;
+                headers.AsSpan(headerLevel + 1).Clear(); // clear all lower level headers
+
+                continue; // don't add headers to the elements list, they are part of the context
+            }
+
+            elements.Add(element);
         }
 
         // take care of any remaining paragraphs
-        SplitIntoChunks(chunks, headers, paragraphs);
+        SplitIntoChunks(chunks, headers, elements);
 
         return Task.FromResult(chunks);
     }
 
-    private void Process(DocumentSection section, List<DocumentChunk> chunks, string?[] headers, List<string> paragraphs)
+    private void SplitIntoChunks(List<DocumentChunk> chunks, string?[] headers, List<DocumentElement> elements)
     {
-        foreach (DocumentElement element in section.Elements)
-        {
-            switch (element)
-            {
-                case DocumentHeader header:
-                    SplitIntoChunks(chunks, headers, paragraphs);
-
-                    int headerLevel = header.Level.GetValueOrDefault();
-                    for (int i = headers.Length - 1; i >= headerLevel; i--)
-                    {
-                        headers[i] = null;
-                    }
-                    headers[headerLevel] = header.Markdown;
-                    break;
-                case DocumentSection simple when IsSimpleLeaf(simple):
-                    paragraphs.Add(simple.Markdown);
-                    break;
-                case DocumentSection nestedSection:
-                    Process(nestedSection, chunks, headers, paragraphs);
-                    break;
-                case DocumentImage image:
-                    paragraphs.Add(image.AlternativeText ?? image.Text);
-                    break;
-                default:
-                    paragraphs.Add(element.Markdown);
-                    break;
-            }
-        }
-    }
-
-    private void SplitIntoChunks(List<DocumentChunk> chunks, string?[] headers, List<string> paragraphs)
-    {
-        if (paragraphs.Count > 0)
+        if (elements.Count > 0)
         {
             string chunkHeader = string.Join(" ", headers.Where(h => !string.IsNullOrEmpty(h)));
-            foreach (string chunk in TextChunker.SplitMarkdownParagraphs(paragraphs, _maxTokensPerParagraph, _overlapTokens,
-                chunkHeader: chunkHeader.Length == 0 ? "" : chunkHeader + ' ', // we need to separate the header from the content
-                text => _tokenizer.CountTokens(text)))
-            {
-                chunks.Add(new DocumentChunk(content: chunk, tokenCount: _tokenizer.CountTokens(chunk), context: chunkHeader));
-            }
-            paragraphs.Clear();
+
+            _elementsChunker.Process(chunks, chunkHeader, elements);
+
+            elements.Clear();
         }
     }
 }
