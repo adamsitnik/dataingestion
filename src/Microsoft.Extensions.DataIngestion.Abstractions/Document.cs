@@ -153,18 +153,18 @@ public sealed class DocumentFooter : DocumentElement
 
 public sealed class DocumentTable : DocumentElement
 {
-    public DocumentTable(string markdown, List<List<string>> rows) : base(markdown)
+    public DocumentTable(string markdown, string[,] cells) : base(markdown)
     {
-        Rows = rows ?? throw new ArgumentNullException(nameof(rows));
+        Cells = cells ?? throw new ArgumentNullException(nameof(cells));
     }
 
     /// <summary>
-    /// Each table can be represented as a list of rows, with the first one being the headers.
+    /// Each table can be represented as a multidimensional array of cell contents, with the first row being the headers.
     /// </summary>
     /// <remarks>
     /// This information is useful when chunking large tables that exceed token count limit.
     /// </remarks>
-    public List<List<string>> Rows { get; }
+    public string[,] Cells { get; }
 }
 
 public sealed class DocumentImage : DocumentElement

@@ -238,41 +238,53 @@ public sealed class MarkdownReader : DocumentReader
         return content.ToString();
     }
 
-    private static List<List<string>> GetRows(Table table, string outputContent)
+    private static string[,] GetRows(Table table, string outputContent)
     {
-        List<List<string>> rows = new(table.Count);
+        int firstRowIndex = SkipFirstRow(table, outputContent) ? 1 : 0;
+        string[,] cells = new string[table.Count - firstRowIndex, table.ColumnDefinitions.Count - 1];
 
-        for (int rowIndex = 0; rowIndex < table.Count; rowIndex++)
+        for (int rowIndex = firstRowIndex; rowIndex < table.Count; rowIndex++)
         {
-            bool includeRow = rowIndex != 0;
-            List<string> row = new(table.ColumnDefinitions.Count);
             TableRow tableRow = (TableRow)table[rowIndex];
-            for (int columnIndex = 0; columnIndex < tableRow.Count; columnIndex++)
+            int columnIndex = 0;
+            for (int cellIndex = 0; cellIndex < tableRow.Count; cellIndex++)
             {
-                TableCell tableCell = (TableCell)tableRow[columnIndex];
+                TableCell tableCell = (TableCell)tableRow[cellIndex];
 
                 Debug.Assert(tableCell.Count == 1, "We assume every TableCell contains a single element.");
                 string content = MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text;
 
-                // Some parsers like MarkItDown include a row with invalid markdown before the separator row:
-                // |  |  |  |  |
-                // | --- | --- | --- | --- |
-                if (!includeRow && !string.IsNullOrWhiteSpace(content))
+                for (int columnSpan = 0; columnSpan < tableCell.ColumnSpan; columnSpan++, columnIndex++)
                 {
-                    includeRow = true;
+                    // We are not using tableCell.ColumnIndex here as it defaults to -1 ;)
+                    cells[rowIndex - firstRowIndex, columnIndex] = content;
                 }
-
-                for (int columnSpan = 0; columnSpan < tableCell.ColumnSpan; columnSpan++)
-                {
-                    row.Add(content);
-                }
-            }
-
-            if (includeRow)
-            {
-                rows.Add(row);
             }
         }
-        return rows;
+
+        return cells;
+
+        // Some parsers like MarkItDown include a row with invalid markdown before the separator row:
+        // |  |  |  |  |
+        // | --- | --- | --- | --- |
+        static bool SkipFirstRow(Table table, string outputContent)
+        {
+            if (table.Count > 0)
+            {
+                TableRow firstRow = (TableRow)table[0];
+                for (int cellIndex = 0; cellIndex < firstRow.Count; cellIndex++)
+                {
+                    TableCell tableCell = (TableCell)firstRow[cellIndex];
+                    if (!string.IsNullOrWhiteSpace(MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
     }
 }

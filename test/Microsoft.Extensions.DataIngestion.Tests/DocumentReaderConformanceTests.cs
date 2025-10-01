@@ -79,13 +79,19 @@ public abstract class DocumentReaderConformanceTests
         var document = await reader.ReadAsync(filePath);
 
         DocumentTable documentTable = Assert.Single(document.OfType<DocumentTable>());
-        Assert.Equal(5, documentTable.Rows.Count);
+        Assert.Equal(5, documentTable.Cells.GetLength(0));
+        Assert.Equal(4, documentTable.Cells.GetLength(1));
 
-        Assert.Equal(["Milestone", "Target Date", "Department", "Indicator"], documentTable.Rows[0]);
-        Assert.Equal(["Environmental Audit", "Mar 2025", "Environmental", "Audit Complete"], documentTable.Rows[1]);
-        Assert.Equal(["Renewable Energy Launch", "Jul 2025", "Facilities", "Install Operational"], documentTable.Rows[2]);
-        Assert.Equal(["Staff Workshop", "Sep 2025", "HR", "Workshop Held"], documentTable.Rows[3]);
-        Assert.Equal(["Emissions Review", "Dec 2029", "All", "25% Emissions Cut"], documentTable.Rows[4]);
+        string[,] expected =
+        {
+            { "Milestone", "Target Date", "Department", "Indicator" },
+            { "Environmental Audit", "Mar 2025", "Environmental", "Audit Complete" },
+            { "Renewable Energy Launch", "Jul 2025", "Facilities", "Install Operational" },
+            { "Staff Workshop", "Sep 2025", "HR", "Workshop Held" },
+            { "Emissions Review", "Dec 2029", "All", "25% Emissions Cut" }
+        };
+
+        Assert.Equal(expected, documentTable.Cells);
     }
 
     public static IEnumerable<object[]> Images

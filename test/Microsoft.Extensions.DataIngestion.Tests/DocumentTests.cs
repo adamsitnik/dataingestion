@@ -9,6 +9,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DocumentTests
 {
+    private readonly string[,] rows = { { "header" }, { "row1" }, { "row2" } };
+
     [Fact]
     public void EnumeratorFlattensTheStructureAndPreservesOrder()
     {
@@ -22,7 +24,7 @@ public class DocumentTests
             {
                 new DocumentHeader("header"),
                 new DocumentParagraph("paragraph"),
-                new DocumentTable("table", [["header"], ["row1"], ["row2"]]),
+                new DocumentTable("table", rows),
                 new DocumentSection("nested section")
                 {
                     Elements =
