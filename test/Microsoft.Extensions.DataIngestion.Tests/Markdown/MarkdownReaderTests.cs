@@ -36,6 +36,9 @@ public class MarkdownReaderTests : DocumentReaderConformanceTests
         }
     }
 
+    [Fact]
+    public override Task SupportsTables() => SupportsTablesCore(Path.Combine("TestFiles", "Sample.md"));
+
     [Theory]
     [MemberData(nameof(Sources))]
     public override Task SupportsUris(string uri) => base.SupportsUris(uri);

@@ -2,9 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using Markdig;
+using Markdig.Extensions.Tables;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -115,7 +117,7 @@ public sealed class MarkdownReader : DocumentReader
             LeafBlock leafBlock => MapLeafBlockToElement(leafBlock, previousWasBreak, elementMarkdown),
             ListBlock listBlock => MapListBlock(listBlock, previousWasBreak, outputContent, elementMarkdown),
             QuoteBlock quoteBlock => MapQuoteBlock(quoteBlock, previousWasBreak, outputContent, elementMarkdown),
-            Markdig.Extensions.Tables.Table table => new DocumentTable(elementMarkdown),
+            Table table => new DocumentTable(elementMarkdown, GetRows(table, outputContent)),
             _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
         };
 
@@ -234,5 +236,43 @@ public sealed class MarkdownReader : DocumentReader
         }
 
         return content.ToString();
+    }
+
+    private static List<List<string>> GetRows(Table table, string outputContent)
+    {
+        List<List<string>> rows = new(table.Count);
+
+        for (int rowIndex = 0; rowIndex < table.Count; rowIndex++)
+        {
+            bool includeRow = rowIndex != 0;
+            List<string> row = new(table.ColumnDefinitions.Count);
+            TableRow tableRow = (TableRow)table[rowIndex];
+            for (int columnIndex = 0; columnIndex < tableRow.Count; columnIndex++)
+            {
+                TableCell tableCell = (TableCell)tableRow[columnIndex];
+
+                Debug.Assert(tableCell.Count == 1, "We assume every TableCell contains a single element.");
+                string content = MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text;
+
+                // Some parsers like MarkItDown include a row with invalid markdown before the separator row:
+                // |  |  |  |  |
+                // | --- | --- | --- | --- |
+                if (!includeRow && !string.IsNullOrWhiteSpace(content))
+                {
+                    includeRow = true;
+                }
+
+                for (int columnSpan = 0; columnSpan < tableCell.ColumnSpan; columnSpan++)
+                {
+                    row.Add(content);
+                }
+            }
+
+            if (includeRow)
+            {
+                rows.Add(row);
+            }
+        }
+        return rows;
     }
 }

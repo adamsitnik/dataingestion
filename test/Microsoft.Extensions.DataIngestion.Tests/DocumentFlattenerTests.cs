@@ -21,7 +21,7 @@ public class DocumentFlattenerTests
             {
                 new DocumentHeader("header"),
                 new DocumentParagraph("paragraph"),
-                new DocumentTable("table"),
+                new DocumentTable("table", [["header"], ["row1"], ["row2"]]),
                 new DocumentSection
                 {
                     Elements =

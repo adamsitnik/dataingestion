@@ -151,7 +151,7 @@ public class LlamaParseReader : DocumentReader
                         Text = heading.Value,
                         Level = heading.Level,
                     },
-                    TablePageItem table => new DocumentTable(table.Markdown),
+                    TablePageItem table => new DocumentTable(table.Markdown, table.Rows),
                     _ => throw new InvalidOperationException()
                 };
                 element.PageNumber = parsedPage.PageNumber;
