@@ -120,7 +120,7 @@ public sealed class DocumentSection : DocumentElement
             // In case there are no Elements, we don't want to cache an empty string.
             if (string.IsNullOrEmpty(_markdown))
             {
-                _markdown = string.Join("", Elements.Select(e => e.Markdown));
+                _markdown = string.Join(Environment.NewLine, Elements.Select(e => e.Markdown));
             }
 
             return _markdown;

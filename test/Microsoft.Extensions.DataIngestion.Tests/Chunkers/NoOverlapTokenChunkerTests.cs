@@ -15,7 +15,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
         protected override IDocumentChunker CreateDocumentChunker()
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
-            return new DocumentTokenChunker(tokenizer, chunkSize: 512, chunkOverlap: 0);
+            return new DocumentTokenChunker(tokenizer, maxTokensPerChunk: 512, chunkOverlap: 0);
         }
 
         [Fact]
