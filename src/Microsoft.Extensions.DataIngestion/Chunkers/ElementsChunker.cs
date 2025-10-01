@@ -11,11 +11,6 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers;
 
 internal sealed class ElementsChunker
 {
-    // Values taken from Semantic Kernel's TextChunker class.
-    // https://github.com/microsoft/semantic-kernel/blob/167308f53c3ea15aed5ed1140210eed56474c968/dotnet/src/SemanticKernel.Core/Text/TextChunker.cs#L55-L56
-    private static readonly string?[] s_plaintextSplitOptions = ["\n", ".。．", "?!", ";", ":", ",，、", ")]}", " ", "-", null];
-    private static readonly string?[] s_markdownSplitOptions = [".\u3002\uFF0E", "?!", ";", ":", ",\uFF0C\u3001", ")]}", " ", "-", "\n\r", null];
-
     private readonly Tokenizer _tokenizer;
     private readonly int _maxTokensPerChunk;
     private readonly int _overlapTokens;
@@ -30,9 +25,8 @@ internal sealed class ElementsChunker
 
     // Goals:
     // 1. Create chunks that do not exceed _maxTokensPerChunk when tokenized.
-    // 2. Maintain context by including headers from the headers array in each chunk.
-    // 3. Ensure that chunks are created from complete DocumentElements, not splitting them mid-way, especially for tables!
-    // 4. If a single DocumentElement exceeds _maxTokensPerChunk, it should be split intelligently (e.g., paragraphs can be split into sentences, tables into rows).
+    // 2. Maintain context in each chunk.
+    // 3. If a single DocumentElement exceeds _maxTokensPerChunk, it should be split intelligently (e.g., paragraphs can be split into sentences, tables into rows).
     internal void Process(List<DocumentChunk> chunks, string context, List<DocumentElement> elements)
     {
         // Token count != character count, but StringBuilder will grow as needed.
@@ -40,11 +34,17 @@ internal sealed class ElementsChunker
 
         int contextTokenCount = _tokenizer.CountTokens(context);
         int totalTokenCount = contextTokenCount;
-        Debug.Assert(_maxTokensPerChunk > totalTokenCount, "Context token count should not exceed max tokens per chunk.");
+        // If the context itself exceeds the max tokens per chunk, we can't do anything.
+        if (contextTokenCount >= _maxTokensPerChunk)
+        {
+            ThrowTokenCountExceeded();
+        }
         _currentChunk.Append(context);
 
         for (int elementIndex = 0; elementIndex < elements.Count; elementIndex++)
         {
+            _currentChunk.AppendLine(); // separate elements by a new line
+
             DocumentElement element = elements[elementIndex];
             string semanticContent = element switch
             {
@@ -63,8 +63,6 @@ internal sealed class ElementsChunker
             if (elementTokenCount + totalTokenCount <= _maxTokensPerChunk)
             {
                 totalTokenCount += elementTokenCount;
-
-                _currentChunk.AppendLine(); // separate elements by a new line
                 _currentChunk.Append(semanticContent);
             }
             else if (element is DocumentTable table)
@@ -74,28 +72,55 @@ internal sealed class ElementsChunker
             }
             else
             {
-                // Split by sentences or other delimiters.
+                ReadOnlySpan<char> remainingContent = semanticContent.AsSpan();
 
-                int startIndex = 0;
-                do
+                while (!remainingContent.IsEmpty)
                 {
-                    int index = _tokenizer.GetIndexByTokenCount(semanticContent.AsSpan(startIndex), _maxTokensPerChunk - totalTokenCount, out string? _, out int tokenCount);
+                    int index = _tokenizer.GetIndexByTokenCount(
+                        text: remainingContent,
+                        maxTokenCount: _maxTokensPerChunk - totalTokenCount,
+                        out string? normalizedText,
+                        out int tokenCount,
+                        considerNormalization: false); // We don't normalize, just append as-is to keep original content.
 
-                    _currentChunk.AppendLine(); // separate elements by a new line
-#if NET
-                    _currentChunk.Append(semanticContent.AsSpan(startIndex, index).Trim());
-#else
-                    _currentChunk.Append(semanticContent.Substring(startIndex, index).Trim());
+                    if (index > 0) // some tokens fit
+                    {
+                        // We could try to split by sentences or other delimiters, but it's complicated.
+                        // For simplicity, we will just split at the last new line that fits.
+                        // Our promise is not to go over the max token count, not to create perfect chunks.
+                        int newLineIndex = remainingContent.Slice(0, index).LastIndexOf('\n');
+                        if (newLineIndex > 0)
+                        {
+                            index = newLineIndex + 1; // We want to include the new line character (works for "\r\n" as well).
+                            tokenCount = _tokenizer.CountTokens(remainingContent.Slice(0, index), considerNormalization: false);
+                        }
+
+                        totalTokenCount += tokenCount;
+                        ReadOnlySpan<char> spanToAppend = remainingContent.Slice(0, index);
+                        _currentChunk.Append(spanToAppend
+#if NETSTANDARD2_0
+                            .ToString()
 #endif
-                    totalTokenCount += tokenCount;
+                        );
+                        remainingContent = remainingContent.Slice(index);
+                    }
+                    else if (totalTokenCount == contextTokenCount)
+                    {
+                        // We are at the beginning of a chunk, and even a single token does not fit.
+                        ThrowTokenCountExceeded();
+                    }
 
-                    chunks.Add(new(_currentChunk.ToString(), totalTokenCount, context));
+                    if (!remainingContent.IsEmpty)
+                    {
+                        chunks.Add(new(_currentChunk.ToString(), totalTokenCount, context));
 
-                    totalTokenCount = contextTokenCount;
-                    _currentChunk.Remove(startIndex: context.Length, _currentChunk.Length - context.Length); // keep the context
-
-                    startIndex += index;
-                } while (startIndex < semanticContent.Length);
+                        // We keep the context in the current chunk as it's the same for all elements.
+                        _currentChunk.Remove(
+                            startIndex: context.Length + Environment.NewLine.Length,
+                            length: _currentChunk.Length - (context.Length + Environment.NewLine.Length));
+                        totalTokenCount = contextTokenCount;
+                    }
+                }
             }
         }
 
@@ -104,5 +129,8 @@ internal sealed class ElementsChunker
             chunks.Add(new(_currentChunk.ToString(), totalTokenCount, context));
         }
         _currentChunk.Clear();
+
+        static void ThrowTokenCountExceeded()
+            => throw new InvalidOperationException("Can't fit in the current chunk. Consider increasing max tokens per chunk.");
     }
 }
