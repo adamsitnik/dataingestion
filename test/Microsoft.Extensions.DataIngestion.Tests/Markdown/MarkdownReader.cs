@@ -117,7 +117,7 @@ public sealed class MarkdownReader : DocumentReader
             LeafBlock leafBlock => MapLeafBlockToElement(leafBlock, previousWasBreak, elementMarkdown),
             ListBlock listBlock => MapListBlock(listBlock, previousWasBreak, outputContent, elementMarkdown),
             QuoteBlock quoteBlock => MapQuoteBlock(quoteBlock, previousWasBreak, outputContent, elementMarkdown),
-            Table table => new DocumentTable(elementMarkdown, GetRows(table, outputContent)),
+            Table table => new DocumentTable(elementMarkdown, GetCells(table, outputContent)),
             _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
         };
 
@@ -238,7 +238,7 @@ public sealed class MarkdownReader : DocumentReader
         return content.ToString();
     }
 
-    private static string[,] GetRows(Table table, string outputContent)
+    private static string[,] GetCells(Table table, string outputContent)
     {
         int firstRowIndex = SkipFirstRow(table, outputContent) ? 1 : 0;
         string[,] cells = new string[table.Count - firstRowIndex, table.ColumnDefinitions.Count - 1];
@@ -250,9 +250,12 @@ public sealed class MarkdownReader : DocumentReader
             for (int cellIndex = 0; cellIndex < tableRow.Count; cellIndex++)
             {
                 TableCell tableCell = (TableCell)tableRow[cellIndex];
-
-                Debug.Assert(tableCell.Count == 1, "We assume every TableCell contains a single element.");
-                string content = MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text;
+                string content = tableCell.Count switch
+                {
+                    0 => string.Empty,
+                    1 => MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text,
+                    _ => throw new NotSupportedException($"Cells with {tableCell.Count} elements are not supported.")
+                };
 
                 for (int columnSpan = 0; columnSpan < tableCell.ColumnSpan; columnSpan++, columnIndex++)
                 {
