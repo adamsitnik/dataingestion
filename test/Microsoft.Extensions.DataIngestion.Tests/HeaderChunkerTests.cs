@@ -15,7 +15,7 @@ public class HeaderChunkerTests
     public async Task CanChunkNonTrivialDocument()
     {
         Document doc = new("nonTrivial");
-        doc.Sections.Add(new DocumentSection
+        doc.Sections.Add(new()
         {
             Elements =
             {
@@ -56,7 +56,7 @@ public class HeaderChunkerTests
     public async Task CanRespectTokenLimit()
     {
         Document doc = new("longOne");
-        doc.Sections.Add(new DocumentSection
+        doc.Sections.Add(new()
         {
             Elements =
             {
@@ -71,13 +71,62 @@ public class HeaderChunkerTests
         List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
 
         Assert.Equal(2, chunks.Count);
-        string nl = Environment.NewLine;
         Assert.Equal("Header A Header B Header C", chunks[0].Context);
-        Assert.Equal($"Header A Header B Header C{nl}This is a very long text.", chunks[0].Content);
+        Assert.Equal($"Header A Header B Header C\nThis is a very long text.", chunks[0].Content, ignoreLineEndingDifferences: true);
         Assert.Equal("Header A Header B Header C", chunks[1].Context);
-        Assert.Equal($"Header A Header B Header C{nl}It's expressed with plenty of tokens", chunks[1].Content);
+        Assert.Equal($"Header A Header B Header C\n It's expressed with plenty of tokens", chunks[1].Content, ignoreLineEndingDifferences: true);
     }
 
+    [Fact]
+    public async Task ThrowsWhenLimitIsTooLowToFitAnythingMoreThanContext()
+    {
+        Document doc = new("longOne");
+        doc.Sections.Add(new()
+        {
+            Elements =
+            {
+                new DocumentHeader("Header A") { Level = 1 }, // 2 tokens
+                    new DocumentHeader("Header B") { Level = 2 }, // 2 tokens
+                        new DocumentHeader("Header C") { Level = 3 }, // 2 tokens
+                            new DocumentParagraph("This is a very long text. It's expressed with plenty of tokens")
+            }
+        });
+
+        HeaderChunker lessThanContext = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 5);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => lessThanContext.ProcessAsync(doc));
+
+        HeaderChunker sameAsContext = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 6);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sameAsContext.ProcessAsync(doc));
+    }
+
+    [Fact]
+    public async Task CanSplitLongerParagraphsOnNewLine()
+    {
+        Document doc = new("withNewLines");
+        doc.Sections.Add(new()
+        {
+            Elements =
+            {
+                new DocumentHeader("Header A") { Level = 1 },
+                    new DocumentHeader("Header B") { Level = 2 },
+                        new DocumentHeader("Header C") { Level = 3 },
+                            new DocumentParagraph(
+@"This is a very long text. It's expressed with plenty of tokens. And it contains a new line.
+With some text after the new line."),
+                            new DocumentParagraph("And following paragraph.")
+            }
+        });
+
+        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 30);
+        List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+
+        Assert.Equal(2, chunks.Count);
+        Assert.Equal("Header A Header B Header C", chunks[0].Context);
+        Assert.Equal($"Header A Header B Header C\nThis is a very long text. It's expressed with plenty of tokens. And it contains a new line.\n",
+            chunks[0].Content, ignoreLineEndingDifferences: true);
+        Assert.Equal("Header A Header B Header C", chunks[1].Context);
+        Assert.Equal($"Header A Header B Header C\nWith some text after the new line.\nAnd following paragraph.", chunks[1].Content, ignoreLineEndingDifferences: true);
+    }
 
     // We need plenty of more tests here, especially for edge cases:
     // - sentence splitting
