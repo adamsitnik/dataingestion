@@ -19,45 +19,48 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
     public sealed class DocumentTokenChunker : IDocumentChunker
     {
         private readonly Tokenizer _tokenizer;
-        private readonly int _chunkSize;
+        private readonly int _maxTokensPerChunk;
         private readonly int _chunkOverlap;
 
-        public DocumentTokenChunker(Tokenizer tokenizer, int chunkSize, int chunkOverlap)
+        public DocumentTokenChunker(Tokenizer tokenizer, int maxTokensPerChunk, int chunkOverlap)
         {
-            if (chunkOverlap >= chunkSize)
+            if (chunkOverlap >= maxTokensPerChunk)
                 throw new ArgumentException("Chunk overlap must be less than chunk size.", nameof(chunkOverlap));
 
             _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
-            _chunkSize = chunkSize > 0 ? chunkSize : throw new ArgumentOutOfRangeException(nameof(chunkSize));
+            _maxTokensPerChunk = maxTokensPerChunk > 0 ? maxTokensPerChunk : throw new ArgumentOutOfRangeException(nameof(maxTokensPerChunk));
             _chunkOverlap = chunkOverlap >= 0 ? chunkOverlap : throw new ArgumentOutOfRangeException(nameof(chunkOverlap));
+        }
+
+        internal List<DocumentChunk> ProcessText(string text, string? context = null)
+        {
+            int[] tokens = _tokenizer.EncodeToIds(text).ToArray();
+            List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
+            return tokenGroups.Select(g => GroupToChunk(g, context)).ToList();
         }
 
         public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            int[] tokens = _tokenizer.EncodeToIds(document.Markdown).ToArray();
-            List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
-            List<DocumentChunk> textGroups = tokenGroups.Select(GroupToChunk).ToList();
-
-            return Task.FromResult(textGroups);
+            return Task.FromResult(ProcessText(document.Markdown));
         }
 
         private List<ArraySegment<int>> CreateGroups(int[] tokens)
         {
             List<ArraySegment<int>> groups = new List<ArraySegment<int>>();
-            for (int i = 0; i < tokens.Length; i += (_chunkSize - _chunkOverlap))
+            for (int i = 0; i < tokens.Length; i += (_maxTokensPerChunk - _chunkOverlap))
             {
-                int count = Math.Min(_chunkSize, tokens.Length - i);
+                int count = Math.Min(_maxTokensPerChunk, tokens.Length - i);
                 groups.Add(new ArraySegment<int>(tokens, i, count));
             }
             return groups;
         }
 
-        private DocumentChunk GroupToChunk(ArraySegment<int> tokenGroup)
+        private DocumentChunk GroupToChunk(ArraySegment<int> tokenGroup, string? context = null)
         {
             string text = _tokenizer.Decode(tokenGroup);
-            return new DocumentChunk(text, tokenGroup.Count);
+            return new DocumentChunk(text, tokenGroup.Count, context);
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Microsoft.Extensions.DataIngestion
                     StringBuilder result = new();
                     foreach (var element in nestedSection.Elements)
                     {
-                        result.Append(GetSemanticContent(element));
+                        result.AppendLine(GetSemanticContent(element));
                     }
                     return result.ToString();
                 default:
