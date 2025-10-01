@@ -8,6 +8,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DocumentFlattenerTests
 {
+    private readonly string[,] rows = { { "header" }, { "row1" }, { "row2" } };
+
     [Fact]
     public async Task StructureIsPreservedWithinSectionsAndDocument()
     {
@@ -21,7 +23,7 @@ public class DocumentFlattenerTests
             {
                 new DocumentHeader("header"),
                 new DocumentParagraph("paragraph"),
-                new DocumentTable("table"),
+                new DocumentTable("table", rows),
                 new DocumentSection
                 {
                     Elements =

@@ -151,7 +151,7 @@ public class LlamaParseReader : DocumentReader
                         Text = heading.Value,
                         Level = heading.Level,
                     },
-                    TablePageItem table => new DocumentTable(table.Markdown),
+                    TablePageItem table => new DocumentTable(table.Markdown, GetCells(table.Rows)),
                     _ => throw new InvalidOperationException()
                 };
                 element.PageNumber = parsedPage.PageNumber;
@@ -196,5 +196,18 @@ public class LlamaParseReader : DocumentReader
 
             yield return page;
         }
+    }
+
+    private static string[,] GetCells(List<List<string>> rows)
+    {
+        string[,] cells = new string[rows.Count, rows[0].Count];
+        for (int i = 0; i < rows.Count; i++)
+        {
+            for (int j = 0; j < rows[i].Count; j++)
+            {
+                cells[i,j] = rows[i][j];
+            }
+        }
+        return cells;
     }
 }

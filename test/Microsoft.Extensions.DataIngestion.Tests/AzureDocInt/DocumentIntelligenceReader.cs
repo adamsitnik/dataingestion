@@ -166,7 +166,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                         break;
                     case "table":
                         var parsedTable = parsed.Tables[index];
-                        section.Elements.Add(new DocumentTable(GetMarkdown(parsedTable.Spans, entireContent))
+                        section.Elements.Add(new DocumentTable(GetMarkdown(parsedTable.Spans, entireContent), GetCells(parsedTable))
                         {
                             PageNumber = GetPageNumber(parsedTable.BoundingRegions),
                             Metadata =
@@ -309,5 +309,23 @@ public sealed class DocumentIntelligenceReader : DocumentReader
             }
         }
         return null;
+    }
+
+    private static string[,] GetCells(global::Azure.AI.DocumentIntelligence.DocumentTable parsedTable)
+    {
+        string[,] cells = new string[parsedTable.RowCount, parsedTable.ColumnCount];
+
+        foreach (var cell in parsedTable.Cells)
+        {
+            // Azure Document Intelligence uses HTML to represent merged cells.
+            // DataIngestion uses a simple list of lists, so we duplicate the content in the merged cells.
+            int columnSpan = Math.Max(1, cell.ColumnSpan.GetValueOrDefault());
+            for (int i = 0; i < columnSpan; i++)
+            {
+                cells[cell.RowIndex, cell.ColumnIndex + i] = cell.Content;
+            }
+        }
+
+        return cells;
     }
 }

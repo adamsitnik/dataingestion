@@ -153,12 +153,18 @@ public sealed class DocumentFooter : DocumentElement
 
 public sealed class DocumentTable : DocumentElement
 {
-    // So far, we only support Markdown representation of the table
-    // because "LLMs speak Markdown" and there was no need to access
-    // individual rows/columns/cells.
-    public DocumentTable(string markdown) : base(markdown)
+    public DocumentTable(string markdown, string[,] cells) : base(markdown)
     {
+        Cells = cells ?? throw new ArgumentNullException(nameof(cells));
     }
+
+    /// <summary>
+    /// Each table can be represented as a multidimensional array of cell contents, with the first row being the headers.
+    /// </summary>
+    /// <remarks>
+    /// This information is useful when chunking large tables that exceed token count limit.
+    /// </remarks>
+    public string[,] Cells { get; }
 }
 
 public sealed class DocumentImage : DocumentElement
