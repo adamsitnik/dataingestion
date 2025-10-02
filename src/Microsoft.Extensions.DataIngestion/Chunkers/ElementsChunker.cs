@@ -74,17 +74,17 @@ internal sealed class ElementsChunker
                 int headerLength = tableBuilder.Length;
                 int headerTokenCount = CountTokens(tableBuilder.AsSpan());
 
+                // We can't respect the limit if context and header themselves use more tokens.
+                if (contextTokenCount + headerTokenCount >= _maxTokensPerChunk)
+                {
+                    tableBuilder.Dispose();
+                    ThrowTokenCountExceeded();
+                }
+
                 if (headerTokenCount + totalTokenCount >= _maxTokensPerChunk)
                 {
                     // We can't add the header row, so commit what we have accumulated so far.
                     Commit();
-
-                    // We still can't add the header row, so we can't keep the promise of respecting the limit.
-                    if (headerTokenCount + totalTokenCount >= _maxTokensPerChunk)
-                    {
-                        tableBuilder.Dispose();
-                        ThrowTokenCountExceeded();
-                    }
                 }
 
                 totalTokenCount += headerTokenCount;

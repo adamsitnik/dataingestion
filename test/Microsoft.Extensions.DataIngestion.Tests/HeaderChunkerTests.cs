@@ -238,7 +238,7 @@ And some follow up.", chunks[5].Content, ignoreLineEndingDifferences: true);
 
         static string[,] CreateTableCells()
         {
-            string[,] cells = new string[6, 5]; // 21 rows (1 header + 6 data rows), 5 columns
+            string[,] cells = new string[6, 5]; // 6 rows (1 header + 5 data rows), 5 columns
 
             // Header row
             cells[0, 0] = "one";
