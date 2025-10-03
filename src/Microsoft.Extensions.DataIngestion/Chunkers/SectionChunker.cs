@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     /// <summary>
-    /// Processes a Markdown document and splits it into smaller chunks based on <see cref="DocumentSection"> provided by the <see cref="DocumentReader"/>.
+    /// Processes a <see cref="Document"/> and splits it into smaller chunks based on <see cref="DocumentSection"/> instances provided by the <see cref="DocumentReader"/>.
     /// </summary>
     public class SectionChunker : IDocumentChunker
     {
