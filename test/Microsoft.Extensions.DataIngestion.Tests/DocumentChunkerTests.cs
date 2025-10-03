@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests
 {
     public abstract class DocumentChunkerTests
     {
-        protected abstract IDocumentChunker CreateDocumentChunker();
+        protected abstract IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500);
 
         [Fact]
         public async Task ProcessAsync_ThrowsArgumentNullException_WhenDocumentIsNull()

@@ -10,7 +10,6 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public abstract class DocumentTokenChunkerTests : DocumentChunkerTests
     {
-
         [Fact]
         public async Task SingleChunkText()
         {

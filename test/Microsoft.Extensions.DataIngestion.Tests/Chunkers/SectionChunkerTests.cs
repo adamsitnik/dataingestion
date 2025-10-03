@@ -12,10 +12,10 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class SectionChunkerTests : DocumentChunkerTests
     {
-        protected override IDocumentChunker CreateDocumentChunker()
+        protected override IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
-            return new SectionChunker(tokenizer, 512, 0);
+            return new SectionChunker(tokenizer, maxTokensPerChunk, overlapTokens);
         }
 
         [Fact]
@@ -136,7 +136,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
                     new DocumentParagraph(text)
                 }
             });
-            IDocumentChunker chunker = CreateDocumentChunker();
+            IDocumentChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 512);
             List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(2, chunks.Count);
             Assert.True(chunks[0].Content.Split(' ').Length <= 512);

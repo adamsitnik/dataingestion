@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class MarkdownChunkerTests : DocumentChunkerTests
     {
-        override protected IDocumentChunker CreateDocumentChunker()
+        override protected IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             return new MarkdownChunker();
         }

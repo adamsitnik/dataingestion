@@ -5,6 +5,7 @@ using Azure;
 using Azure.AI.OpenAI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion.Chunkers;
+using Microsoft.ML.Tokenizers;
 using OpenAI.Embeddings;
 using System;
 using System.Collections.Generic;
@@ -15,10 +16,11 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
 {
     public class SemanticChunkerTests : DocumentChunkerTests
     {
-        protected override IDocumentChunker CreateDocumentChunker()
+        protected override IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             EmbeddingClient embeddingClient = CreateEmbeddingClient();
-            return new SemanticChunker(embeddingClient.AsIEmbeddingGenerator());
+            Tokenizer tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
+            return new SemanticChunker(embeddingClient.AsIEmbeddingGenerator(), tokenizer, maxTokensPerChunk, overlapTokens);
         }
 
         private EmbeddingClient CreateEmbeddingClient()
@@ -69,8 +71,121 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             IDocumentChunker chunker = CreateDocumentChunker();
             List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(2, chunks.Count);
-            Assert.Equal(String.Join(" ", text1, text2), chunks[0].Content);
+            Assert.Equal(text1 + Environment.NewLine + text2, chunks[0].Content);
             Assert.Equal(text3, chunks[1].Content);
+        }
+
+        [Fact]
+        public async Task TwoSeparateTopicsWithAllKindsOfElements()
+        {
+            string dotNetTableMarkdown = @"| Language | Type | Status |
+| --- | --- | --- |
+| C# | Object-oriented | Primary |
+| F# | Functional | Official |
+| Visual Basic | Object-oriented | Official |
+| PowerShell | Scripting | Supported |
+| IronPython | Dynamic | Community |
+| IronRuby | Dynamic | Community |
+| Boo | Object-oriented | Community |
+| Nemerle | Functional/OOP | Community |";
+
+            string godsTableMarkdown = @"| God | Domain | Symbol | Roman Name |
+| --- | --- | --- | --- |
+| Zeus | Sky & Thunder | Lightning Bolt | Jupiter |
+| Hera | Marriage & Family | Peacock | Juno |
+| Poseidon | Sea & Earthquakes | Trident | Neptune |
+| Athena | Wisdom & War | Owl | Minerva |
+| Apollo | Sun & Music | Lyre | Apollo |
+| Artemis | Hunt & Moon | Silver Bow | Diana |
+| Aphrodite | Love & Beauty | Dove | Venus |
+| Ares | War & Courage | Spear | Mars |
+| Hephaestus | Fire & Forge | Hammer | Vulcan |
+| Demeter | Harvest & Nature | Wheat | Ceres |
+| Dionysus | Wine & Festivity | Grapes | Bacchus |
+| Hermes | Messages & Trade | Caduceus | Mercury |";
+
+            Document doc = new("dotnet-languages");
+            doc.Sections.Add(new DocumentSection
+            {
+                Elements =
+                {
+                    new DocumentHeader("# .NET Supported Languages") { Level = 1 },
+                    new DocumentParagraph("The .NET platform supports multiple programming languages:"),
+                    new DocumentTable(dotNetTableMarkdown, CreateLanguageTableCells()),
+                    new DocumentParagraph("C# remains the most popular language for .NET development."),
+                    new DocumentHeader("# Ancient Greek Olympian Gods") { Level = 1 },
+                    new DocumentParagraph("The twelve Olympian gods were the principal deities of the Greek pantheon:"),
+                    new DocumentTable(godsTableMarkdown, CreateGreekGodsTableCells()),
+                    new DocumentParagraph("These gods resided on Mount Olympus and ruled over different aspects of mortal and divine life.")
+                }
+            });
+
+            IDocumentChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 200);
+            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+            
+            Assert.Equal(3, chunks.Count);
+            Assert.Equal($@"# .NET Supported Languages
+The .NET platform supports multiple programming languages:
+{dotNetTableMarkdown}
+C# remains the most popular language for .NET development."
+            , chunks[0].Content, ignoreLineEndingDifferences: true);
+            Assert.Equal($@"# Ancient Greek Olympian Gods
+The twelve Olympian gods were the principal deities of the Greek pantheon:
+| God | Domain | Symbol | Roman Name |
+| --- | --- | --- | --- |
+| Zeus | Sky & Thunder | Lightning Bolt | Jupiter |
+| Hera | Marriage & Family | Peacock | Juno |
+| Poseidon | Sea & Earthquakes | Trident | Neptune |
+| Athena | Wisdom & War | Owl | Minerva |
+| Apollo | Sun & Music | Lyre | Apollo |
+| Artemis | Hunt & Moon | Silver Bow | Diana |
+| Aphrodite | Love & Beauty | Dove | Venus |
+| Ares | War & Courage | Spear | Mars |
+| Hephaestus | Fire & Forge | Hammer | Vulcan |
+| Demeter | Harvest & Nature | Wheat | Ceres |
+| Dionysus | Wine & Festivity | Grapes | Bacchus |"
+            , chunks[1].Content, ignoreLineEndingDifferences: true);
+            Assert.Equal($@"| God | Domain | Symbol | Roman Name |
+| --- | --- | --- | --- |
+| Hermes | Messages & Trade | Caduceus | Mercury |
+These gods resided on Mount Olympus and ruled over different aspects of mortal and divine life."
+            , chunks[2].Content, ignoreLineEndingDifferences: true);
+
+            static string[,] CreateGreekGodsTableCells()
+            {
+                return new string[,]
+                {
+                    { "God", "Domain", "Symbol", "Roman Name" },
+                    { "Zeus", "Sky & Thunder", "Lightning Bolt", "Jupiter" },
+                    { "Hera", "Marriage & Family", "Peacock", "Juno" },
+                    { "Poseidon", "Sea & Earthquakes", "Trident", "Neptune" },
+                    { "Athena", "Wisdom & War", "Owl", "Minerva" },
+                    { "Apollo", "Sun & Music", "Lyre", "Apollo" },
+                    { "Artemis", "Hunt & Moon", "Silver Bow", "Diana" },
+                    { "Aphrodite", "Love & Beauty", "Dove", "Venus" },
+                    { "Ares", "War & Courage", "Spear", "Mars" },
+                    { "Hephaestus", "Fire & Forge", "Hammer", "Vulcan" },
+                    { "Demeter", "Harvest & Nature", "Wheat", "Ceres" },
+                    { "Dionysus", "Wine & Festivity", "Grapes", "Bacchus" },
+                    { "Hermes", "Messages & Trade", "Caduceus", "Mercury" }
+                };
+            }
+
+            static string[,] CreateLanguageTableCells()
+            {
+                return new string[,]
+                {
+                    { "Language", "Type", "Status" },
+                    { "C#", "Object-oriented", "Primary" },
+                    { "F#", "Functional", "Official" },
+                    { "Visual Basic", "Object-oriented", "Official" },
+                    { "PowerShell", "Scripting", "Supported" },
+                    { "IronPython", "Dynamic", "Community" },
+                    { "IronRuby", "Dynamic", "Community" },
+                    { "Boo", "Object-oriented", "Community" },
+                    { "Nemerle", "Functional/OOP", "Community" }
+                };
+            }
         }
     }
 }
