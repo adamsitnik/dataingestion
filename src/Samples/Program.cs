@@ -36,7 +36,7 @@ namespace Samples
             IDocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
                 // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
-                maxTokensPerParagraph: 2000,
+                maxTokensPerChunk: 2000,
                 overlapTokens: 500);
 
             using SqlServerVectorStore sqlServerVectorStore = new(
@@ -81,7 +81,7 @@ namespace Samples
             IDocumentChunker chunker = new HeaderChunker(
                 TiktokenTokenizer.CreateForModel("gpt-4"),
                 // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
-                maxTokensPerParagraph: 2000,
+                maxTokensPerChunk: 2000,
                 overlapTokens: 500);
 
             using SqlServerVectorStore sqlServerVectorStore = new(

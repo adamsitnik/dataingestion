@@ -2,9 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using Markdig;
+using Markdig.Extensions.Tables;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -115,7 +117,7 @@ public sealed class MarkdownReader : DocumentReader
             LeafBlock leafBlock => MapLeafBlockToElement(leafBlock, previousWasBreak, elementMarkdown),
             ListBlock listBlock => MapListBlock(listBlock, previousWasBreak, outputContent, elementMarkdown),
             QuoteBlock quoteBlock => MapQuoteBlock(quoteBlock, previousWasBreak, outputContent, elementMarkdown),
-            Markdig.Extensions.Tables.Table table => new DocumentTable(elementMarkdown),
+            Table table => new DocumentTable(elementMarkdown, GetCells(table, outputContent)),
             _ => throw new NotSupportedException($"Block type '{block.GetType().Name}' is not supported.")
         };
 
@@ -234,5 +236,58 @@ public sealed class MarkdownReader : DocumentReader
         }
 
         return content.ToString();
+    }
+
+    private static string[,] GetCells(Table table, string outputContent)
+    {
+        int firstRowIndex = SkipFirstRow(table, outputContent) ? 1 : 0;
+        string[,] cells = new string[table.Count - firstRowIndex, table.ColumnDefinitions.Count - 1];
+
+        for (int rowIndex = firstRowIndex; rowIndex < table.Count; rowIndex++)
+        {
+            TableRow tableRow = (TableRow)table[rowIndex];
+            int columnIndex = 0;
+            for (int cellIndex = 0; cellIndex < tableRow.Count; cellIndex++)
+            {
+                TableCell tableCell = (TableCell)tableRow[cellIndex];
+                string content = tableCell.Count switch
+                {
+                    0 => string.Empty,
+                    1 => MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text,
+                    _ => throw new NotSupportedException($"Cells with {tableCell.Count} elements are not supported.")
+                };
+
+                for (int columnSpan = 0; columnSpan < tableCell.ColumnSpan; columnSpan++, columnIndex++)
+                {
+                    // We are not using tableCell.ColumnIndex here as it defaults to -1 ;)
+                    cells[rowIndex - firstRowIndex, columnIndex] = content;
+                }
+            }
+        }
+
+        return cells;
+
+        // Some parsers like MarkItDown include a row with invalid markdown before the separator row:
+        // |  |  |  |  |
+        // | --- | --- | --- | --- |
+        static bool SkipFirstRow(Table table, string outputContent)
+        {
+            if (table.Count > 0)
+            {
+                TableRow firstRow = (TableRow)table[0];
+                for (int cellIndex = 0; cellIndex < firstRow.Count; cellIndex++)
+                {
+                    TableCell tableCell = (TableCell)firstRow[cellIndex];
+                    if (!string.IsNullOrWhiteSpace(MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
     }
 }

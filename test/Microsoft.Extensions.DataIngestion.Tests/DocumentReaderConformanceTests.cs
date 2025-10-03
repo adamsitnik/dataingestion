@@ -70,6 +70,30 @@ public abstract class DocumentReaderConformanceTests
         SimpleAsserts(document, filePath, filePath);
     }
 
+    [Fact]
+    public virtual Task SupportsTables() => SupportsTablesCore(Path.Combine("TestFiles", "Sample.docx"));
+
+    protected async Task SupportsTablesCore(string filePath)
+    {
+        var reader = CreateDocumentReader();
+        var document = await reader.ReadAsync(filePath);
+
+        DocumentTable documentTable = Assert.Single(document.OfType<DocumentTable>());
+        Assert.Equal(5, documentTable.Cells.GetLength(0));
+        Assert.Equal(4, documentTable.Cells.GetLength(1));
+
+        string[,] expected =
+        {
+            { "Milestone", "Target Date", "Department", "Indicator" },
+            { "Environmental Audit", "Mar 2025", "Environmental", "Audit Complete" },
+            { "Renewable Energy Launch", "Jul 2025", "Facilities", "Install Operational" },
+            { "Staff Workshop", "Sep 2025", "HR", "Workshop Held" },
+            { "Emissions Review", "Dec 2029", "All", "25% Emissions Cut" }
+        };
+
+        Assert.Equal(expected, documentTable.Cells);
+    }
+
     public static IEnumerable<object[]> Images
     {
         get
