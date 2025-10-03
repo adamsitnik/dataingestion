@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0;netstandard2.0</TargetFrameworks>
-    <NoWarn>SKEXP0050</NoWarn>
+    <!-- "Slice can be simplified": we don't want to include a copy of Range-related types for netstandard2.0 -->
+    <NoWarn>IDE0057</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

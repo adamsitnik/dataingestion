@@ -117,7 +117,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         };
 
 #if DEBUG
-        HashSet<int> visitedSections = new();
+        HashSet<int> visitedSections = [];
 #endif
         DocumentSection rootSection = new();
         HandleSection(sectionIndex: 0, rootSection, parsed.Content);

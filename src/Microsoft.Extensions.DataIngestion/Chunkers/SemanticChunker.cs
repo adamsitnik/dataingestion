@@ -14,13 +14,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     public class SemanticChunker : IDocumentChunker
     {
-        private IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
-        private float _tresholdPercentile;
+        private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
+        private readonly float _thresholdPercentile;
 
-        public SemanticChunker(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, float tresholdPercentile = 95.0f)
+        public SemanticChunker(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, float thresholdPercentile = 95.0f)
         {
-            _embeddingGenerator = embeddingGenerator;
-            _tresholdPercentile = tresholdPercentile;
+            _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
+            _thresholdPercentile = thresholdPercentile;
         }
 
         public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
@@ -45,14 +45,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
         private async Task<List<(string, float)>> CalculateDistances(string[] elements)
         {
-            List<(string, float)> sentenceDistance = new();
+            List<(string, float)> sentenceDistance = [];
 
             var embeddings = await _embeddingGenerator.GenerateAsync(elements).ConfigureAwait(false);
 
             for (int i = 0; i < elements.Length - 1; i++)
             {
                 string current = elements[i];
-                string next = elements[i + 1];
                 float distance = 1 - TensorPrimitives.CosineSimilarity(embeddings[i].Vector.Span, embeddings[i + 1].Vector.Span);
                 sentenceDistance.Add((current, distance));
             }
@@ -100,7 +99,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 return sorted[0];
             }
 
-            float i = (_tresholdPercentile / 100f) * (sorted.Length - 1);
+            float i = (_thresholdPercentile / 100f) * (sorted.Length - 1);
             int i0 = (int)i;
             int i1 = Math.Min(i0 + 1, sorted.Length - 1);
             return sorted[i0] + (i - i0) * (sorted[i1] - sorted[i0]);

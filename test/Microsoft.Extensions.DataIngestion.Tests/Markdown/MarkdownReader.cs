@@ -6,7 +6,6 @@ using Markdig.Extensions.Tables;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -162,17 +161,22 @@ public sealed class MarkdownReader : DocumentReader
     {
         // So far Sections were only pages (LP) or sections for ADI. Now they can also represent lists.
         DocumentSection list = new(listMarkdown);
-        foreach (ListItemBlock item in listBlock)
+        foreach (Block? item in listBlock)
         {
-            foreach (LeafBlock child in item)
+            if (item is not ListItemBlock listItemBlock)
             {
-                if (IsEmptyBlock(child))
+                continue;
+            }
+
+            foreach (Block? child in listItemBlock)
+            {
+                if (child is not LeafBlock leafBlock || IsEmptyBlock(leafBlock))
                 {
                     continue; // Skip empty blocks in lists
                 }
 
-                string childMarkdown = outputContent.Substring(child.Span.Start, child.Span.Length);
-                DocumentElement element = MapLeafBlockToElement(child, previousWasBreak, childMarkdown);
+                string childMarkdown = outputContent.Substring(leafBlock.Span.Start, leafBlock.Span.Length);
+                DocumentElement element = MapLeafBlockToElement(leafBlock, previousWasBreak, childMarkdown);
                 list.Elements.Add(element);
             }
         }
