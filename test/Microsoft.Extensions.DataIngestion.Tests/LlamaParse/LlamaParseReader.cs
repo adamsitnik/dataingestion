@@ -100,7 +100,7 @@ public class LlamaParseReader : DocumentReader
         return (parsed, images);
     }
 
-    private Document MapToDocument(List<RawResult> parsed, List<ImageDocument> images, string identifier)
+    private static Document MapToDocument(List<RawResult> parsed, List<ImageDocument> images, string identifier)
     {
         Document result = new(identifier);
 
@@ -113,7 +113,7 @@ public class LlamaParseReader : DocumentReader
         return result;
     }
 
-    private IEnumerable<DocumentSection> Map(LlamaParseDocument document, List<ImageDocument> images)
+    private static IEnumerable<DocumentSection> Map(LlamaParseDocument document, List<ImageDocument> images)
     {
         foreach (var parsedPage in document.Pages)
         {

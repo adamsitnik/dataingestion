@@ -94,7 +94,7 @@ public abstract class DocumentElement
 
     public int? PageNumber { get; set; }
 
-    public Dictionary<string, object?> Metadata => _metadata ??= new();
+    public Dictionary<string, object?> Metadata => _metadata ??= [];
 }
 
 /// <summary>

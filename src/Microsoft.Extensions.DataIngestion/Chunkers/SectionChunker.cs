@@ -14,12 +14,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     public class SectionChunker : IDocumentChunker
     {
-        private DocumentTokenChunker _documentTokenChunker;
+        private readonly DocumentTokenChunker _documentTokenChunker;
         public SectionChunker(Tokenizer tokenizer, int maxTokensPerChunk, int chunkOverlap)
         {
             if (maxTokensPerChunk <= 0) throw new ArgumentOutOfRangeException(nameof(maxTokensPerChunk));
 
-            _documentTokenChunker = new DocumentTokenChunker(tokenizer, maxTokensPerChunk, chunkOverlap);
+            _documentTokenChunker = new(tokenizer, maxTokensPerChunk, chunkOverlap);
         }
 
         public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
