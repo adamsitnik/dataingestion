@@ -140,6 +140,11 @@ public class LlamaParseReader : DocumentReader
 
             foreach (var item in parsedPage.Items)
             {
+                if (item is TablePageItem { Rows.Count: 0 })
+                {
+                    continue; // Workaround a LlamaParse bug
+                }
+
                 DocumentElement element = item switch
                 {
                     TextPageItem text => new DocumentParagraph(item.Markdown)
