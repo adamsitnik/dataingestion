@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
+namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public class NoOverlapDocumentTokenChunkerTests : DocumentTokenChunkerTests
     {
