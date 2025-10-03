@@ -4,52 +4,73 @@
 using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Microsoft.Extensions.DataIngestion.ElementUtils;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
+    /// <summary>
+    /// Processes a Markdown document and splits it into smaller chunks based on <see cref="DocumentSection"> provided by the <see cref="DocumentReader"/>.
+    /// </summary>
     public class SectionChunker : IDocumentChunker
     {
-        private readonly DocumentTokenChunker _documentTokenChunker;
-        public SectionChunker(Tokenizer tokenizer, int maxTokensPerChunk, int chunkOverlap)
-        {
-            if (maxTokensPerChunk <= 0) throw new ArgumentOutOfRangeException(nameof(maxTokensPerChunk));
+        private readonly ElementsChunker _elementsChunker;
 
-            _documentTokenChunker = new(tokenizer, maxTokensPerChunk, chunkOverlap);
-        }
+        public SectionChunker(Tokenizer tokenizer, int maxTokensPerChunk, int chunkOverlap)
+            => _elementsChunker = new(tokenizer, maxTokensPerChunk, chunkOverlap);
 
         public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
-            if (document is null) throw new ArgumentNullException(nameof(document));
+            if (document is null)
+            {
+                throw new ArgumentNullException(nameof(document));
+            }
 
-            List<DocumentChunk> chunks = document.Sections.Select(ProcessSection)
-                .Where(x => !string.IsNullOrWhiteSpace(x.content))
-                .SelectMany(x =>_documentTokenChunker.ProcessText(x.content, x.context))
-                .ToList();
+            List<DocumentChunk> chunks = [];
+            foreach (DocumentSection section in document.Sections)
+            {
+                Process(section, chunks);
+            }
 
             return Task.FromResult(chunks);
         }
 
-        private (string content, string? context) ProcessSection(DocumentSection section)
+        private void Process(DocumentSection section, List<DocumentChunk> chunks, string? parentContext = null)
         {
-            StringBuilder sectionText = new();
-            foreach (var element in section.Elements)
+            List<DocumentElement> elements = new(section.Elements.Count);
+            string context = parentContext ?? string.Empty;
+
+            for (int i = 0; i < section.Elements.Count; i++)
             {
-                sectionText.AppendLine(GetSemanticContent(element)); // No special handling for nested sections
+                switch (section.Elements[i])
+                {
+                    // If the first element is a header, we use it as a context.
+                    // This is common for various documents and readers.
+                    case DocumentHeader documentHeader when i == 0:
+                        context = string.IsNullOrEmpty(context)
+                            ? documentHeader.Markdown
+                            : context + $" {documentHeader.Markdown}";
+                    break;
+                    case DocumentSection nestedSection:
+                        Commit();
+                        Process(nestedSection, chunks, context);
+                        break;
+                    default:
+                        elements.Add(section.Elements[i]);
+                        break;
+                }
             }
 
-            string? context = null;
-            DocumentElement? firstElement = section.Elements.FirstOrDefault();
-            if (firstElement is DocumentHeader)
-            {
-                context = firstElement.Markdown;
-            }
+            Commit();
 
-            return (sectionText.ToString(), context);
+            void Commit()
+            {
+                if (elements.Count > 0)
+                {
+                    _elementsChunker.Process(chunks, context, elements);
+                    elements.Clear();
+                }
+            }
         }
     }
 }
