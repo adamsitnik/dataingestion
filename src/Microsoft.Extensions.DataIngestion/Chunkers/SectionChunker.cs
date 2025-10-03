@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
     {
         private readonly ElementsChunker _elementsChunker;
 
-        public SectionChunker(Tokenizer tokenizer, int maxTokensPerChunk, int chunkOverlap)
+        public SectionChunker(Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int chunkOverlap = 500)
             => _elementsChunker = new(tokenizer, maxTokensPerChunk, chunkOverlap);
 
         public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
