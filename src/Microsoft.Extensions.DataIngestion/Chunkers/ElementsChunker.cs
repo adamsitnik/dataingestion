@@ -46,7 +46,7 @@ internal sealed class ElementsChunker
         for (int elementIndex = 0; elementIndex < elements.Count; elementIndex++)
         {
             DocumentElement element = elements[elementIndex];
-            string semanticContent = element switch
+            string? semanticContent = element switch
             {
                 // Image exposes:
                 // - Markdown: ![Alt Text](url) which is not very useful for embedding.
@@ -57,7 +57,10 @@ internal sealed class ElementsChunker
                 _ => element.Markdown
             };
 
-            Debug.Assert(!string.IsNullOrEmpty(semanticContent), "Element semantic content should not be null or empty.");
+            if(string.IsNullOrEmpty(semanticContent))
+            {
+                continue; // An image can come with Markdown, but no AlternativeText or Text.
+            }
 
             int elementTokenCount = CountTokens(semanticContent.AsSpan());
             if (elementTokenCount + totalTokenCount <= _maxTokensPerChunk)

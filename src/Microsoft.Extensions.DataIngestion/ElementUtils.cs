@@ -7,7 +7,7 @@ namespace Microsoft.Extensions.DataIngestion
 {
     internal static class ElementUtils
     {
-        internal static string GetSemanticContent(DocumentElement documentElement)
+        internal static string? GetSemanticContent(DocumentElement documentElement)
         {
             switch (documentElement)
             {
@@ -19,7 +19,11 @@ namespace Microsoft.Extensions.DataIngestion
                     StringBuilder result = new();
                     foreach (var element in nestedSection.Elements)
                     {
-                        result.AppendLine(GetSemanticContent(element));
+                        string? nestedContent = GetSemanticContent(element);
+                        if (!string.IsNullOrEmpty(nestedContent))
+                        {
+                            result.AppendLine(nestedContent);
+                        }
                     }
                     return result.ToString();
                 default:

@@ -88,7 +88,7 @@ public abstract class DocumentElement
 
     private Dictionary<string, object?>? _metadata;
 
-    public string Text { get; set; } = string.Empty;
+    public string? Text { get; set; }
 
     public virtual string Markdown => _markdown;
 
