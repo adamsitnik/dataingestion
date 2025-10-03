@@ -174,7 +174,7 @@ public class LlamaParseReader : DocumentReader
                     Content = binaryData,
                     MediaType = image.ImageMimetype,
                     PageNumber = parsedPage.PageNumber,
-                    Text = image.Text ?? string.Empty,
+                    Text = image.Text,
                 };
 
                 foreach (var kvp in image.Metadata)

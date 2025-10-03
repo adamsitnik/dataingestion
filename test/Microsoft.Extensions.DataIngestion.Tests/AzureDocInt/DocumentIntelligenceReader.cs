@@ -187,7 +187,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                             Content = content?.ToMemory(),
                             MediaType = content?.MediaType ?? "image/png",
                             PageNumber = GetPageNumber(figure.BoundingRegions),
-                            Text = figure.Caption?.Content ?? "",
+                            Text = figure.Caption?.Content,
                             Metadata =
                             {
                                 { nameof(figure.Id), figure.Id },

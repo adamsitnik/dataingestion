@@ -197,7 +197,7 @@ public sealed class MarkdownReader : DocumentReader
         return quote;
     }
 
-    private static string GetText(ContainerInline? containerInline)
+    private static string? GetText(ContainerInline? containerInline)
     {
         Debug.Assert(containerInline != null, "ContainerInline should not be null here.");
         Debug.Assert(containerInline.FirstChild != null, "FirstChild should not be null here.");
@@ -205,7 +205,7 @@ public sealed class MarkdownReader : DocumentReader
         if (ReferenceEquals(containerInline.FirstChild, containerInline.LastChild))
         {
             // If there is only one child, return its text.
-            return containerInline.FirstChild.ToString()!;
+            return containerInline.FirstChild.ToString();
         }
 
         StringBuilder content = new(100);
@@ -253,7 +253,7 @@ public sealed class MarkdownReader : DocumentReader
                 string content = tableCell.Count switch
                 {
                     0 => string.Empty,
-                    1 => MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text,
+                    1 => MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text ?? string.Empty,
                     _ => throw new NotSupportedException($"Cells with {tableCell.Count} elements are not supported.")
                 };
 
