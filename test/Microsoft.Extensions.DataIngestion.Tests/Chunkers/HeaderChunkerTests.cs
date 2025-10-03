@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Extensions.DataIngestion.Tests;
+namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests;
 
 public class HeaderChunkerTests
 {

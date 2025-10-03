@@ -2,24 +2,28 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using Microsoft.Extensions.AI;
+using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics.Tensors;
 using System.Threading;
 using System.Threading.Tasks;
-using static Microsoft.Extensions.DataIngestion.ElementUtils;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     public class SemanticChunker : IDocumentChunker
     {
+        private readonly ElementsChunker _elementsChunker;
         private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
         private readonly float _thresholdPercentile;
 
-        public SemanticChunker(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, float thresholdPercentile = 95.0f)
+        public SemanticChunker(
+            IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
+            Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int overlapTokens = 500,
+            float thresholdPercentile = 95.0f)
         {
             _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
+            _elementsChunker = new(tokenizer, maxTokensPerChunk, overlapTokens);
             _thresholdPercentile = thresholdPercentile;
         }
 
@@ -37,67 +41,82 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 return [];
             }
 
-            IEnumerable<string> units = document.Select(GetSemanticContent).Where(content => !string.IsNullOrEmpty(content))!;
-            Task<List<(string, float)>> sentenceDistances = CalculateDistances(units.ToArray());
-
-            return MakeChunks(await sentenceDistances);
+            List<(DocumentElement, float)> distances = await CalculateDistances(document);
+            return MakeChunks(distances);
         }
 
-        private async Task<List<(string, float)>> CalculateDistances(string[] elements)
+        private async Task<List<(DocumentElement element, float distance)>> CalculateDistances(Document documents)
         {
-            List<(string, float)> sentenceDistance = [];
+            List<(DocumentElement element, float distance)> elementDistance = [];
+            List<string> semanticContents = [];
 
-            var embeddings = await _embeddingGenerator.GenerateAsync(elements).ConfigureAwait(false);
-
-            for (int i = 0; i < elements.Length - 1; i++)
+            foreach (DocumentElement element in documents)
             {
-                string current = elements[i];
-                float distance = 1 - TensorPrimitives.CosineSimilarity(embeddings[i].Vector.Span, embeddings[i + 1].Vector.Span);
-                sentenceDistance.Add((current, distance));
+                string? semanticContent = element is DocumentImage img
+                    ? img.AlternativeText ?? img.Text
+                    : element.Markdown;
+
+                if (!string.IsNullOrEmpty(semanticContent))
+                {
+                    elementDistance.Add((element, default));
+                    semanticContents.Add(semanticContent!);
+                }
             }
 
-            sentenceDistance.Add((elements.Last(), 0f));
-            return sentenceDistance;
+            var embeddings = await _embeddingGenerator.GenerateAsync(semanticContents).ConfigureAwait(false);
+
+            for (int i = 0; i < semanticContents.Count - 1; i++)
+            {
+                string current = semanticContents[i];
+                float distance = 1 - TensorPrimitives.CosineSimilarity(embeddings[i].Vector.Span, embeddings[i + 1].Vector.Span);
+                elementDistance[i] = (elementDistance[i].element, distance);
+            }
+
+            return elementDistance;
         }
 
-        private List<DocumentChunk> MakeChunks(List<(string, float)> elementDistances)
+        private List<DocumentChunk> MakeChunks(List<(DocumentElement element, float distance)> elementDistances)
         {
             List<DocumentChunk> chunks = [];
-            float distanceThreshold = Percentile(elementDistances.Select(x => x.Item2));
+            float distanceThreshold = Percentile(elementDistances);
 
-            List<string> elementAccumulator = [];
-            foreach (var (sentence, distance) in elementDistances)
+            List<DocumentElement> elementAccumulator = [];
+            string context = string.Empty; // we could implement some simple heuristic
+            foreach (var (element, distance) in elementDistances)
             {
-                elementAccumulator.Add(sentence);
+                elementAccumulator.Add(element);
                 if (distance > distanceThreshold)
                 {
-                    DocumentChunk chunk = new(String.Join(" ", elementAccumulator));
-                    chunks.Add(chunk);
+                    _elementsChunker.Process(chunks, context, elementAccumulator);
                     elementAccumulator.Clear();
                 }
             }
 
             if (elementAccumulator.Count > 0)
             {
-                DocumentChunk chunk = new(String.Join(" ", elementAccumulator));
-                chunks.Add(chunk);
+                _elementsChunker.Process(chunks, context, elementAccumulator);
             }
 
             return chunks;
         }
 
-
-        private float Percentile(IEnumerable<float> sequence)
+        private float Percentile(List<(DocumentElement element, float distance)> elementDistances)
         {
-            var sorted = sequence.OrderBy(x => x).ToArray();
-            if (sorted.Length == 0)
+            if (elementDistances.Count == 0)
             {
                 return 0f;
             }
-            else if (sorted.Length == 1)
+            else if (elementDistances.Count == 1)
             {
-                return sorted[0];
+                return elementDistances[0].distance;
             }
+
+            float[] sorted = new float[elementDistances.Count];
+            for (int elementIndex = 0; elementIndex < elementDistances.Count; elementIndex++)
+            {
+                sorted[elementIndex] = elementDistances[elementIndex].distance;
+            }
+            Array.Sort(sorted);
 
             float i = (_thresholdPercentile / 100f) * (sorted.Length - 1);
             int i0 = (int)i;

@@ -4,6 +4,7 @@
 using Azure;
 using Azure.AI.DocumentIntelligence;
 using LlamaParse;
+using Microsoft.Extensions.DataIngestion.Chunkers;
 using Microsoft.ML.Tokenizers;
 using Microsoft.SemanticKernel.Connectors.InMemory;
 using OpenTelemetry;
@@ -105,7 +106,7 @@ public class DocumentPipelineTests
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
         IDocumentProcessor[] documentProcessors = [new DocumentFlattener(), RemovalProcessor.Footers, RemovalProcessor.EmptySections];
-        IDocumentChunker documentChunker = new DummyChunker();
+        IDocumentChunker documentChunker = new HeaderChunker(CreateTokenizer());
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -148,7 +149,7 @@ public class DocumentPipelineTests
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
         IDocumentProcessor[] documentProcessors = [new DocumentFlattener()];
-        IDocumentChunker documentChunker = new DummyChunker();
+        IDocumentChunker documentChunker = new SectionChunker(CreateTokenizer());
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -203,10 +204,12 @@ public class DocumentPipelineTests
         return readers;
     }
 
+    private static Tokenizer CreateTokenizer() => TiktokenTokenizer.CreateForModel("gpt-4");
+
     private static List<IDocumentChunker> CreateChunkers() => [
-        new DummyChunker(),
         // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
-        new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"), 2000, 500)
+        new HeaderChunker(CreateTokenizer()),
+        new SectionChunker(CreateTokenizer())
     ];
 
     private static TracerProvider CreateTraceProvider(List<Activity> activities)

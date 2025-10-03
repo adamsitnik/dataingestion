@@ -3,6 +3,7 @@ using Microsoft.Extensions.DataIngestion;
 using Microsoft.Extensions.DataIngestion.Chunkers;
 using Microsoft.Extensions.DataIngestion.Tests;
 using Microsoft.Extensions.VectorData;
+using Microsoft.ML.Tokenizers;
 
 namespace AspireSamples.Web.Services.Ingestion;
 
@@ -25,7 +26,7 @@ public class DataIngestor(
         using DocumentPipeline pipeline = new(
             new MarkItDownReader(), // requires MarkItDown to be installed and in PATH
             [RemovalProcessor.Footers, RemovalProcessor.EmptySections],
-            new SemanticChunker(embeddingGenerator),
+            new SemanticChunker(embeddingGenerator, TiktokenTokenizer.CreateForModel("gpt-4o")),
             [], // [new SummaryEnricher(chatClient)], takes too much time for samples
             writer,
             loggerFactory);

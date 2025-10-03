@@ -4,7 +4,6 @@
 using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers;
@@ -17,6 +16,7 @@ internal sealed class ElementsChunker
     private readonly bool _considerNormalization;
     private StringBuilder? _currentChunk;
 
+    // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
     internal ElementsChunker(Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int overlapTokens = 500, bool considerNormalization = false)
     {
         _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
@@ -207,13 +207,19 @@ internal sealed class ElementsChunker
         => _tokenizer.CountTokens(input, considerNormalization: _considerNormalization);
 
     private static void AppendNewLineAndSpan(StringBuilder stringBuilder, ReadOnlySpan<char> chars)
-        => stringBuilder
-            .AppendLine()
-            .Append(chars
+    {
+        // Don't start an empty chunk (no context provided) with a new line.
+        if (stringBuilder.Length > 0)
+        {
+            stringBuilder.AppendLine();
+        }
+
+        stringBuilder.Append(chars
 #if NETSTANDARD2_0
-                         .ToString()
+                                  .ToString()
 #endif
-          );
+        );
+    }
 
     private static void AddMarkdownTableRow(DocumentTable table, int rowIndex, ref ValueStringBuilder vsb)
     {
