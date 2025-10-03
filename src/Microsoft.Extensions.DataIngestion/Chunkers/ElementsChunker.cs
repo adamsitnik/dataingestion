@@ -57,7 +57,7 @@ internal sealed class ElementsChunker
                 _ => element.Markdown
             };
 
-            if(!string.IsNullOrEmpty(semanticContent))
+            if(string.IsNullOrEmpty(semanticContent))
             {
                 continue; // An image can come with Markdown, but no AlternativeText or Text.
             }
