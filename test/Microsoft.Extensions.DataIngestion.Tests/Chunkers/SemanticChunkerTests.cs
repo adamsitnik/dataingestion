@@ -1,12 +1,12 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Azure;
+using Azure.AI.OpenAI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion.Chunkers;
-using OpenAI;
 using OpenAI.Embeddings;
 using System;
-using System.ClientModel;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
@@ -26,14 +26,9 @@ namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
             string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")!;
             string key = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")!;
 
-            return new EmbeddingClient(
-                "text-embedding-3-small",
-                credential: new ApiKeyCredential(key),
-                options: new OpenAIClientOptions()
-                {
-                    Endpoint = new Uri(endpoint)
-                }
-            );
+            AzureOpenAIClient openAIClient = new(new Uri(endpoint), new AzureKeyCredential(key));
+
+            return openAIClient.GetEmbeddingClient("text-embedding-3-small");
         }
 
         [Fact]
