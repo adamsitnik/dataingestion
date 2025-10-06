@@ -21,9 +21,9 @@ public sealed class Document : IEnumerable<DocumentElement>
         Identifier = identifier ?? throw new ArgumentNullException(nameof(identifier));
     }
 
-    public List<DocumentSection> Sections { get; } = [];
-
     public string Identifier { get; }
+
+    public List<DocumentSection> Sections { get; } = [];
 
     public string Markdown
     {
@@ -81,7 +81,7 @@ public abstract class DocumentElement
 {
     protected string _markdown;
 
-    protected DocumentElement(string markdown)
+    protected internal DocumentElement(string markdown)
     {
         _markdown = string.IsNullOrEmpty(markdown) ? throw new ArgumentNullException(nameof(markdown)) : markdown;
     }
