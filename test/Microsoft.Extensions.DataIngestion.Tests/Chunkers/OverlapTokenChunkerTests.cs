@@ -9,16 +9,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Extensions.DataIngestion.Tests.Chunkers
+namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public class OverlapTokenChunkerTests : DocumentTokenChunkerTests
     {
-        protected override IDocumentChunker CreateDocumentChunker()
+        protected override IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
-            int chunkSize = 512;
-            int chunkOverlap = 50;
-            return new DocumentTokenChunker(tokenizer, chunkSize, chunkOverlap);
+            return new DocumentTokenChunker(tokenizer, maxTokensPerChunk, overlapTokens);
         }
 
         [Fact]

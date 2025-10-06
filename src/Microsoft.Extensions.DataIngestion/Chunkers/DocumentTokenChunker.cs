@@ -22,14 +22,14 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         private readonly int _maxTokensPerChunk;
         private readonly int _chunkOverlap;
 
-        public DocumentTokenChunker(Tokenizer tokenizer, int maxTokensPerChunk, int chunkOverlap)
+        public DocumentTokenChunker(Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
-            if (chunkOverlap >= maxTokensPerChunk)
-                throw new ArgumentException("Chunk overlap must be less than chunk size.", nameof(chunkOverlap));
+            if (overlapTokens >= maxTokensPerChunk)
+                throw new ArgumentException("Chunk overlap must be less than chunk size.", nameof(overlapTokens));
 
             _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
             _maxTokensPerChunk = maxTokensPerChunk > 0 ? maxTokensPerChunk : throw new ArgumentOutOfRangeException(nameof(maxTokensPerChunk));
-            _chunkOverlap = chunkOverlap >= 0 ? chunkOverlap : throw new ArgumentOutOfRangeException(nameof(chunkOverlap));
+            _chunkOverlap = overlapTokens >= 0 ? overlapTokens : throw new ArgumentOutOfRangeException(nameof(overlapTokens));
         }
 
         internal List<DocumentChunk> ProcessText(string text, string? context = null)
