@@ -9,7 +9,9 @@ using System.Linq;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-[DebuggerDisplay("{Markdown}")]
+/// <summary>
+/// A format-agnostic container that normalizes diverse input formats into a structured hierarchy.
+/// </summary>
 public sealed class Document : IEnumerable<DocumentElement>
 {
     private string? _markdown;

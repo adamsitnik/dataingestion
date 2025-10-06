@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion;
 
 /// <summary>
-/// A <see cref="IDocumentChunker"/> that splits documents into chunks based on headers and their corresponding levels, preserving the header context.
+/// Splits documents into chunks based on headers and their corresponding levels, preserving the header context.
 /// </summary>
 public sealed class HeaderChunker : IDocumentChunker
 {

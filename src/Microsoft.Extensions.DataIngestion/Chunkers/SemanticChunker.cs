@@ -9,119 +9,121 @@ using System.Numerics.Tensors;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DataIngestion.Chunkers
+namespace Microsoft.Extensions.DataIngestion.Chunkers;
+
+/// <summary>
+/// Splits a <see cref="Document"/> into chunks based on semantic similarity between its elements.
+/// </summary>
+public sealed class SemanticChunker : IDocumentChunker
 {
-    public class SemanticChunker : IDocumentChunker
+    private readonly ElementsChunker _elementsChunker;
+    private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
+    private readonly float _thresholdPercentile;
+
+    public SemanticChunker(
+        IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
+        Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int overlapTokens = 500,
+        float thresholdPercentile = 95.0f)
     {
-        private readonly ElementsChunker _elementsChunker;
-        private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
-        private readonly float _thresholdPercentile;
+        _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
+        _elementsChunker = new(tokenizer, maxTokensPerChunk, overlapTokens);
+        _thresholdPercentile = thresholdPercentile;
+    }
 
-        public SemanticChunker(
-            IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-            Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int overlapTokens = 500,
-            float thresholdPercentile = 95.0f)
+    public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (document is null)
         {
-            _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
-            _elementsChunker = new(tokenizer, maxTokensPerChunk, overlapTokens);
-            _thresholdPercentile = thresholdPercentile;
+            throw new ArgumentNullException(nameof(document));
         }
 
-        public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        if (document.Sections.Count == 0)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (document is null)
-            {
-                throw new ArgumentNullException(nameof(document));
-            }
-
-            if (document.Sections.Count == 0)
-            {
-                return [];
-            }
-
-            List<(DocumentElement, float)> distances = await CalculateDistances(document);
-            return MakeChunks(distances);
+            return [];
         }
 
-        private async Task<List<(DocumentElement element, float distance)>> CalculateDistances(Document documents)
+        List<(DocumentElement, float)> distances = await CalculateDistances(document);
+        return MakeChunks(distances);
+    }
+
+    private async Task<List<(DocumentElement element, float distance)>> CalculateDistances(Document documents)
+    {
+        List<(DocumentElement element, float distance)> elementDistance = [];
+        List<string> semanticContents = [];
+
+        foreach (DocumentElement element in documents)
         {
-            List<(DocumentElement element, float distance)> elementDistance = [];
-            List<string> semanticContents = [];
+            string? semanticContent = element is DocumentImage img
+                ? img.AlternativeText ?? img.Text
+                : element.Markdown;
 
-            foreach (DocumentElement element in documents)
+            if (!string.IsNullOrEmpty(semanticContent))
             {
-                string? semanticContent = element is DocumentImage img
-                    ? img.AlternativeText ?? img.Text
-                    : element.Markdown;
-
-                if (!string.IsNullOrEmpty(semanticContent))
-                {
-                    elementDistance.Add((element, default));
-                    semanticContents.Add(semanticContent!);
-                }
+                elementDistance.Add((element, default));
+                semanticContents.Add(semanticContent!);
             }
-
-            var embeddings = await _embeddingGenerator.GenerateAsync(semanticContents).ConfigureAwait(false);
-
-            for (int i = 0; i < semanticContents.Count - 1; i++)
-            {
-                string current = semanticContents[i];
-                float distance = 1 - TensorPrimitives.CosineSimilarity(embeddings[i].Vector.Span, embeddings[i + 1].Vector.Span);
-                elementDistance[i] = (elementDistance[i].element, distance);
-            }
-
-            return elementDistance;
         }
 
-        private List<DocumentChunk> MakeChunks(List<(DocumentElement element, float distance)> elementDistances)
+        var embeddings = await _embeddingGenerator.GenerateAsync(semanticContents).ConfigureAwait(false);
+
+        for (int i = 0; i < semanticContents.Count - 1; i++)
         {
-            List<DocumentChunk> chunks = [];
-            float distanceThreshold = Percentile(elementDistances);
+            string current = semanticContents[i];
+            float distance = 1 - TensorPrimitives.CosineSimilarity(embeddings[i].Vector.Span, embeddings[i + 1].Vector.Span);
+            elementDistance[i] = (elementDistance[i].element, distance);
+        }
 
-            List<DocumentElement> elementAccumulator = [];
-            string context = string.Empty; // we could implement some simple heuristic
-            foreach (var (element, distance) in elementDistances)
-            {
-                elementAccumulator.Add(element);
-                if (distance > distanceThreshold)
-                {
-                    _elementsChunker.Process(chunks, context, elementAccumulator);
-                    elementAccumulator.Clear();
-                }
-            }
+        return elementDistance;
+    }
 
-            if (elementAccumulator.Count > 0)
+    private List<DocumentChunk> MakeChunks(List<(DocumentElement element, float distance)> elementDistances)
+    {
+        List<DocumentChunk> chunks = [];
+        float distanceThreshold = Percentile(elementDistances);
+
+        List<DocumentElement> elementAccumulator = [];
+        string context = string.Empty; // we could implement some simple heuristic
+        foreach (var (element, distance) in elementDistances)
+        {
+            elementAccumulator.Add(element);
+            if (distance > distanceThreshold)
             {
                 _elementsChunker.Process(chunks, context, elementAccumulator);
+                elementAccumulator.Clear();
             }
-
-            return chunks;
         }
 
-        private float Percentile(List<(DocumentElement element, float distance)> elementDistances)
+        if (elementAccumulator.Count > 0)
         {
-            if (elementDistances.Count == 0)
-            {
-                return 0f;
-            }
-            else if (elementDistances.Count == 1)
-            {
-                return elementDistances[0].distance;
-            }
-
-            float[] sorted = new float[elementDistances.Count];
-            for (int elementIndex = 0; elementIndex < elementDistances.Count; elementIndex++)
-            {
-                sorted[elementIndex] = elementDistances[elementIndex].distance;
-            }
-            Array.Sort(sorted);
-
-            float i = (_thresholdPercentile / 100f) * (sorted.Length - 1);
-            int i0 = (int)i;
-            int i1 = Math.Min(i0 + 1, sorted.Length - 1);
-            return sorted[i0] + (i - i0) * (sorted[i1] - sorted[i0]);
+            _elementsChunker.Process(chunks, context, elementAccumulator);
         }
+
+        return chunks;
+    }
+
+    private float Percentile(List<(DocumentElement element, float distance)> elementDistances)
+    {
+        if (elementDistances.Count == 0)
+        {
+            return 0f;
+        }
+        else if (elementDistances.Count == 1)
+        {
+            return elementDistances[0].distance;
+        }
+
+        float[] sorted = new float[elementDistances.Count];
+        for (int elementIndex = 0; elementIndex < elementDistances.Count; elementIndex++)
+        {
+            sorted[elementIndex] = elementDistances[elementIndex].distance;
+        }
+        Array.Sort(sorted);
+
+        float i = (_thresholdPercentile / 100f) * (sorted.Length - 1);
+        int i0 = (int)i;
+        int i1 = Math.Min(i0 + 1, sorted.Length - 1);
+        return sorted[i0] + (i - i0) * (sorted[i1] - sorted[i0]);
     }
 }

@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
+/// <summary>
+/// Part of the document processing pipeline that takes a <see cref="Document"/> as input and produces a (potentially modified) <see cref="Document"/> as output.
+/// </summary>
 public interface IDocumentProcessor
 {
     Task<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default);

@@ -7,7 +7,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public class DocumentFlattener : IDocumentProcessor
+/// <summary>
+/// Flattens the Document structure and represents every Document as a single section containing all elements.
+/// </summary>
+public sealed class DocumentFlattener : IDocumentProcessor
 {
     public Task<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {

@@ -9,7 +9,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-// This name is not final, we need to find a better one.
+/// <summary>
+/// Enriches DocumentImage elements with alternative text using an AI service,
+/// so the generated embeddings can include the image content information.
+/// </summary>
 public sealed class AlternativeTextEnricher : IDocumentProcessor
 {
     private readonly IChatClient _chatClient;
