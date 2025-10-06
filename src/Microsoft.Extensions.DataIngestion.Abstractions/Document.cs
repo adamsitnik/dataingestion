@@ -32,7 +32,7 @@ public sealed class Document : IEnumerable<DocumentElement>
             // In case there are no Sections, we don't want to cache an empty string.
             if (string.IsNullOrEmpty(_markdown))
             {
-                _markdown = string.Join("", Sections.Select(section => section.Markdown));
+                _markdown = string.Join(Environment.NewLine, Sections.Select(section => section.Markdown));
             }
 
             return _markdown!;
