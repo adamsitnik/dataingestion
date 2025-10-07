@@ -10,5 +10,5 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public interface IDocumentWriter : IDisposable
 {
-    Task WriteAsync(Document document, List<DocumentChunk> chunks, CancellationToken cancellationToken = default);
+    Task WriteAsync(IReadOnlyList<DocumentChunk> chunks, CancellationToken cancellationToken = default);
 }

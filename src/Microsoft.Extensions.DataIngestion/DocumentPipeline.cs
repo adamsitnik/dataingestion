@@ -258,7 +258,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
             writerActivity?.SetTag(WriteDocument.WriterTagName, GetShortName(_writer));
             _logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(_writer));
 
-            await TryAsync(() => _writer.WriteAsync(document, chunks, cancellationToken), writerActivity);
+            await TryAsync(() => _writer.WriteAsync(chunks, cancellationToken), writerActivity);
 
             _logger?.LogInformation("Persisted chunks for document '{DocumentId}'.", document.Identifier);
         }

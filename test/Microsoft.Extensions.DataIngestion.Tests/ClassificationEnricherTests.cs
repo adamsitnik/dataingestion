@@ -9,6 +9,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class ClassificationEnricherTests : ChatClientTestBase
 {
+    private static readonly Document document = new("test");
+
     [Fact]
     public async Task CanClassify()
     {
@@ -26,8 +28,8 @@ public class ClassificationEnricherTests : ChatClientTestBase
 
     private static List<DocumentChunk> CreateChunks() =>
     [
-        new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services."),
-        new ("Rabbits are small mammals in the family Leporidae of the order Lagomorpha (along with the hare and the pika). They are herbivorous animals and are known for their long ears, large hind legs, and short fluffy tails."),
-        new("This text does not belong to any category."),
+        new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document),
+        new ("Rabbits are small mammals in the family Leporidae of the order Lagomorpha (along with the hare and the pika). They are herbivorous animals and are known for their long ears, large hind legs, and short fluffy tails.", document),
+        new("This text does not belong to any category.", document),
     ];
 }

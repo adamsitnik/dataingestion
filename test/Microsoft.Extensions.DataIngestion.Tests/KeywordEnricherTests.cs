@@ -9,6 +9,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class KeywordEnricherTests : ChatClientTestBase
 {
+    private static readonly Document document = new("test");
+
     [Fact]
     public async Task CanExtractKeywordsWithoutPredefinedList()
     {
@@ -42,6 +44,6 @@ public class KeywordEnricherTests : ChatClientTestBase
 
     private static List<DocumentChunk> CreateChunks() =>
     [
-        new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services."),
+        new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document),
     ];
 }

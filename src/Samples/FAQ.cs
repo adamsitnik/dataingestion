@@ -24,7 +24,7 @@ public sealed class QAWriter : IDocumentWriter
         _chatClient.Dispose();
     }
 
-    public async Task WriteAsync(Document document, List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public async Task WriteAsync(IReadOnlyList<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken);
 

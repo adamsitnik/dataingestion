@@ -29,13 +29,13 @@ public sealed class SectionChunker : IDocumentChunker
         List<DocumentChunk> chunks = [];
         foreach (DocumentSection section in document.Sections)
         {
-            Process(section, chunks);
+            Process(document, section, chunks);
         }
 
         return Task.FromResult(chunks);
     }
 
-    private void Process(DocumentSection section, List<DocumentChunk> chunks, string? parentContext = null)
+    private void Process(Document document, DocumentSection section, List<DocumentChunk> chunks, string? parentContext = null)
     {
         List<DocumentElement> elements = new(section.Elements.Count);
         string context = parentContext ?? string.Empty;
@@ -53,7 +53,7 @@ public sealed class SectionChunker : IDocumentChunker
                 break;
                 case DocumentSection nestedSection:
                     Commit();
-                    Process(nestedSection, chunks, context);
+                    Process(document, nestedSection, chunks, context);
                     break;
                 default:
                     elements.Add(section.Elements[i]);
@@ -67,7 +67,7 @@ public sealed class SectionChunker : IDocumentChunker
         {
             if (elements.Count > 0)
             {
-                _elementsChunker.Process(chunks, context, elements);
+                _elementsChunker.Process(document, chunks, context, elements);
                 elements.Clear();
             }
         }

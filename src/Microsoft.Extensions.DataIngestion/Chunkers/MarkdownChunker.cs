@@ -34,10 +34,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             IEnumerable<DocumentElement> elements = document.Reverse();
             var sectionStack = new Stack<DocumentElement>(elements);
 
-            return Task.FromResult(ParseLevel(sectionStack, 1));
+            return Task.FromResult(ParseLevel(document, sectionStack, 1));
         }
 
-        private List<DocumentChunk> ParseLevel(Stack<DocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)
+        private List<DocumentChunk> ParseLevel(Document document, Stack<DocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)
         {
             List<DocumentChunk> chunks = new List<DocumentChunk>();
 
@@ -54,7 +54,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 }
                 else
                 {
-                    DocumentChunk? currentChunk = CreateChunk(sb, context, lastHeader);
+                    DocumentChunk? currentChunk = CreateChunk(document, sb, context, lastHeader);
                     if (currentChunk is not null)
                     {
                         chunks.Add(currentChunk);
@@ -73,13 +73,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                     else
                     {
                         string newContext = StringyfyContext(context, lastHeader);
-                        chunks.AddRange(ParseLevel(lines, markdownHeaderLevel + 1, newContext, element.Markdown));
+                        chunks.AddRange(ParseLevel(document, lines, markdownHeaderLevel + 1, newContext, element.Markdown));
                     }
 
                 }
             }
 
-            DocumentChunk? chunk = CreateChunk(sb, context, lastHeader);
+            DocumentChunk? chunk = CreateChunk(document, sb, context, lastHeader);
             if (chunk is not null)
             {
                 chunks.Add(chunk);
@@ -93,7 +93,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return string.Join(";", new[] { context, lastHeader }.Where(x => x is not null));
         }
 
-        private DocumentChunk? CreateChunk(StringBuilder content, string? context, string? header)
+        private DocumentChunk? CreateChunk(Document document, StringBuilder content, string? context, string? header)
         {
             context = StringyfyContext(context, header);
             if (!_stripHeaders)
@@ -103,7 +103,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             string textContent = content.ToString();
             if (string.IsNullOrWhiteSpace(textContent))
                 return null;
-            return new DocumentChunk(textContent, context: context);
+            return new DocumentChunk(textContent, document, context: context);
         }
     }
 }

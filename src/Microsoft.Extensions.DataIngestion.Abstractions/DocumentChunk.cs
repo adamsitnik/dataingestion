@@ -14,13 +14,15 @@ public sealed class DocumentChunk
 
     public string Content { get; }
 
+    public Document Document { get; }
+
     public int? TokenCount { get; }
 
     public string? Context { get; }
 
     public Dictionary<string, object> Metadata => _metadata ??= new();
 
-    public DocumentChunk(string content, int? tokenCount = null, string? context = null)
+    public DocumentChunk(string content, Document document, int? tokenCount = null, string? context = null)
     {
         if (string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
@@ -28,6 +30,7 @@ public sealed class DocumentChunk
             throw new ArgumentOutOfRangeException(nameof(tokenCount), "Token count must be greater than zero.");
 
         Content = content;
+        Document = document ?? throw new ArgumentNullException(nameof(document));
         TokenCount = tokenCount;
         Context = context;
     }

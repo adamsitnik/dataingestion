@@ -54,15 +54,11 @@ public sealed class VectorStoreWriter : IDocumentWriter
         _vectorStoreCollection?.Dispose();
     }
 
-    public async Task WriteAsync(Document document, List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public async Task WriteAsync(IReadOnlyList<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (document is null)
-        {
-            throw new ArgumentNullException(nameof(document));
-        }
-        else if (chunks is null)
+        if (chunks is null)
         {
             throw new ArgumentNullException(nameof(chunks));
         }
@@ -72,17 +68,17 @@ public sealed class VectorStoreWriter : IDocumentWriter
             return;
         }
 
+        // We assume that every chunk has the same metadata schema so we use the first chunk as representative.
+        DocumentChunk representativeChunk = chunks[0];
+
         if (_vectorStoreCollection is null)
         {
-            // We assume that every chunk has the same metadata schema so we use the first chunk as representative.
-            DocumentChunk representativeChunk = chunks[0];
-
             _vectorStoreCollection = _vectorStore.GetDynamicCollection(_options.CollectionName, GetVectorStoreRecordDefinition(representativeChunk));
 
             await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        await DeletePreExistingChunksForGivenDocument(document, cancellationToken).ConfigureAwait(false);
+        await DeletePreExistingChunksForGivenDocument(representativeChunk.Document, cancellationToken).ConfigureAwait(false);
 
         foreach (DocumentChunk chunk in chunks)
         {
@@ -95,7 +91,7 @@ public sealed class VectorStoreWriter : IDocumentWriter
                 [ContentName] = chunk.Content,
                 [EmbeddingName] = chunk.Content,
                 [ContextName] = chunk.Context,
-                [DocumentIdName] = document.Identifier,
+                [DocumentIdName] = chunk.Document.Identifier,
             };
 
             foreach (var metadata in chunk.Metadata)

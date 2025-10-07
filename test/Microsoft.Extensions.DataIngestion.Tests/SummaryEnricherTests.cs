@@ -9,6 +9,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class SummaryEnricherTests : ChatClientTestBase
 {
+    private static readonly Document document = new("test");
+
     [Fact]
     public async Task CanProvideSummary()
     {
@@ -16,8 +18,8 @@ public class SummaryEnricherTests : ChatClientTestBase
 
         List<DocumentChunk> chunks = new()
         {
-            new("I love programming! It's so much fun and rewarding."),
-            new("I hate bugs. They are so frustrating and time-consuming.")
+            new("I love programming! It's so much fun and rewarding.", document),
+            new("I hate bugs. They are so frustrating and time-consuming.", document)
         };
 
         await sut.ProcessAsync(chunks);

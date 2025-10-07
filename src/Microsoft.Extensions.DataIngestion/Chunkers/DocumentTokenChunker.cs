@@ -30,18 +30,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _chunkOverlap = options.OverlapTokens;
         }
 
-        internal List<DocumentChunk> ProcessText(string text, string? context = null)
-        {
-            int[] tokens = _tokenizer.EncodeToIds(text).ToArray();
-            List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
-            return tokenGroups.Select(g => GroupToChunk(g, context)).ToList();
-        }
-
         public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            return Task.FromResult(ProcessText(document.Markdown));
+            int[] tokens = _tokenizer.EncodeToIds(document.Markdown).ToArray();
+            List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
+            return Task.FromResult(tokenGroups.Select(g => GroupToChunk(document, g)).ToList());
         }
 
         private List<ArraySegment<int>> CreateGroups(int[] tokens)
@@ -55,10 +50,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return groups;
         }
 
-        private DocumentChunk GroupToChunk(ArraySegment<int> tokenGroup, string? context = null)
+        private DocumentChunk GroupToChunk(Document document, ArraySegment<int> tokenGroup)
         {
             string text = _tokenizer.Decode(tokenGroup);
-            return new DocumentChunk(text, tokenGroup.Count, context);
+            return new DocumentChunk(text, document, tokenGroup.Count);
         }
     }
 }

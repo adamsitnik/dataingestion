@@ -9,6 +9,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class SentimentEnricherTests : ChatClientTestBase
 {
+    private static readonly Document document = new("test");
+
     [Fact]
     public async Task CanProvideSentiment()
     {
@@ -16,10 +18,10 @@ public class SentimentEnricherTests : ChatClientTestBase
 
         List<DocumentChunk> chunks = new()
         {
-            new("I love programming! It's so much fun and rewarding."),
-            new("I hate bugs. They are so frustrating and time-consuming."),
-            new("The weather is okay, not too bad but not great either."),
-            new("I hate you. I am sorry, I actually don't. I am not sure myself what my feelings are.")
+            new("I love programming! It's so much fun and rewarding.", document),
+            new("I hate bugs. They are so frustrating and time-consuming.", document),
+            new("The weather is okay, not too bad but not great either.", document),
+            new("I hate you. I am sorry, I actually don't. I am not sure myself what my feelings are.", document)
         };
 
         await sut.ProcessAsync(chunks);
