@@ -77,6 +77,4 @@ public class DocumentTests
         doc.Sections.Add(new DocumentSection("section markdown"));
         Assert.Equal(doc.Markdown, doc.Sections[0].Markdown);
     }
-
-
 }
