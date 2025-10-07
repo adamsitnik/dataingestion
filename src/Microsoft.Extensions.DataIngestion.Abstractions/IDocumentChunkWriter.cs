@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public interface IDocumentWriter : IDisposable
+public interface IDocumentChunkWriter : IDisposable
 {
     Task WriteAsync(IReadOnlyList<DocumentChunk> chunks, CancellationToken cancellationToken = default);
 }

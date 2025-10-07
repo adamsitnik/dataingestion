@@ -21,14 +21,14 @@ public sealed class DocumentPipeline : IDocumentPipeline
     private readonly IReadOnlyList<IDocumentProcessor> _processors;
     private readonly IDocumentChunker _chunker;
     private readonly IReadOnlyList<IChunkProcessor> _chunkProcessors;
-    private readonly IDocumentWriter _writer;
+    private readonly IDocumentChunkWriter _writer;
 
     public DocumentPipeline(
         DocumentReader reader,
         IReadOnlyList<IDocumentProcessor> documentProcessors,
         IDocumentChunker chunker,
         IReadOnlyList<IChunkProcessor> chunkProcessors,
-        IDocumentWriter writer,
+        IDocumentChunkWriter writer,
         ILoggerFactory? loggerFactory = default,
         string? sourceName = default)
     {
