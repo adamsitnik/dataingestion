@@ -7,7 +7,7 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public class ChunkerOptions
 {
-    // Default values come comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
+    // Default values come from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
     private int _maxTokensPerChunk = 2_000;
     private int _overlapTokens = 500;
 
@@ -20,7 +20,7 @@ public class ChunkerOptions
         set => _maxTokensPerChunk = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
     }
     /// <summary>
-    /// The number of overlapping tokens between consecutive chunks. Default is 0.
+    /// The number of overlapping tokens between consecutive chunks. Default is 500.
     /// </summary>
     public int OverlapTokens
     {

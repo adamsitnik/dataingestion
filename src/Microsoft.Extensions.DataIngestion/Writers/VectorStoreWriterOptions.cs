@@ -24,7 +24,7 @@ public sealed class VectorStoreWriterOptions
     public string? DistanceFunction { get; set; }
 
     /// <summary>
-    /// When enabled, the writer will delete the chunks for given document before inserting the new ones.
+    /// When enabled, the writer will delete the chunks for the given document before inserting the new ones.
     /// So the ingestion will "replace" the existing chunks for the document with the new ones.
     /// </summary>
     public bool IncrementalIngestion { get; set; } = false;
