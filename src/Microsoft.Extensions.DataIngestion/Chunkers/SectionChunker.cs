@@ -16,8 +16,8 @@ public sealed class SectionChunker : IDocumentChunker
 {
     private readonly ElementsChunker _elementsChunker;
 
-    public SectionChunker(Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int chunkOverlap = 500)
-        => _elementsChunker = new(tokenizer, maxTokensPerChunk, chunkOverlap);
+    public SectionChunker(Tokenizer tokenizer, ChunkerOptions? options = default)
+        => _elementsChunker = new(tokenizer, options ?? new());
 
     public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {

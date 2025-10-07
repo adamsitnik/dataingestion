@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         protected override IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
-            return new DocumentTokenChunker(tokenizer, maxTokensPerChunk, overlapTokens);
+            return new DocumentTokenChunker(tokenizer, new() { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = overlapTokens });
         }
 
         [Fact]
@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             int chunkSize = 4;  // Small chunk size to demonstrate overlap
             int chunkOverlap = 1;
 
-            var chunker = new DocumentTokenChunker(tokenizer, chunkSize, chunkOverlap);
+            var chunker = new DocumentTokenChunker(tokenizer, new() {  MaxTokensPerChunk = chunkSize, OverlapTokens = chunkOverlap });
             Document doc = new Document("overlapExample");
             doc.Sections.Add(new DocumentSection
             {

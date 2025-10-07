@@ -67,7 +67,7 @@ public class HeaderChunkerTests
             }
         });
 
-        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 13);
+        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 13 });
         List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
 
         Assert.Equal(2, chunks.Count);
@@ -92,10 +92,10 @@ public class HeaderChunkerTests
             }
         });
 
-        HeaderChunker lessThanContext = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 5);
+        HeaderChunker lessThanContext = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 5 });
         await Assert.ThrowsAsync<InvalidOperationException>(() => lessThanContext.ProcessAsync(doc));
 
-        HeaderChunker sameAsContext = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 6);
+        HeaderChunker sameAsContext = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 6 });
         await Assert.ThrowsAsync<InvalidOperationException>(() => sameAsContext.ProcessAsync(doc));
     }
 
@@ -117,7 +117,7 @@ With some text after the new line."),
             }
         });
 
-        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 30);
+        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 30 });
         List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
 
         Assert.Equal(2, chunks.Count);
@@ -134,7 +134,7 @@ With some text after the new line."),
         Document document = CreateDocumentWithLargeTable();
 
         // It takes 38 tokens to represent Headers, Separator and the first Row.
-        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 37);
+        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 37 });
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => chunker.ProcessAsync(document));
     }
@@ -144,7 +144,7 @@ With some text after the new line."),
     {
         Document document = CreateDocumentWithLargeTable();
 
-        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 100);
+        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 100 });
         List<DocumentChunk> chunks = await chunker.ProcessAsync(document);
 
         Assert.Equal(2, chunks.Count);
@@ -171,7 +171,7 @@ And some follow up.", chunks[1].Content, ignoreLineEndingDifferences: true);
     {
         Document document = CreateDocumentWithLargeTable();
 
-        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), maxTokensPerChunk: 50);
+        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 50 });
         List<DocumentChunk> chunks = await chunker.ProcessAsync(document);
 
         Assert.Equal(6, chunks.Count);

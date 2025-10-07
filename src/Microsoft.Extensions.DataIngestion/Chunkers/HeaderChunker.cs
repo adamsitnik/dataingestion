@@ -19,8 +19,8 @@ public sealed class HeaderChunker : IDocumentChunker
     private const int MaxHeaderLevel = 10;
     private readonly ElementsChunker _elementsChunker;
 
-    public HeaderChunker(Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int overlapTokens = 0)
-        => _elementsChunker = new(tokenizer, maxTokensPerChunk, overlapTokens);
+    public HeaderChunker(Tokenizer tokenizer, ChunkerOptions? options = default)
+        => _elementsChunker = new(tokenizer, options ?? new());
 
     public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
     {

@@ -22,11 +22,11 @@ public sealed class SemanticChunker : IDocumentChunker
 
     public SemanticChunker(
         IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-        Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int overlapTokens = 500,
+        Tokenizer tokenizer, ChunkerOptions? options = default,
         float thresholdPercentile = 95.0f)
     {
         _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
-        _elementsChunker = new(tokenizer, maxTokensPerChunk, overlapTokens);
+        _elementsChunker = new(tokenizer, options ?? new());
         _thresholdPercentile = thresholdPercentile;
     }
 
