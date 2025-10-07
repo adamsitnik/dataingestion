@@ -7,7 +7,7 @@ using Microsoft.Extensions.VectorData;
 
 namespace Samples;
 
-public sealed class QAWriter : IDocumentWriter
+public sealed class QAWriter : IDocumentChunkWriter
 {
     private readonly VectorStoreCollection<Guid, QARecord> _vectorStoreCollection;
     private readonly IChatClient _chatClient;

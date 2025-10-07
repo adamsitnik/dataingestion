@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public sealed class VectorStoreWriter : IDocumentWriter
+public sealed class VectorStoreWriter : IDocumentChunkWriter
 {
     // The names are lowercase with no special characters to ensure compatibility with various vector stores.
     private const string KeyName = "key";
