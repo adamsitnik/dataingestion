@@ -14,13 +14,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers;
 /// <summary>
 /// Splits a <see cref="Document"/> into chunks based on semantic similarity between its elements.
 /// </summary>
-public sealed class SemanticChunker : IDocumentChunker
+public sealed class SemanticSimilarityChunker : IDocumentChunker
 {
     private readonly ElementsChunker _elementsChunker;
     private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
     private readonly float _thresholdPercentile;
 
-    public SemanticChunker(
+    public SemanticSimilarityChunker(
         IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
         Tokenizer tokenizer, ChunkerOptions? options = default,
         float thresholdPercentile = 95.0f)

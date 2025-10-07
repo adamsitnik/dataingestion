@@ -13,13 +13,13 @@ using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
-    public class SemanticChunkerTests : DocumentChunkerTests
+    public class SemanticSimilarityChunkerTests : DocumentChunkerTests
     {
         protected override IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             EmbeddingClient embeddingClient = CreateEmbeddingClient();
             Tokenizer tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
-            return new SemanticChunker(embeddingClient.AsIEmbeddingGenerator(), tokenizer,
+            return new SemanticSimilarityChunker(embeddingClient.AsIEmbeddingGenerator(), tokenizer,
                 new() { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = overlapTokens });
         }
 
