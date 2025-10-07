@@ -43,7 +43,7 @@
     <!-- Do not run the tests when AZURE_OPENAI_ENDPOINT environment variable is not set -->
     <Compile Remove="**\*EnricherTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
     <Compile Remove="PiiRemovalProcessorTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
-    <Compile Remove="Chunkers\SemanticChunkerTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == '' Or '$(AZURE_OPENAI_API_KEY)' == ''" />
+    <Compile Remove="Chunkers\SemanticSimilarityChunkerTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == '' Or '$(AZURE_OPENAI_API_KEY)' == ''" />
   </ItemGroup>
 
   <ItemGroup>
