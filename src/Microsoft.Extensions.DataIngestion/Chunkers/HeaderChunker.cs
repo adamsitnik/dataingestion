@@ -32,7 +32,7 @@ public sealed class HeaderChunker : IDocumentChunker
         {
             if (element is DocumentHeader header)
             {
-                SplitIntoChunks(chunks, headers, elements);
+                SplitIntoChunks(document, chunks, headers, elements);
 
                 int headerLevel = header.Level.GetValueOrDefault();
                 headers[headerLevel] = header.Markdown;
@@ -45,18 +45,18 @@ public sealed class HeaderChunker : IDocumentChunker
         }
 
         // take care of any remaining paragraphs
-        SplitIntoChunks(chunks, headers, elements);
+        SplitIntoChunks(document, chunks, headers, elements);
 
         return Task.FromResult(chunks);
     }
 
-    private void SplitIntoChunks(List<DocumentChunk> chunks, string?[] headers, List<DocumentElement> elements)
+    private void SplitIntoChunks(Document document, List<DocumentChunk> chunks, string?[] headers, List<DocumentElement> elements)
     {
         if (elements.Count > 0)
         {
             string chunkHeader = string.Join(" ", headers.Where(h => !string.IsNullOrEmpty(h)));
 
-            _elementsChunker.Process(chunks, chunkHeader, elements);
+            _elementsChunker.Process(document, chunks, chunkHeader, elements);
 
             elements.Clear();
         }

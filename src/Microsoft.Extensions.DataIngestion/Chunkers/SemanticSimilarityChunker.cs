@@ -47,7 +47,7 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
         }
 
         List<(DocumentElement, float)> distances = await CalculateDistances(document);
-        return MakeChunks(distances);
+        return MakeChunks(document, distances);
     }
 
     private async Task<List<(DocumentElement element, float distance)>> CalculateDistances(Document documents)
@@ -79,7 +79,7 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
         return elementDistance;
     }
 
-    private List<DocumentChunk> MakeChunks(List<(DocumentElement element, float distance)> elementDistances)
+    private List<DocumentChunk> MakeChunks(Document document, List<(DocumentElement element, float distance)> elementDistances)
     {
         List<DocumentChunk> chunks = [];
         float distanceThreshold = Percentile(elementDistances);
@@ -91,14 +91,14 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
             elementAccumulator.Add(element);
             if (distance > distanceThreshold)
             {
-                _elementsChunker.Process(chunks, context, elementAccumulator);
+                _elementsChunker.Process(document, chunks, context, elementAccumulator);
                 elementAccumulator.Clear();
             }
         }
 
         if (elementAccumulator.Count > 0)
         {
-            _elementsChunker.Process(chunks, context, elementAccumulator);
+            _elementsChunker.Process(document, chunks, context, elementAccumulator);
         }
 
         return chunks;

@@ -45,7 +45,7 @@ public class VectorStoreWriterTests
         Document document = new(documentId);
         List<DocumentChunk> chunks = new()
         {
-            new DocumentChunk("some content")
+            new DocumentChunk("some content", document)
             {
                 Metadata =
                 {
@@ -58,7 +58,7 @@ public class VectorStoreWriterTests
         };
 
         Assert.False(testEmbeddingGenerator.WasCalled);
-        await writer.WriteAsync(document, chunks);
+        await writer.WriteAsync(chunks);
 
         Dictionary<string, object?> record = await writer.VectorStoreCollection
             .GetAsync(filter: record => (string)record["documentid"]! == documentId, top: 1)
@@ -93,17 +93,17 @@ public class VectorStoreWriterTests
         Document document = new(documentId);
         List<DocumentChunk> chunks = new()
         {
-            new DocumentChunk("first chunk")
+            new DocumentChunk("first chunk", document)
             {
                 Metadata =
                 {
                     { "key1", "value1" }
                 }
             },
-            new DocumentChunk("second chunk")
+            new DocumentChunk("second chunk", document)
         };
 
-        await writer.WriteAsync(document, chunks);
+        await writer.WriteAsync(chunks);
 
         int recordCount = await writer.VectorStoreCollection
             .GetAsync(filter: record => (string)record["documentid"]! == documentId, top: 100)
@@ -113,7 +113,7 @@ public class VectorStoreWriterTests
         // Now we will do an incremental ingestion that updates the chunk(s).
         List<DocumentChunk> updatedChunks = new()
         {
-            new DocumentChunk("different content")
+            new DocumentChunk("different content", document)
             {
                 Metadata =
                 {
@@ -122,7 +122,7 @@ public class VectorStoreWriterTests
             }
         };
 
-        await writer.WriteAsync(document, updatedChunks);
+        await writer.WriteAsync(updatedChunks);
 
         // We ask for 100 records, but we expect only 1 as the previous 2 should have been deleted.
         Dictionary<string, object?> record = await writer.VectorStoreCollection

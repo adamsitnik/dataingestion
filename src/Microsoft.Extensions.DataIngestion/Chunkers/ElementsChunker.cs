@@ -28,7 +28,7 @@ internal sealed class ElementsChunker
     // 1. Create chunks that do not exceed _maxTokensPerChunk when tokenized.
     // 2. Maintain context in each chunk.
     // 3. If a single DocumentElement exceeds _maxTokensPerChunk, it should be split intelligently (e.g., paragraphs can be split into sentences, tables into rows).
-    internal void Process(List<DocumentChunk> chunks, string context, List<DocumentElement> elements)
+    internal void Process(Document document, List<DocumentChunk> chunks, string context, List<DocumentElement> elements)
     {
         // Token count != character count, but StringBuilder will grow as needed.
         _currentChunk ??= new(capacity: _maxTokensPerChunk);
@@ -183,13 +183,13 @@ internal sealed class ElementsChunker
 
         if (totalTokenCount > contextTokenCount)
         {
-            chunks.Add(new(_currentChunk.ToString(), totalTokenCount, context));
+            chunks.Add(new(_currentChunk.ToString(), document, totalTokenCount, context));
         }
         _currentChunk.Clear();
 
         void Commit()
         {
-            chunks.Add(new(_currentChunk.ToString(), totalTokenCount, context));
+            chunks.Add(new(_currentChunk.ToString(), document, totalTokenCount, context));
 
             // We keep the context in the current chunk as it's the same for all elements.
             _currentChunk.Remove(
