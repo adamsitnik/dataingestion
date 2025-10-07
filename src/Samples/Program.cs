@@ -33,11 +33,7 @@ namespace Samples
             List<IDocumentProcessor> processors = CreateDocumentProcessors(extractImages);
             IChunkProcessor[] chunkProcessors = CreateChunkProcessors();
 
-            IDocumentChunker chunker = new HeaderChunker(
-                TiktokenTokenizer.CreateForModel("gpt-4"),
-                // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
-                maxTokensPerChunk: 2000,
-                overlapTokens: 500);
+            IDocumentChunker chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
 
             using SqlServerVectorStore sqlServerVectorStore = new(
                 Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,
@@ -78,11 +74,7 @@ namespace Samples
             DocumentReader reader = CreateReader(readerId, extractImages: false);
             List<IDocumentProcessor> processors = CreateDocumentProcessors(extractImages: false);
 
-            IDocumentChunker chunker = new HeaderChunker(
-                TiktokenTokenizer.CreateForModel("gpt-4"),
-                // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
-                maxTokensPerChunk: 2000,
-                overlapTokens: 500);
+            IDocumentChunker chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
 
             using SqlServerVectorStore sqlServerVectorStore = new(
                 Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,

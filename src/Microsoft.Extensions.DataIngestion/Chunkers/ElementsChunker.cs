@@ -16,13 +16,12 @@ internal sealed class ElementsChunker
     private readonly bool _considerNormalization;
     private StringBuilder? _currentChunk;
 
-    // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
-    internal ElementsChunker(Tokenizer tokenizer, int maxTokensPerChunk = 2_000, int overlapTokens = 500, bool considerNormalization = false)
+    internal ElementsChunker(Tokenizer tokenizer, ChunkerOptions options)
     {
         _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
-        _maxTokensPerChunk = maxTokensPerChunk > 0 ? maxTokensPerChunk : throw new ArgumentOutOfRangeException(nameof(maxTokensPerChunk));
-        _overlapTokens = overlapTokens >= 0 ? overlapTokens : throw new ArgumentOutOfRangeException(nameof(overlapTokens));
-        _considerNormalization = considerNormalization;
+        _maxTokensPerChunk = options.MaxTokensPerChunk;
+        _overlapTokens = options.OverlapTokens;
+        _considerNormalization = options.ConsiderNormalization;
     }
 
     // Goals:

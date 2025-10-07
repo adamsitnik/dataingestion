@@ -4,7 +4,6 @@
 using Azure;
 using Azure.AI.OpenAI;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.DataIngestion.Chunkers;
 using Microsoft.ML.Tokenizers;
 using OpenAI.Embeddings;
 using System;
@@ -14,13 +13,14 @@ using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
-    public class SemanticChunkerTests : DocumentChunkerTests
+    public class SemanticSimilarityChunkerTests : DocumentChunkerTests
     {
         protected override IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             EmbeddingClient embeddingClient = CreateEmbeddingClient();
             Tokenizer tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
-            return new SemanticChunker(embeddingClient.AsIEmbeddingGenerator(), tokenizer, maxTokensPerChunk, overlapTokens);
+            return new SemanticSimilarityChunker(embeddingClient.AsIEmbeddingGenerator(), tokenizer,
+                new() { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = overlapTokens });
         }
 
         private EmbeddingClient CreateEmbeddingClient()
@@ -120,7 +120,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
 
-            IDocumentChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 200);
+            IDocumentChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 200, overlapTokens: 0);
             List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
             
             Assert.Equal(3, chunks.Count);

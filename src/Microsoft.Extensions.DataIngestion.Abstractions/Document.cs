@@ -9,7 +9,9 @@ using System.Linq;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-[DebuggerDisplay("{Markdown}")]
+/// <summary>
+/// A format-agnostic container that normalizes diverse input formats into a structured hierarchy.
+/// </summary>
 public sealed class Document : IEnumerable<DocumentElement>
 {
     private string? _markdown;
@@ -19,9 +21,9 @@ public sealed class Document : IEnumerable<DocumentElement>
         Identifier = identifier ?? throw new ArgumentNullException(nameof(identifier));
     }
 
-    public List<DocumentSection> Sections { get; } = [];
-
     public string Identifier { get; }
+
+    public List<DocumentSection> Sections { get; } = [];
 
     public string Markdown
     {
@@ -30,7 +32,7 @@ public sealed class Document : IEnumerable<DocumentElement>
             // In case there are no Sections, we don't want to cache an empty string.
             if (string.IsNullOrEmpty(_markdown))
             {
-                _markdown = string.Join("", Sections.Select(section => section.Markdown));
+                _markdown = string.Join(Environment.NewLine, Sections.Select(section => section.Markdown));
             }
 
             return _markdown!;
@@ -79,7 +81,7 @@ public abstract class DocumentElement
 {
     protected string _markdown;
 
-    protected DocumentElement(string markdown)
+    protected internal DocumentElement(string markdown)
     {
         _markdown = string.IsNullOrEmpty(markdown) ? throw new ArgumentNullException(nameof(markdown)) : markdown;
     }

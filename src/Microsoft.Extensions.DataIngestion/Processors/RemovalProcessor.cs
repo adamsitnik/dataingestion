@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
+/// <summary>
+/// Represents a processor that removes specific elements from a document based on a provided predicate.
+/// </summary>
 public sealed class RemovalProcessor : IDocumentProcessor
 {
     public static RemovalProcessor Footers { get; } = new(static element => element is DocumentFooter);
