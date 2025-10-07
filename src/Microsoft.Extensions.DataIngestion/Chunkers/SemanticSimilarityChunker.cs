@@ -27,7 +27,9 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
     {
         _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
         _elementsChunker = new(tokenizer, options ?? new());
-        _thresholdPercentile = thresholdPercentile;
+        _thresholdPercentile = thresholdPercentile < 0f || thresholdPercentile > 100f
+            ? throw new ArgumentOutOfRangeException(nameof(thresholdPercentile))
+            : thresholdPercentile ;
     }
 
     public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
@@ -68,9 +70,8 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
 
         var embeddings = await _embeddingGenerator.GenerateAsync(semanticContents).ConfigureAwait(false);
 
-        for (int i = 0; i < semanticContents.Count - 1; i++)
+        for (int i = 0; i < elementDistance.Count - 1; i++)
         {
-            string current = semanticContents[i];
             float distance = 1 - TensorPrimitives.CosineSimilarity(embeddings[i].Vector.Span, embeddings[i + 1].Vector.Span);
             elementDistance[i] = (elementDistance[i].element, distance);
         }
