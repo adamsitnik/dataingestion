@@ -62,10 +62,10 @@ public class ChunkerOptions
     /// <summary>
     /// Indicate whether to consider pre-tokenization before tokenization.
     /// </summary>
-    internal bool ConsiderPreTokenization { get; set; } = true;
+    internal bool ConsiderPreTokenization { get; set; } = false;
 
     /// <summary>
     /// Indicate whether to consider normalization before tokenization.
     /// </summary>
-    internal bool ConsiderNormalization { get; set; } = true;
+    internal bool ConsiderNormalization { get; set; } = false;
 }
