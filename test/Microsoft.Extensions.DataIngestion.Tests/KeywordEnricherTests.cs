@@ -15,12 +15,12 @@ public class KeywordEnricherTests : ChatClientTestBase
     public async Task CanExtractKeywordsWithoutPredefinedList()
     {
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: null, confidenceThreshold: 0.5);
-        List<DocumentChunk> chunks = CreateChunks();
+        List<IngestionChunk> chunks = CreateChunks();
 
-        List<DocumentChunk> got = await sut.ProcessAsync(chunks);
+        List<IngestionChunk> got = await sut.ProcessAsync(chunks);
 
         Assert.Same(chunks, got);
-        DocumentChunk chunk = Assert.Single(chunks);
+        IngestionChunk chunk = Assert.Single(chunks);
         Assert.NotEmpty((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
         Assert.Contains((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!, keyword => keyword.Contains("artificial intelligence") || keyword.Contains("AI"));
     }
@@ -29,12 +29,12 @@ public class KeywordEnricherTests : ChatClientTestBase
     public async Task CanExtractKeywordsWithPredefinedList()
     {
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: ["AI", ".NET", "Animals", "Rabbits"], confidenceThreshold: 0.6);
-        List<DocumentChunk> chunks = CreateChunks();
+        List<IngestionChunk> chunks = CreateChunks();
 
-        List<DocumentChunk> got = await sut.ProcessAsync(chunks);
+        List<IngestionChunk> got = await sut.ProcessAsync(chunks);
 
         Assert.Same(chunks, got);
-        DocumentChunk chunk = Assert.Single(chunks);
+        IngestionChunk chunk = Assert.Single(chunks);
         Assert.NotEmpty((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
         Assert.Contains("AI", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
         Assert.Contains(".NET", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
@@ -42,7 +42,7 @@ public class KeywordEnricherTests : ChatClientTestBase
         Assert.DoesNotContain("Rabbits", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
     }
 
-    private static List<DocumentChunk> CreateChunks() =>
+    private static List<IngestionChunk> CreateChunks() =>
     [
         new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document),
     ];

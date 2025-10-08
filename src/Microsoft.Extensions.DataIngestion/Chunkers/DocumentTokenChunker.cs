@@ -17,13 +17,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
     /// <remarks>This class uses a tokenizer to convert the document's content into tokens and then splits the
     /// tokens into chunks of a specified size, with a configurable overlap between consecutive chunks. The resulting
     /// chunks are returned as a list of <see cref="Chunk"/> objects.</remarks>
-    public sealed class DocumentTokenChunker : IDocumentChunker
+    public sealed class DocumentTokenChunker : IngestionChunker
     {
         private readonly Tokenizer _tokenizer;
         private readonly int _maxTokensPerChunk;
         private readonly int _chunkOverlap;
 
-        public DocumentTokenChunker(Tokenizer tokenizer, ChunkerOptions? options = default)
+        public DocumentTokenChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         {
             _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
             options ??= new();
@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _chunkOverlap = options.OverlapTokens;
         }
 
-        public Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+        public Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
         {
             if (document is null)
             {
@@ -55,10 +55,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return groups;
         }
 
-        private DocumentChunk GroupToChunk(IngestionDocument document, ArraySegment<int> tokenGroup)
+        private IngestionChunk GroupToChunk(IngestionDocument document, ArraySegment<int> tokenGroup)
         {
             string text = _tokenizer.Decode(tokenGroup);
-            return new DocumentChunk(text, document, tokenGroup.Count);
+            return new IngestionChunk(text, document, tokenGroup.Count);
         }
 
         private static string GetDocumentMarkdown(IngestionDocument document)

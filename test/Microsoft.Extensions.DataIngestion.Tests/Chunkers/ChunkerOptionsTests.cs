@@ -11,7 +11,7 @@ public class ChunkerOptionsTests
     [Fact]
     public void DefaultValues_ShouldBeSetCorrectly()
     {
-        ChunkerOptions options = new();
+        IngestionChunkerOptions options = new();
 
         Assert.Equal(2000, options.MaxTokensPerChunk);
         Assert.Equal(500, options.OverlapTokens);
@@ -20,7 +20,7 @@ public class ChunkerOptionsTests
     [Fact]
     public void DefaultOverlapTokensIsZeroForSmallMaxTokensPerChunk()
     {
-        ChunkerOptions options = new() { MaxTokensPerChunk = 100 };
+        IngestionChunkerOptions options = new() { MaxTokensPerChunk = 100 };
 
         Assert.Equal(100, options.MaxTokensPerChunk);
         Assert.Equal(0, options.OverlapTokens);
@@ -29,7 +29,7 @@ public class ChunkerOptionsTests
     [Fact]
     public void Properties_ShouldThrow_OnZeroOrNegative()
     {
-        ChunkerOptions options = new();
+        IngestionChunkerOptions options = new();
 
         Assert.Throws<ArgumentOutOfRangeException>(() => options.MaxTokensPerChunk = 0);
         Assert.Throws<ArgumentOutOfRangeException>(() => options.MaxTokensPerChunk = -1);
@@ -41,7 +41,7 @@ public class ChunkerOptionsTests
     [Fact]
     public void OverlapTokens_ShouldThrow_WhenGreaterOrEqualThanMaxTokens()
     {
-        ChunkerOptions options = new() { MaxTokensPerChunk = 1000 };
+        IngestionChunkerOptions options = new() { MaxTokensPerChunk = 1000 };
 
         Assert.Throws<ArgumentOutOfRangeException>(() => options.OverlapTokens = 1000);
         Assert.Throws<ArgumentOutOfRangeException>(() => options.OverlapTokens = 1500);
@@ -50,7 +50,7 @@ public class ChunkerOptionsTests
     [Fact]
     public void MaxTokensPerChunk_ShouldThrow_WhenLessOrEqualThanOverlapTokens()
     {
-        ChunkerOptions options = new() { OverlapTokens = 10 };
+        IngestionChunkerOptions options = new() { OverlapTokens = 10 };
 
         Assert.Throws<ArgumentOutOfRangeException>(() => options.MaxTokensPerChunk = 10);
         Assert.Throws<ArgumentOutOfRangeException>(() => options.MaxTokensPerChunk = 5);

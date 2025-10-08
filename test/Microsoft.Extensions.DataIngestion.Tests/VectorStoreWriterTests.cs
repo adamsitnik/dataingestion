@@ -43,9 +43,9 @@ public class VectorStoreWriterTests
             dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
         IngestionDocument document = new(documentId);
-        List<DocumentChunk> chunks = new()
+        List<IngestionChunk> chunks = new()
         {
-            new DocumentChunk("some content", document)
+            new IngestionChunk("some content", document)
             {
                 Metadata =
                 {
@@ -91,16 +91,16 @@ public class VectorStoreWriterTests
             });
 
         IngestionDocument document = new(documentId);
-        List<DocumentChunk> chunks = new()
+        List<IngestionChunk> chunks = new()
         {
-            new DocumentChunk("first chunk", document)
+            new IngestionChunk("first chunk", document)
             {
                 Metadata =
                 {
                     { "key1", "value1" }
                 }
             },
-            new DocumentChunk("second chunk", document)
+            new IngestionChunk("second chunk", document)
         };
 
         await writer.WriteAsync(chunks);
@@ -111,9 +111,9 @@ public class VectorStoreWriterTests
         Assert.Equal(chunks.Count, recordCount);
 
         // Now we will do an incremental ingestion that updates the chunk(s).
-        List<DocumentChunk> updatedChunks = new()
+        List<IngestionChunk> updatedChunks = new()
         {
-            new DocumentChunk("different content", document)
+            new IngestionChunk("different content", document)
             {
                 Metadata =
                 {

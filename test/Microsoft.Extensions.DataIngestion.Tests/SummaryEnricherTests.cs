@@ -16,7 +16,7 @@ public class SummaryEnricherTests : ChatClientTestBase
     {
         SummaryEnricher sut = new(ChatClient);
 
-        List<DocumentChunk> chunks = new()
+        List<IngestionChunk> chunks = new()
         {
             new("I love programming! It's so much fun and rewarding.", document),
             new("I hate bugs. They are so frustrating and time-consuming.", document)

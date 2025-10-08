@@ -12,21 +12,21 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers;
 /// <summary>
 /// Treats each section in a <see cref="IngestionDocument"/> as a separate entity.
 /// </summary>
-public sealed class SectionChunker : IDocumentChunker
+public sealed class SectionChunker : IngestionChunker
 {
     private readonly ElementsChunker _elementsChunker;
 
-    public SectionChunker(Tokenizer tokenizer, ChunkerOptions? options = default)
+    public SectionChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         if (document is null)
         {
             throw new ArgumentNullException(nameof(document));
         }
 
-        List<DocumentChunk> chunks = [];
+        List<IngestionChunk> chunks = [];
         foreach (IngestionDocumentSection section in document.Sections)
         {
             Process(document, section, chunks);
@@ -35,7 +35,7 @@ public sealed class SectionChunker : IDocumentChunker
         return Task.FromResult(chunks);
     }
 
-    private void Process(IngestionDocument document, IngestionDocumentSection section, List<DocumentChunk> chunks, string? parentContext = null)
+    private void Process(IngestionDocument document, IngestionDocumentSection section, List<IngestionChunk> chunks, string? parentContext = null)
     {
         List<IngestionDocumentElement> elements = new(section.Elements.Count);
         string context = parentContext ?? string.Empty;

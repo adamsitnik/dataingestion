@@ -14,17 +14,17 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <summary>
 /// Splits documents into chunks based on headers and their corresponding levels, preserving the header context.
 /// </summary>
-public sealed class HeaderChunker : IDocumentChunker
+public sealed class HeaderChunker : IngestionChunker
 {
     private const int MaxHeaderLevel = 10;
     private readonly ElementsChunker _elementsChunker;
 
-    public HeaderChunker(Tokenizer tokenizer, ChunkerOptions? options = default)
+    public HeaderChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
-        List<DocumentChunk> chunks = new();
+        List<IngestionChunk> chunks = new();
         List<IngestionDocumentElement> elements = new(20);
         string?[] headers = new string?[MaxHeaderLevel + 1];
 
@@ -50,7 +50,7 @@ public sealed class HeaderChunker : IDocumentChunker
         return Task.FromResult(chunks);
     }
 
-    private void SplitIntoChunks(IngestionDocument document, List<DocumentChunk> chunks, string?[] headers, List<IngestionDocumentElement> elements)
+    private void SplitIntoChunks(IngestionDocument document, List<IngestionChunk> chunks, string?[] headers, List<IngestionDocumentElement> elements)
     {
         if (elements.Count > 0)
         {

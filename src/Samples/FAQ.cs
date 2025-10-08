@@ -7,7 +7,7 @@ using Microsoft.Extensions.VectorData;
 
 namespace Samples;
 
-public sealed class QAWriter : IDocumentChunkWriter
+public sealed class QAWriter : IngestionChunkWriter
 {
     private readonly VectorStoreCollection<Guid, QARecord> _vectorStoreCollection;
     private readonly IChatClient _chatClient;
@@ -24,7 +24,7 @@ public sealed class QAWriter : IDocumentChunkWriter
         _chatClient.Dispose();
     }
 
-    public async Task WriteAsync(IReadOnlyList<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public async Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default)
     {
         await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken);
 

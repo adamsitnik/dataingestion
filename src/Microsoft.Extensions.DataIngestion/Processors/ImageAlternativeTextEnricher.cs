@@ -12,12 +12,12 @@ namespace Microsoft.Extensions.DataIngestion;
 /// Enriches <see cref="IngestionDocumentImage"/> elements with alternative text using an AI service,
 /// so the generated embeddings can include the image content information.
 /// </summary>
-public sealed class AlternativeTextEnricher : IDocumentProcessor
+public sealed class ImageAlternativeTextEnricher : IngestionDocumentProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
 
-    public AlternativeTextEnricher(IChatClient chatClient, ChatOptions? chatOptions = null)
+    public ImageAlternativeTextEnricher(IChatClient chatClient, ChatOptions? chatOptions = null)
     {
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
         _chatOptions = chatOptions;

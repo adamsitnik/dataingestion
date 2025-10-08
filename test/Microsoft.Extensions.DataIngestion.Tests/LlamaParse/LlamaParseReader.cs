@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public class LlamaParseReader : DocumentReader
+public class LlamaParseReader : IngestionDocumentReader
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {

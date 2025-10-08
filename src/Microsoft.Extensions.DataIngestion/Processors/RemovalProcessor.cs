@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <summary>
 /// Represents a processor that removes specific elements from a document based on a provided predicate.
 /// </summary>
-public sealed class RemovalProcessor : IDocumentProcessor
+public sealed class RemovalProcessor : IngestionDocumentProcessor
 {
     public static RemovalProcessor Footers { get; } = new(static element => element is IngestionDocumentFooter);
     public static RemovalProcessor EmptySections { get; } = new(static element => element is IngestionDocumentSection section && section.Elements.Count == 0);

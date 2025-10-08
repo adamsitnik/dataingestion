@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public class MarkItDownReader : DocumentReader
+public class MarkItDownReader : IngestionDocumentReader
 {
     private readonly string _exePath;
     private readonly bool _extractImages;

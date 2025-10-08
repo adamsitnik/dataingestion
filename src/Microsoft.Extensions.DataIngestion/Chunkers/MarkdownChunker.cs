@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
     /// <remarks>This class is designed to parse a Markdown document and divide it into logical chunks based
     /// on the specified header level. Each chunk represents a section of the document, and the headers can be
     /// optionally stripped from the output. The splitting behavior is controlled by the header level. </remarks>
-    public sealed class MarkdownChunker : IDocumentChunker
+    public sealed class MarkdownChunker : IngestionChunker
     {
         private readonly int _headerLevelToSplitOn;
         private readonly bool _stripHeaders;
@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _stripHeaders = stripHeaders;
         }
 
-        public Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+        public Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
@@ -37,9 +37,9 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return Task.FromResult(ParseLevel(document, sectionStack, 1));
         }
 
-        private List<DocumentChunk> ParseLevel(IngestionDocument document, Stack<IngestionDocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)
+        private List<IngestionChunk> ParseLevel(IngestionDocument document, Stack<IngestionDocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)
         {
-            List<DocumentChunk> chunks = new List<DocumentChunk>();
+            List<IngestionChunk> chunks = new List<IngestionChunk>();
 
             StringBuilder sb = new StringBuilder();
 
@@ -54,7 +54,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 }
                 else
                 {
-                    DocumentChunk? currentChunk = CreateChunk(document, sb, context, lastHeader);
+                    IngestionChunk? currentChunk = CreateChunk(document, sb, context, lastHeader);
                     if (currentChunk is not null)
                     {
                         chunks.Add(currentChunk);
@@ -79,7 +79,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 }
             }
 
-            DocumentChunk? chunk = CreateChunk(document, sb, context, lastHeader);
+            IngestionChunk? chunk = CreateChunk(document, sb, context, lastHeader);
             if (chunk is not null)
             {
                 chunks.Add(chunk);
@@ -93,7 +93,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return string.Join(";", new[] { context, lastHeader }.Where(x => x is not null));
         }
 
-        private DocumentChunk? CreateChunk(IngestionDocument document, StringBuilder content, string? context, string? header)
+        private IngestionChunk? CreateChunk(IngestionDocument document, StringBuilder content, string? context, string? header)
         {
             context = StringyfyContext(context, header);
             if (!_stripHeaders)
@@ -103,7 +103,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             string textContent = content.ToString();
             if (string.IsNullOrWhiteSpace(textContent))
                 return null;
-            return new DocumentChunk(textContent, document, context: context);
+            return new IngestionChunk(textContent, document, context: context);
         }
     }
 }

@@ -15,9 +15,9 @@ public class ClassificationEnricherTests : ChatClientTestBase
     public async Task CanClassify()
     {
         ClassificationEnricher sut = new(ChatClient, ["AI", "Animals", "Sports"], fallbackClass: "UFO");
-        List<DocumentChunk> chunks = CreateChunks();
+        List<IngestionChunk> chunks = CreateChunks();
 
-        List<DocumentChunk> got = await sut.ProcessAsync(chunks);
+        List<IngestionChunk> got = await sut.ProcessAsync(chunks);
 
         Assert.Same(chunks, got);
         Assert.Equal(3, chunks.Count);
@@ -26,7 +26,7 @@ public class ClassificationEnricherTests : ChatClientTestBase
         Assert.Equal("UFO", chunks[2].Metadata[ClassificationEnricher.MetadataKey]);
     }
 
-    private static List<DocumentChunk> CreateChunks() =>
+    private static List<IngestionChunk> CreateChunks() =>
     [
         new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document),
         new ("Rabbits are small mammals in the family Leporidae of the order Lagomorpha (along with the hare and the pika). They are herbivorous animals and are known for their long ears, large hind legs, and short fluffy tails.", document),

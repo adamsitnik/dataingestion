@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public sealed class MarkdownReader : DocumentReader
+public sealed class MarkdownReader : IngestionDocumentReader
 {
     public override async Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
     {

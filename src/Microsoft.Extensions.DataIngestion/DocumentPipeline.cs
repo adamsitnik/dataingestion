@@ -13,22 +13,22 @@ using static Microsoft.Extensions.DataIngestion.DiagnosticsConstants;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public sealed class DocumentPipeline : IDocumentPipeline
+public sealed class DocumentPipeline : IngestionPipeline
 {
     private readonly ActivitySource _activitySource;
     private readonly ILogger? _logger;
-    private readonly DocumentReader _reader;
-    private readonly IReadOnlyList<IDocumentProcessor> _processors;
-    private readonly IDocumentChunker _chunker;
-    private readonly IReadOnlyList<IChunkProcessor> _chunkProcessors;
-    private readonly IDocumentChunkWriter _writer;
+    private readonly IngestionDocumentReader _reader;
+    private readonly IReadOnlyList<IngestionDocumentProcessor> _processors;
+    private readonly IngestionChunker _chunker;
+    private readonly IReadOnlyList<IngestionChunkProcessor> _chunkProcessors;
+    private readonly IngestionChunkWriter _writer;
 
     public DocumentPipeline(
-        DocumentReader reader,
-        IReadOnlyList<IDocumentProcessor> documentProcessors,
-        IDocumentChunker chunker,
-        IReadOnlyList<IChunkProcessor> chunkProcessors,
-        IDocumentChunkWriter writer,
+        IngestionDocumentReader reader,
+        IReadOnlyList<IngestionDocumentProcessor> documentProcessors,
+        IngestionChunker chunker,
+        IReadOnlyList<IngestionChunkProcessor> chunkProcessors,
+        IngestionChunkWriter writer,
         ILoggerFactory? loggerFactory = default,
         string? sourceName = default)
     {
@@ -211,7 +211,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
 
     private async Task ProcessAsync(IngestionDocument document, Activity? parentActivity, CancellationToken cancellationToken)
     {
-        foreach (IDocumentProcessor processor in _processors)
+        foreach (IngestionDocumentProcessor processor in _processors)
         {
             using (Activity? processorActivity = StartActivity(ProcessDocument.ActivityName, parent: parentActivity))
             {
@@ -226,7 +226,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
             }
         }
 
-        List<DocumentChunk>? chunks = null;
+        List<IngestionChunk>? chunks = null;
         using (Activity? chunkerActivity = StartActivity(ChunkDocument.ActivityName, parent: parentActivity))
         {
             chunkerActivity?.SetTag(ChunkDocument.ChunkerTagName, GetShortName(_chunker));
@@ -238,7 +238,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
             _logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
         }
 
-        foreach (IChunkProcessor processor in _chunkProcessors)
+        foreach (IngestionChunkProcessor processor in _chunkProcessors)
         {
             using (Activity? processorActivity = StartActivity(ProcessChunk.ActivityName, parent: parentActivity))
             {

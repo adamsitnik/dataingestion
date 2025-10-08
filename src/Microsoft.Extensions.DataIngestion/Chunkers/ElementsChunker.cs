@@ -16,7 +16,7 @@ internal sealed class ElementsChunker
     private readonly bool _considerNormalization;
     private StringBuilder? _currentChunk;
 
-    internal ElementsChunker(Tokenizer tokenizer, ChunkerOptions options)
+    internal ElementsChunker(Tokenizer tokenizer, IngestionChunkerOptions options)
     {
         _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
         _maxTokensPerChunk = options.MaxTokensPerChunk;
@@ -28,7 +28,7 @@ internal sealed class ElementsChunker
     // 1. Create chunks that do not exceed _maxTokensPerChunk when tokenized.
     // 2. Maintain context in each chunk.
     // 3. If a single IngestionDocumentElement exceeds _maxTokensPerChunk, it should be split intelligently (e.g., paragraphs can be split into sentences, tables into rows).
-    internal void Process(IngestionDocument document, List<DocumentChunk> chunks, string context, List<IngestionDocumentElement> elements)
+    internal void Process(IngestionDocument document, List<IngestionChunk> chunks, string context, List<IngestionDocumentElement> elements)
     {
         // Token count != character count, but StringBuilder will grow as needed.
         _currentChunk ??= new(capacity: _maxTokensPerChunk);
