@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DocumentPipelineTests
 {
-    public static TheoryData<string[], DocumentReader, IDocumentChunker> FilesAndReaders
+    public static TheoryData<string[], IngestionDocumentReader, IngestionChunker> FilesAndReaders
     {
         get
         {
@@ -38,11 +38,11 @@ public class DocumentPipelineTests
                 Path.Combine("TestFiles", "Sample.md"),
             };
 
-            List<DocumentReader> documentReaders = CreateReaders();
-            List<IDocumentChunker> documentChunkers = CreateChunkers();
+            List<IngestionDocumentReader> documentReaders = CreateReaders();
+            List<IngestionChunker> documentChunkers = CreateChunkers();
 
-            TheoryData<string[], DocumentReader, IDocumentChunker> theoryData = new();
-            foreach (DocumentReader reader in documentReaders)
+            TheoryData<string[], IngestionDocumentReader, IngestionChunker> theoryData = new();
+            foreach (IngestionDocumentReader reader in documentReaders)
             {
                 string[] filePaths = reader switch
                 {
@@ -50,7 +50,7 @@ public class DocumentPipelineTests
                     _ => nonMarkdownFiles
                 };
 
-                foreach (IDocumentChunker chunker in documentChunkers)
+                foreach (IngestionChunker chunker in documentChunkers)
                 {
                     theoryData.Add(filePaths, reader, chunker);
                 }
@@ -62,12 +62,12 @@ public class DocumentPipelineTests
 
     [Theory]
     [MemberData(nameof(FilesAndReaders))]
-    public async Task CanProcessDocuments(string[] filePaths, DocumentReader reader, IDocumentChunker chunker)
+    public async Task CanProcessDocuments(string[] filePaths, IngestionDocumentReader reader, IngestionChunker chunker)
     {
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
+        IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -96,17 +96,17 @@ public class DocumentPipelineTests
         AssertActivities(activities, "ProcessFiles");
     }
 
-    public static TheoryData<DocumentReader> Readers => new(CreateReaders());
+    public static TheoryData<IngestionDocumentReader> Readers => new(CreateReaders());
 
     [Theory]
     [MemberData(nameof(Readers))]
-    public async Task CanProcessDocumentsInDirectory(DocumentReader reader)
+    public async Task CanProcessDocumentsInDirectory(IngestionDocumentReader reader)
     {
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
-        IDocumentChunker documentChunker = new HeaderChunker(CreateTokenizer());
+        IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
+        IngestionChunker documentChunker = new HeaderChunker(CreateTokenizer());
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -148,8 +148,8 @@ public class DocumentPipelineTests
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers];
-        IDocumentChunker documentChunker = new SectionChunker(CreateTokenizer());
+        IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers];
+        IngestionChunker documentChunker = new SectionChunker(CreateTokenizer());
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -173,9 +173,9 @@ public class DocumentPipelineTests
         activities.Clear();
     }
 
-    private static List<DocumentReader> CreateReaders()
+    private static List<IngestionDocumentReader> CreateReaders()
     {
-        List<DocumentReader> readers = new()
+        List<IngestionDocumentReader> readers = new()
         {
             new MarkdownReader(),
             new MarkItDownReader(),
@@ -206,7 +206,7 @@ public class DocumentPipelineTests
 
     private static Tokenizer CreateTokenizer() => TiktokenTokenizer.CreateForModel("gpt-4");
 
-    private static List<IDocumentChunker> CreateChunkers() => [
+    private static List<IngestionChunker> CreateChunkers() => [
         // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
         new HeaderChunker(CreateTokenizer()),
         new SectionChunker(CreateTokenizer())
@@ -239,7 +239,7 @@ public class DocumentPipelineTests
         Assert.All(activities, a => Assert.Equal(ExpectedException.ExceptionMessage, a.StatusDescription));
     }
 
-    private class ThrowingReader : DocumentReader
+    private class ThrowingReader : IngestionDocumentReader
     {
         public override Task<IngestionDocument> ReadAsync(string filePath, string identifier, System.Threading.CancellationToken cancellationToken = default)
             => throw new ExpectedException();

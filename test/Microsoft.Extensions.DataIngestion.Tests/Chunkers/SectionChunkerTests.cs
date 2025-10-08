@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public class SectionChunkerTests : DocumentChunkerTests
     {
-        protected override IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
+        protected override IngestionChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
             return new SectionChunker(tokenizer, new() { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = overlapTokens });
@@ -29,8 +29,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     new IngestionDocumentParagraph("This is another paragraph.")
                 }
             });
-            IDocumentChunker chunker = CreateDocumentChunker();
-            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+            IngestionChunker chunker = CreateDocumentChunker();
+            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Single(chunks);
             string expectedResult = "This is a paragraph.\nThis is another paragraph.";
             Assert.Equal(expectedResult, chunks[0].Content, ignoreLineEndingDifferences: true);
@@ -62,8 +62,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             };
 
-            IDocumentChunker chunker = CreateDocumentChunker();
-            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+            IngestionChunker chunker = CreateDocumentChunker();
+            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
 
             Assert.Equal(2, chunks.Count);
             string expectedResult1 = "This is a paragraph.\nThis is another paragraph.";
@@ -80,8 +80,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             {
                 Elements = { }
             });
-            IDocumentChunker chunker = CreateDocumentChunker();
-            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+            IngestionChunker chunker = CreateDocumentChunker();
+            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Empty(chunks);
         }
 
@@ -113,8 +113,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             };
 
-            IDocumentChunker chunker = CreateDocumentChunker();
-            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+            IngestionChunker chunker = CreateDocumentChunker();
+            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
 
             Assert.Equal(2, chunks.Count);
             Assert.Equal("# Section title", chunks[0].Context);
@@ -135,8 +135,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     new IngestionDocumentParagraph(text)
                 }
             });
-            IDocumentChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 512);
-            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+            IngestionChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 512);
+            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(2, chunks.Count);
             Assert.True(chunks[0].Content.Split(' ').Length <= 512);
             Assert.True(chunks[1].Content.Split(' ').Length <= 512);
@@ -156,9 +156,9 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     new IngestionDocumentParagraph("This is another paragraph in section 1.")
                 }
             });
-            IDocumentChunker chunker = CreateDocumentChunker();
-            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
-            DocumentChunk chunk = Assert.Single(chunks);
+            IngestionChunker chunker = CreateDocumentChunker();
+            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IngestionChunk chunk = Assert.Single(chunks);
             string expectedResult = "Section 1\nThis is a paragraph in section 1.\nThis is another paragraph in section 1.";
             Assert.Equal(expectedResult, chunk.Content, ignoreLineEndingDifferences: true);
             Assert.Equal("Section 1", chunk.Context);

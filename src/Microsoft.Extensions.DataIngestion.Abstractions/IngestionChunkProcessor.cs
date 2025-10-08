@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public interface IChunkProcessor
+public abstract class IngestionChunkProcessor
 {
-    Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default);
+    public abstract Task<List<IngestionChunk>> ProcessAsync(List<IngestionChunk> chunks, CancellationToken cancellationToken = default);
 }

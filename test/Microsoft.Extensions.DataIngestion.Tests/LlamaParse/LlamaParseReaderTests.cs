@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class LlamaParseReaderTests : DocumentReaderConformanceTests
 {
-    protected override DocumentReader CreateDocumentReader(bool extractImages = false)
+    protected override IngestionDocumentReader CreateDocumentReader(bool extractImages = false)
     {
         string key = Environment.GetEnvironmentVariable("LLAMACLOUD_API_KEY")!;
 

@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers;
 /// <summary>
 /// Splits a <see cref="IngestionDocument"/> into chunks based on semantic similarity between its elements.
 /// </summary>
-public sealed class SemanticSimilarityChunker : IDocumentChunker
+public sealed class SemanticSimilarityChunker : IngestionChunker
 {
     private readonly ElementsChunker _elementsChunker;
     private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
@@ -22,7 +22,7 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
 
     public SemanticSimilarityChunker(
         IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-        Tokenizer tokenizer, ChunkerOptions? options = default,
+        Tokenizer tokenizer, IngestionChunkerOptions? options = default,
         float thresholdPercentile = 95.0f)
     {
         _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
@@ -32,7 +32,7 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
             : thresholdPercentile ;
     }
 
-    public async Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override async Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -79,9 +79,9 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
         return elementDistance;
     }
 
-    private List<DocumentChunk> MakeChunks(IngestionDocument document, List<(IngestionDocumentElement element, float distance)> elementDistances)
+    private List<IngestionChunk> MakeChunks(IngestionDocument document, List<(IngestionDocumentElement element, float distance)> elementDistances)
     {
-        List<DocumentChunk> chunks = [];
+        List<IngestionChunk> chunks = [];
         float distanceThreshold = Percentile(elementDistances);
 
         List<IngestionDocumentElement> elementAccumulator = [];

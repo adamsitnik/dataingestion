@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class MarkdownReaderTests : DocumentReaderConformanceTests
 {
-    protected override DocumentReader CreateDocumentReader(bool extractImages = false) => new MarkdownReader();
+    protected override IngestionDocumentReader CreateDocumentReader(bool extractImages = false) => new MarkdownReader();
 
     public static new IEnumerable<object[]> Sources
     {

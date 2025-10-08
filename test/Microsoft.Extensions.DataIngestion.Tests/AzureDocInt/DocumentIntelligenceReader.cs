@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public sealed class DocumentIntelligenceReader : DocumentReader
+public sealed class DocumentIntelligenceReader : IngestionDocumentReader
 {
     private readonly DocumentIntelligenceClient _client;
     private readonly string _modelName;

@@ -36,7 +36,7 @@ public class HeaderChunkerTests
         });
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"));
-        List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+        List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
 
         Assert.Equal(5, chunks.Count);
         string nl = Environment.NewLine;
@@ -68,7 +68,7 @@ public class HeaderChunkerTests
         });
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 13 });
-        List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+        List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
 
         Assert.Equal(2, chunks.Count);
         Assert.Equal("Header A Header B Header C", chunks[0].Context);
@@ -118,7 +118,7 @@ With some text after the new line."),
         });
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 30 });
-        List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+        List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
 
         Assert.Equal(2, chunks.Count);
         Assert.Equal("Header A Header B Header C", chunks[0].Context);
@@ -145,7 +145,7 @@ With some text after the new line."),
         IngestionDocument document = CreateDocumentWithLargeTable();
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 100 });
-        List<DocumentChunk> chunks = await chunker.ProcessAsync(document);
+        List<IngestionChunk> chunks = await chunker.ProcessAsync(document);
 
         Assert.Equal(2, chunks.Count);
         Assert.All(chunks, chunk => Assert.Equal("Header A", chunk.Context));
@@ -172,7 +172,7 @@ And some follow up.", chunks[1].Content, ignoreLineEndingDifferences: true);
         IngestionDocument document = CreateDocumentWithLargeTable();
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 50 });
-        List<DocumentChunk> chunks = await chunker.ProcessAsync(document);
+        List<IngestionChunk> chunks = await chunker.ProcessAsync(document);
 
         Assert.Equal(6, chunks.Count);
         Assert.All(chunks, chunk => Assert.Equal("Header A", chunk.Context));

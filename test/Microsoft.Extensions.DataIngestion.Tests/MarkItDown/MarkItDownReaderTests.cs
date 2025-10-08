@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class MarkItDownReaderTests : DocumentReaderConformanceTests
 {
-    protected override DocumentReader CreateDocumentReader(bool extractImages = false)
+    protected override IngestionDocumentReader CreateDocumentReader(bool extractImages = false)
         => new MarkItDownReader(extractImages: extractImages);
 
     protected override void SimpleAsserts(IngestionDocument document, string source, string expectedId)

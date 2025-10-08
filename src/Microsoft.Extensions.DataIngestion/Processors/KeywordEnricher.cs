@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <remarks>
 /// It adds "keywords" metadata to each chunk. It's an array of strings representing the extracted keywords.
 /// </remarks>
-public sealed class KeywordEnricher : IChunkProcessor
+public sealed class KeywordEnricher : IngestionChunkProcessor
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -39,7 +39,7 @@ public sealed class KeywordEnricher : IChunkProcessor
 
     public static string MetadataKey => "keywords";
 
-    public async Task<List<DocumentChunk>> ProcessAsync(List<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task<List<IngestionChunk>> ProcessAsync(List<IngestionChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -48,7 +48,7 @@ public sealed class KeywordEnricher : IChunkProcessor
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        foreach (DocumentChunk chunk in chunks)
+        foreach (IngestionChunk chunk in chunks)
         {
             ChatResponse<string[]> response = await _chatClient.GetResponseAsync<string[]>(
             [

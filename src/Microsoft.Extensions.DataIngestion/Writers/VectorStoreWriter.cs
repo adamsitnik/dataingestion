@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public sealed class VectorStoreWriter : IDocumentChunkWriter
+public sealed class VectorStoreWriter : IngestionChunkWriter
 {
     // The names are lowercase with no special characters to ensure compatibility with various vector stores.
     private const string KeyName = "key";
@@ -26,9 +26,9 @@ public sealed class VectorStoreWriter : IDocumentChunkWriter
     private VectorStoreCollection<object, Dictionary<string, object?>>? _vectorStoreCollection;
 
     /// <summary>
-    /// Creates a new instance of <see cref="VectorStoreCollection{TKey, Dictionary{string, object?}}"/> that uses dynamic schema to store the <see cref="DocumentChunk"/> instances as <see cref="Dictionary{string, object?}"/> using provided vector store, collection name and dimension count.
+    /// Creates a new instance of <see cref="VectorStoreCollection{TKey, Dictionary{string, object?}}"/> that uses dynamic schema to store the <see cref="IngestionChunk"/> instances as <see cref="Dictionary{string, object?}"/> using provided vector store, collection name and dimension count.
     /// </summary>
-    /// <param name="vectorStore">The <see cref="VectorStore"/> to use to store the <see cref="DocumentChunk"/> instances.</param>
+    /// <param name="vectorStore">The <see cref="VectorStore"/> to use to store the <see cref="IngestionChunk"/> instances.</param>
     /// <param name="dimensionCount">The number of dimensions that the vector has. This value is required when creating collections.</param>
     /// <param name="options">The options for the vector store writer.</param>
     /// <exception cref="ArgumentNullException">When <paramref name="vectorStore"/> is null.</exception>
@@ -48,13 +48,13 @@ public sealed class VectorStoreWriter : IDocumentChunkWriter
     public VectorStoreCollection<object, Dictionary<string, object?>> VectorStoreCollection
         => _vectorStoreCollection ?? throw new InvalidOperationException("The collection has not been initialized yet. Call WriteAsync first.");
 
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
         _vectorStore.Dispose();
         _vectorStoreCollection?.Dispose();
     }
 
-    public async Task WriteAsync(IReadOnlyList<DocumentChunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -69,7 +69,7 @@ public sealed class VectorStoreWriter : IDocumentChunkWriter
         }
 
         // We assume that every chunk has the same metadata schema so we use the first chunk as representative.
-        DocumentChunk representativeChunk = chunks[0];
+        IngestionChunk representativeChunk = chunks[0];
 
         if (_vectorStoreCollection is null)
         {
@@ -80,7 +80,7 @@ public sealed class VectorStoreWriter : IDocumentChunkWriter
 
         await DeletePreExistingChunksForGivenDocument(representativeChunk.Document, cancellationToken).ConfigureAwait(false);
 
-        foreach (DocumentChunk chunk in chunks)
+        foreach (IngestionChunk chunk in chunks)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -106,7 +106,7 @@ public sealed class VectorStoreWriter : IDocumentChunkWriter
         }
     }
 
-    private VectorStoreCollectionDefinition GetVectorStoreRecordDefinition(DocumentChunk representativeChunk)
+    private VectorStoreCollectionDefinition GetVectorStoreRecordDefinition(IngestionChunk representativeChunk)
     {
         VectorStoreCollectionDefinition definition = new()
         {

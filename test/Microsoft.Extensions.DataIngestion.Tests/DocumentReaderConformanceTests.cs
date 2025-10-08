@@ -13,7 +13,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public abstract class DocumentReaderConformanceTests
 {
-    protected abstract DocumentReader CreateDocumentReader(bool extractImages = false);
+    protected abstract IngestionDocumentReader CreateDocumentReader(bool extractImages = false);
 
     public static IEnumerable<object[]> Sources
     {

@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public class ChunkerOptions
+public class IngestionChunkerOptions
 {
     // Default values come from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
     private int _maxTokensPerChunk = 2_000;

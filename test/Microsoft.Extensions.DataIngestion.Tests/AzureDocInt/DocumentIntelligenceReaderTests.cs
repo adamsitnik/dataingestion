@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DocumentIntelligenceReaderTests : DocumentReaderConformanceTests
 {
-    protected override DocumentReader CreateDocumentReader(bool extractImages = false)
+    protected override IngestionDocumentReader CreateDocumentReader(bool extractImages = false)
     {
         string key = Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_KEY")!;
         string endpoint = Environment.GetEnvironmentVariable("AZURE_DOCUMENT_INT_ENDPOINT")!;

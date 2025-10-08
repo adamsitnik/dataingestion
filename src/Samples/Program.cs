@@ -29,11 +29,11 @@ namespace Samples
         {
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
-            DocumentReader reader = CreateReader(readerId, extractImages);
-            List<IDocumentProcessor> processors = CreateDocumentProcessors(extractImages);
-            IChunkProcessor[] chunkProcessors = CreateChunkProcessors();
+            IngestionDocumentReader reader = CreateReader(readerId, extractImages);
+            List<IngestionDocumentProcessor> processors = CreateDocumentProcessors(extractImages);
+            IngestionChunkProcessor[] chunkProcessors = CreateChunkProcessors();
 
-            IDocumentChunker chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
+            IngestionChunker chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
 
             using SqlServerVectorStore sqlServerVectorStore = new(
                 Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,
@@ -71,10 +71,10 @@ namespace Samples
         {
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
-            DocumentReader reader = CreateReader(readerId, extractImages: false);
-            List<IDocumentProcessor> processors = CreateDocumentProcessors(extractImages: false);
+            IngestionDocumentReader reader = CreateReader(readerId, extractImages: false);
+            List<IngestionDocumentProcessor> processors = CreateDocumentProcessors(extractImages: false);
 
-            IDocumentChunker chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
+            IngestionChunker chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
 
             using SqlServerVectorStore sqlServerVectorStore = new(
                 Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,
@@ -119,7 +119,7 @@ namespace Samples
             return 0;
         }
 
-        private static DocumentReader CreateReader(string readerId, bool extractImages)
+        private static IngestionDocumentReader CreateReader(string readerId, bool extractImages)
             => readerId switch
             {
                 "llama" => new LlamaParseReader(new LlamaParseClient(new HttpClient(),
@@ -138,20 +138,20 @@ namespace Samples
                 _ => throw new NotSupportedException($"The specified reader '{readerId}' is not supported.")
             };
 
-        private static List<IDocumentProcessor> CreateDocumentProcessors(bool extractImages)
+        private static List<IngestionDocumentProcessor> CreateDocumentProcessors(bool extractImages)
         {
-            List<IDocumentProcessor> processors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
+            List<IngestionDocumentProcessor> processors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
 
             if (extractImages)
             {
                 AzureOpenAIClient openAIClient = CreateOpenAiClient();
-                processors.Add(new AlternativeTextEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient()));
+                processors.Add(new ImageAlternativeTextEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient()));
             }
 
             return processors;
         }
 
-        private static IChunkProcessor[] CreateChunkProcessors()
+        private static IngestionChunkProcessor[] CreateChunkProcessors()
         {
             AzureOpenAIClient openAIClient = CreateOpenAiClient();
             return [new SummaryEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];

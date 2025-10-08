@@ -13,7 +13,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public class OverlapTokenChunkerTests : DocumentTokenChunkerTests
     {
-        protected override IDocumentChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
+        protected override IngestionChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
             return new DocumentTokenChunker(tokenizer, new() { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = overlapTokens });
@@ -37,7 +37,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
 
-            List<DocumentChunk> chunks = await chunker.ProcessAsync(doc);
+            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(3, chunks.Count);
             ChunkAssertions.ContentEquals("The quick brown fox", chunks[0]);
             ChunkAssertions.ContentEquals("fox jumps over the", chunks[1]);

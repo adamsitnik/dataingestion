@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public interface IDocumentPipeline : IDisposable
+public interface IngestionPipeline : IDisposable
 {
     Task ProcessAsync(DirectoryInfo directory, string searchPattern = "*.*", SearchOption searchOption = SearchOption.TopDirectoryOnly, CancellationToken cancellationToken = default);
     Task ProcessAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default);
