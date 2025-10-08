@@ -48,8 +48,8 @@ public sealed class SectionChunker : IDocumentChunker
                 // This is common for various documents and readers.
                 case IngestionDocumentHeader documentHeader when i == 0:
                     context = string.IsNullOrEmpty(context)
-                        ? documentHeader.Markdown
-                        : context + $" {documentHeader.Markdown}";
+                        ? documentHeader.GetMarkdown()
+                        : context + $" {documentHeader.GetMarkdown()}";
                 break;
                 case IngestionDocumentSection nestedSection:
                     Commit();

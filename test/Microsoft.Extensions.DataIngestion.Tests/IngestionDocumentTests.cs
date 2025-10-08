@@ -44,19 +44,19 @@ public class IngestionDocumentTests
         IngestionDocumentElement[] flatElements = doc.ToArray();
 
         Assert.IsType<IngestionDocumentHeader>(flatElements[0]);
-        Assert.Equal("header", flatElements[0].Markdown);
+        Assert.Equal("header", flatElements[0].GetMarkdown());
         Assert.IsType<IngestionDocumentParagraph>(flatElements[1]);
-        Assert.Equal("paragraph", flatElements[1].Markdown);
+        Assert.Equal("paragraph", flatElements[1].GetMarkdown());
         Assert.IsType<IngestionDocumentTable>(flatElements[2]);
-        Assert.Equal("table", flatElements[2].Markdown);
+        Assert.Equal("table", flatElements[2].GetMarkdown());
         Assert.IsType<IngestionDocumentHeader>(flatElements[3]);
-        Assert.Equal("nested header", flatElements[3].Markdown);
+        Assert.Equal("nested header", flatElements[3].GetMarkdown());
         Assert.IsType<IngestionDocumentParagraph>(flatElements[4]);
-        Assert.Equal("nested paragraph", flatElements[4].Markdown);
+        Assert.Equal("nested paragraph", flatElements[4].GetMarkdown());
         Assert.IsType<IngestionDocumentHeader>(flatElements[5]);
-        Assert.Equal("header 2", flatElements[5].Markdown);
+        Assert.Equal("header 2", flatElements[5].GetMarkdown());
         Assert.IsType<IngestionDocumentParagraph>(flatElements[6]);
-        Assert.Equal("paragraph 2", flatElements[6].Markdown);
+        Assert.Equal("paragraph 2", flatElements[6].GetMarkdown());
     }
 
     [Theory]

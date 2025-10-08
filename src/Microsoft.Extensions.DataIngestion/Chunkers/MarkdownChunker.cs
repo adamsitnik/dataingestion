@@ -50,7 +50,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 int headerLevel = element is IngestionDocumentHeader header ? header.Level.GetValueOrDefault(0) : 0;
                 if (headerLevel == 0 || headerLevel > _headerLevelToSplitOn)
                 {
-                    sb.AppendLine(element.Markdown);
+                    sb.AppendLine(element.GetMarkdown());
                 }
                 else
                 {
@@ -63,7 +63,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
                     if (headerLevel == markdownHeaderLevel)
                     {
-                        lastHeader = element.Markdown;
+                        lastHeader = element.GetMarkdown();
                     }
                     else if (headerLevel < markdownHeaderLevel)
                     {
@@ -73,7 +73,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                     else
                     {
                         string newContext = StringyfyContext(context, lastHeader);
-                        chunks.AddRange(ParseLevel(document, lines, markdownHeaderLevel + 1, newContext, element.Markdown));
+                        chunks.AddRange(ParseLevel(document, lines, markdownHeaderLevel + 1, newContext, element.GetMarkdown()));
                     }
 
                 }

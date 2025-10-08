@@ -59,7 +59,7 @@ public sealed class IngestionDocument : IEnumerable<IngestionDocumentElement>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
-[DebuggerDisplay("{GetType().Name}: {Markdown}")]
+[DebuggerDisplay("{GetType().Name}: {GetMarkdown}")]
 public abstract class IngestionDocumentElement
 {
     protected string _markdown;
@@ -75,7 +75,7 @@ public abstract class IngestionDocumentElement
 
     public string? Text { get; set; }
 
-    public virtual string Markdown => _markdown;
+    public virtual string GetMarkdown() => _markdown;
 
     public int? PageNumber { get; set; }
 
@@ -100,19 +100,9 @@ public sealed class IngestionDocumentSection : IngestionDocumentElement
 
     public List<IngestionDocumentElement> Elements { get; } = [];
 
-    public override string Markdown
-    {
-        get
-        {
-            // In case there are no Elements, we don't want to cache an empty string.
-            if (string.IsNullOrEmpty(_markdown))
-            {
-                _markdown = string.Join(Environment.NewLine, Elements.Select(e => e.Markdown));
-            }
-
-            return _markdown;
-        }
-    }
+    // The result is not being cached, as elements can be added, removed or modified.
+    public override string GetMarkdown()
+        => string.Join(Environment.NewLine, Elements.Select(e => e.GetMarkdown()));
 }
 
 public sealed class IngestionDocumentParagraph : IngestionDocumentElement

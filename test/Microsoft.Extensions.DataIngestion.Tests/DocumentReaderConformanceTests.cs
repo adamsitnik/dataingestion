@@ -35,7 +35,7 @@ public abstract class DocumentReaderConformanceTests
         Assert.Contains(elements, element => element is IngestionDocumentHeader);
         Assert.Contains(elements, element => element is IngestionDocumentParagraph);
         Assert.Contains(elements, element => element is IngestionDocumentTable);
-        Assert.All(elements.Where(element => element is not IngestionDocumentImage), element => Assert.NotEmpty(element.Markdown));
+        Assert.All(elements.Where(element => element is not IngestionDocumentImage), element => Assert.NotEmpty(element.GetMarkdown()));
     }
 
     [Theory]

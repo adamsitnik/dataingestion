@@ -66,7 +66,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             StringBuilder sb = new();
             for (int i = 0; i < document.Sections.Count; i++)
             {
-                sb.Append(document.Sections[i].Markdown);
+                sb.Append(document.Sections[i].GetMarkdown());
                 if (i != document.Sections.Count - 1)
                 {
                     sb.AppendLine();

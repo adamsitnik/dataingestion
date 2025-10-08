@@ -29,7 +29,7 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
         }
 
         Assert.Contains(elements, element => element is IngestionDocumentParagraph);
-        Assert.All(elements, element => Assert.NotEmpty(element.Markdown));
+        Assert.All(elements, element => Assert.NotEmpty(element.GetMarkdown()));
     }
 
     public override Task SupportsImages(string filePath)

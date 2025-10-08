@@ -29,9 +29,9 @@ public class RemovalProcessorTests
         Assert.Single(updated.Sections);
         Assert.Single(updated.Sections[0].Elements);
         IngestionDocumentParagraph updatedParagraph = Assert.IsType<IngestionDocumentParagraph>(updated.Sections[0].Elements[0]);
-        Assert.Equal(paragraph.Markdown, updatedParagraph.Markdown);
+        Assert.Equal(paragraph.GetMarkdown(), updatedParagraph.GetMarkdown());
         Assert.Equal(paragraph.Metadata, updatedParagraph.Metadata);
-        Assert.Equal(ExpectedMarkdown, updated.Sections[0].Markdown);
+        Assert.Equal(ExpectedMarkdown, updated.Sections[0].GetMarkdown());
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class RemovalProcessorTests
         Assert.Single(updated.Sections);
         Assert.Single(updated.Sections[0].Elements);
         IngestionDocumentParagraph updatedParagraph = Assert.IsType<IngestionDocumentParagraph>(updated.Sections[0].Elements[0]);
-        Assert.Equal(ExpectedMarkdown, updatedParagraph.Markdown);
-        Assert.Equal(ExpectedMarkdown, updated.Sections[0].Markdown);
+        Assert.Equal(ExpectedMarkdown, updatedParagraph.GetMarkdown());
+        Assert.Equal(ExpectedMarkdown, updated.Sections[0].GetMarkdown());
     }
 }

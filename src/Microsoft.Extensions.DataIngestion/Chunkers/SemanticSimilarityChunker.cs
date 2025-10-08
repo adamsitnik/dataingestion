@@ -59,7 +59,7 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
         {
             string? semanticContent = element is IngestionDocumentImage img
                 ? img.AlternativeText ?? img.Text
-                : element.Markdown;
+                : element.GetMarkdown();
 
             if (!string.IsNullOrEmpty(semanticContent))
             {

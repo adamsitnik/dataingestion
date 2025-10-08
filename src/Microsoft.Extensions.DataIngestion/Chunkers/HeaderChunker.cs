@@ -35,7 +35,7 @@ public sealed class HeaderChunker : IDocumentChunker
                 SplitIntoChunks(document, chunks, headers, elements);
 
                 int headerLevel = header.Level.GetValueOrDefault();
-                headers[headerLevel] = header.Markdown;
+                headers[headerLevel] = header.GetMarkdown();
                 headers.AsSpan(headerLevel + 1).Clear(); // clear all lower level headers
 
                 continue; // don't add headers to the elements list, they are part of the context

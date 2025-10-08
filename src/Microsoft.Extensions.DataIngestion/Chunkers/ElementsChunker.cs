@@ -53,7 +53,7 @@ internal sealed class ElementsChunker
                 // - Text: result of OCR, can be longer, but also can be null or empty. It can be several hundred words.
                 // We prefer  AlternativeText over Text, as it is usually more relevant.
                 IngestionDocumentImage image => image.AlternativeText ?? image.Text,
-                _ => element.Markdown
+                _ => element.GetMarkdown()
             };
 
             if(string.IsNullOrEmpty(semanticContent))
