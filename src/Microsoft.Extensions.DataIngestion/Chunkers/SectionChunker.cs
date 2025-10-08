@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion.Chunkers;
 
 /// <summary>
-/// Treats each section in a <see cref="Document"/> as a separate entity.
+/// Treats each section in a <see cref="IngestionDocument"/> as a separate entity.
 /// </summary>
 public sealed class SectionChunker : IDocumentChunker
 {
@@ -19,7 +19,7 @@ public sealed class SectionChunker : IDocumentChunker
     public SectionChunker(Tokenizer tokenizer, ChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         if (document is null)
         {
@@ -27,7 +27,7 @@ public sealed class SectionChunker : IDocumentChunker
         }
 
         List<DocumentChunk> chunks = [];
-        foreach (DocumentSection section in document.Sections)
+        foreach (IngestionDocumentSection section in document.Sections)
         {
             Process(document, section, chunks);
         }
@@ -35,9 +35,9 @@ public sealed class SectionChunker : IDocumentChunker
         return Task.FromResult(chunks);
     }
 
-    private void Process(Document document, DocumentSection section, List<DocumentChunk> chunks, string? parentContext = null)
+    private void Process(IngestionDocument document, IngestionDocumentSection section, List<DocumentChunk> chunks, string? parentContext = null)
     {
-        List<DocumentElement> elements = new(section.Elements.Count);
+        List<IngestionDocumentElement> elements = new(section.Elements.Count);
         string context = parentContext ?? string.Empty;
 
         for (int i = 0; i < section.Elements.Count; i++)
@@ -46,12 +46,12 @@ public sealed class SectionChunker : IDocumentChunker
             {
                 // If the first element is a header, we use it as a context.
                 // This is common for various documents and readers.
-                case DocumentHeader documentHeader when i == 0:
+                case IngestionDocumentHeader documentHeader when i == 0:
                     context = string.IsNullOrEmpty(context)
                         ? documentHeader.Markdown
                         : context + $" {documentHeader.Markdown}";
                 break;
-                case DocumentSection nestedSection:
+                case IngestionDocumentSection nestedSection:
                     Commit();
                     Process(document, nestedSection, chunks, context);
                     break;

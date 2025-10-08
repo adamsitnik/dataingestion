@@ -30,7 +30,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _chunkOverlap = options.OverlapTokens;
         }
 
-        public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
@@ -50,7 +50,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return groups;
         }
 
-        private DocumentChunk GroupToChunk(Document document, ArraySegment<int> tokenGroup)
+        private DocumentChunk GroupToChunk(IngestionDocument document, ArraySegment<int> tokenGroup)
         {
             string text = _tokenizer.Decode(tokenGroup);
             return new DocumentChunk(text, document, tokenGroup.Count);

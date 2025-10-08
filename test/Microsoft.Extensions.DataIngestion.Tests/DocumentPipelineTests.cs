@@ -241,10 +241,10 @@ public class DocumentPipelineTests
 
     private class ThrowingReader : DocumentReader
     {
-        public override Task<Document> ReadAsync(string filePath, string identifier, System.Threading.CancellationToken cancellationToken = default)
+        public override Task<IngestionDocument> ReadAsync(string filePath, string identifier, System.Threading.CancellationToken cancellationToken = default)
             => throw new ExpectedException();
 
-        public override Task<Document> ReadAsync(Uri source, string identifier, System.Threading.CancellationToken cancellationToken = default)
+        public override Task<IngestionDocument> ReadAsync(Uri source, string identifier, System.Threading.CancellationToken cancellationToken = default)
             => throw new ExpectedException();
     }
 

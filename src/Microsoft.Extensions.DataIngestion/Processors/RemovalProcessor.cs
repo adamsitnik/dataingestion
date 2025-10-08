@@ -12,14 +12,14 @@ namespace Microsoft.Extensions.DataIngestion;
 /// </summary>
 public sealed class RemovalProcessor : IDocumentProcessor
 {
-    public static RemovalProcessor Footers { get; } = new(static element => element is DocumentFooter);
-    public static RemovalProcessor EmptySections { get; } = new(static element => element is DocumentSection section && section.Elements.Count == 0);
+    public static RemovalProcessor Footers { get; } = new(static element => element is IngestionDocumentFooter);
+    public static RemovalProcessor EmptySections { get; } = new(static element => element is IngestionDocumentSection section && section.Elements.Count == 0);
 
-    private readonly Predicate<DocumentElement> _shouldRemove;
+    private readonly Predicate<IngestionDocumentElement> _shouldRemove;
 
-    public RemovalProcessor(Predicate<DocumentElement> shouldRemove) => _shouldRemove = shouldRemove;
+    public RemovalProcessor(Predicate<IngestionDocumentElement> shouldRemove) => _shouldRemove = shouldRemove;
 
-    public Task<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public Task<IngestionDocument> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -28,11 +28,11 @@ public sealed class RemovalProcessor : IDocumentProcessor
             throw new ArgumentNullException(nameof(document));
         }
 
-        Document updated = new(document.Identifier);
+        IngestionDocument updated = new(document.Identifier);
 
-        foreach (DocumentSection section in document.Sections)
+        foreach (IngestionDocumentSection section in document.Sections)
         {
-            if (Process(section) is DocumentSection updatedSection)
+            if (Process(section) is IngestionDocumentSection updatedSection)
             {
                 updated.Sections.Add(updatedSection);
             }
@@ -41,18 +41,18 @@ public sealed class RemovalProcessor : IDocumentProcessor
         return Task.FromResult(updated);
     }
 
-    private DocumentElement? Process(DocumentElement element)
+    private IngestionDocumentElement? Process(IngestionDocumentElement element)
     {
         if (_shouldRemove(element))
         {
             return null;
         }
-        else if (element is DocumentSection section)
+        else if (element is IngestionDocumentSection section)
         {
-            DocumentSection updatedSection = new();
-            foreach (DocumentElement child in section.Elements)
+            IngestionDocumentSection updatedSection = new();
+            foreach (IngestionDocumentElement child in section.Elements)
             {
-                if (Process(child) is DocumentElement updatedChild)
+                if (Process(child) is IngestionDocumentElement updatedChild)
                 {
                     updatedSection.Elements.Add(updatedChild);
                 }

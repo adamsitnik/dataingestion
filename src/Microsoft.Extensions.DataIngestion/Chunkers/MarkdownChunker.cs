@@ -27,17 +27,17 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _stripHeaders = stripHeaders;
         }
 
-        public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
-            IEnumerable<DocumentElement> elements = document.Reverse();
-            var sectionStack = new Stack<DocumentElement>(elements);
+            IEnumerable<IngestionDocumentElement> elements = document.Reverse();
+            var sectionStack = new Stack<IngestionDocumentElement>(elements);
 
             return Task.FromResult(ParseLevel(document, sectionStack, 1));
         }
 
-        private List<DocumentChunk> ParseLevel(Document document, Stack<DocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)
+        private List<DocumentChunk> ParseLevel(IngestionDocument document, Stack<IngestionDocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)
         {
             List<DocumentChunk> chunks = new List<DocumentChunk>();
 
@@ -45,9 +45,9 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
             while (lines.Any())
             {
-                DocumentElement element = lines.Pop();
+                IngestionDocumentElement element = lines.Pop();
 
-                int headerLevel = element is DocumentHeader header ? header.Level.GetValueOrDefault(0) : 0;
+                int headerLevel = element is IngestionDocumentHeader header ? header.Level.GetValueOrDefault(0) : 0;
                 if (headerLevel == 0 || headerLevel > _headerLevelToSplitOn)
                 {
                     sb.AppendLine(element.Markdown);
@@ -93,7 +93,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return string.Join(";", new[] { context, lastHeader }.Where(x => x is not null));
         }
 
-        private DocumentChunk? CreateChunk(Document document, StringBuilder content, string? context, string? header)
+        private DocumentChunk? CreateChunk(IngestionDocument document, StringBuilder content, string? context, string? header)
         {
             context = StringyfyContext(context, header);
             if (!_stripHeaders)

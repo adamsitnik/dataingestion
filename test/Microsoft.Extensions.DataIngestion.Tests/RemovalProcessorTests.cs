@@ -12,23 +12,23 @@ public class RemovalProcessorTests
     public async Task WhenFooterIsDeletedTheMarkdownIsUpdatedAndMetadataIsPreserved()
     {
         const string ExpectedMarkdown = "This is a paragraph.";
-        DocumentParagraph paragraph = new(ExpectedMarkdown)
+        IngestionDocumentParagraph paragraph = new(ExpectedMarkdown)
         {
             Metadata = { ["key"] = "value" }
         };
 
-        Document document = new("some");
-        DocumentSection section = new();
+        IngestionDocument document = new("some");
+        IngestionDocumentSection section = new();
         section.Elements.Add(paragraph);
-        section.Elements.Add(new DocumentFooter("This is a footer that should be removed."));
+        section.Elements.Add(new IngestionDocumentFooter("This is a footer that should be removed."));
         document.Sections.Add(section);
 
-        Document updated = await RemovalProcessor.Footers.ProcessAsync(document);
+        IngestionDocument updated = await RemovalProcessor.Footers.ProcessAsync(document);
 
         Assert.Same(document.Identifier, updated.Identifier);
         Assert.Single(updated.Sections);
         Assert.Single(updated.Sections[0].Elements);
-        DocumentParagraph updatedParagraph = Assert.IsType<DocumentParagraph>(updated.Sections[0].Elements[0]);
+        IngestionDocumentParagraph updatedParagraph = Assert.IsType<IngestionDocumentParagraph>(updated.Sections[0].Elements[0]);
         Assert.Equal(paragraph.Markdown, updatedParagraph.Markdown);
         Assert.Equal(paragraph.Metadata, updatedParagraph.Metadata);
         Assert.Equal(ExpectedMarkdown, updated.Sections[0].Markdown);
@@ -40,39 +40,39 @@ public class RemovalProcessorTests
     {
         const string ExpectedMarkdown = "This is a paragraph.";
 
-        Document document = new("some")
+        IngestionDocument document = new("some")
         {
             Sections =
             {
-                new DocumentSection()
+                new IngestionDocumentSection()
                 {
                     Elements =
                     {
-                        new DocumentSection()
+                        new IngestionDocumentSection()
                         {
                             Elements =
                             {
-                                new DocumentSection()
+                                new IngestionDocumentSection()
                             }
                         }
                     }
                 },
-                new DocumentSection()
+                new IngestionDocumentSection()
                 {
                     Elements =
                     {
-                        new DocumentParagraph(ExpectedMarkdown)
+                        new IngestionDocumentParagraph(ExpectedMarkdown)
                     }
                 }
             }
         };
 
-        Document updated = await RemovalProcessor.EmptySections.ProcessAsync(document);
+        IngestionDocument updated = await RemovalProcessor.EmptySections.ProcessAsync(document);
 
         Assert.Same(document.Identifier, updated.Identifier);
         Assert.Single(updated.Sections);
         Assert.Single(updated.Sections[0].Elements);
-        DocumentParagraph updatedParagraph = Assert.IsType<DocumentParagraph>(updated.Sections[0].Elements[0]);
+        IngestionDocumentParagraph updatedParagraph = Assert.IsType<IngestionDocumentParagraph>(updated.Sections[0].Elements[0]);
         Assert.Equal(ExpectedMarkdown, updatedParagraph.Markdown);
         Assert.Equal(ExpectedMarkdown, updated.Sections[0].Markdown);
         Assert.Equal(ExpectedMarkdown, updated.Markdown);

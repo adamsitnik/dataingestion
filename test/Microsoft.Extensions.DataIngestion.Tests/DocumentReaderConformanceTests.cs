@@ -25,7 +25,7 @@ public abstract class DocumentReaderConformanceTests
         }
     }
 
-    protected virtual void SimpleAsserts(Document document, string source, string expectedId)
+    protected virtual void SimpleAsserts(IngestionDocument document, string source, string expectedId)
     {
         Assert.NotNull(document);
         Assert.Equal(expectedId, document.Identifier);
@@ -33,10 +33,10 @@ public abstract class DocumentReaderConformanceTests
         Assert.NotEmpty(document.Markdown);
 
         var elements = document.ToArray();
-        Assert.Contains(elements, element => element is DocumentHeader);
-        Assert.Contains(elements, element => element is DocumentParagraph);
-        Assert.Contains(elements, element => element is DocumentTable);
-        Assert.All(elements.Where(element => element is not DocumentImage), element => Assert.NotEmpty(element.Markdown));
+        Assert.Contains(elements, element => element is IngestionDocumentHeader);
+        Assert.Contains(elements, element => element is IngestionDocumentParagraph);
+        Assert.Contains(elements, element => element is IngestionDocumentTable);
+        Assert.All(elements.Where(element => element is not IngestionDocumentImage), element => Assert.NotEmpty(element.Markdown));
     }
 
     [Theory]
@@ -78,7 +78,7 @@ public abstract class DocumentReaderConformanceTests
         var reader = CreateDocumentReader();
         var document = await reader.ReadAsync(filePath);
 
-        DocumentTable documentTable = Assert.Single(document.OfType<DocumentTable>());
+        IngestionDocumentTable documentTable = Assert.Single(document.OfType<IngestionDocumentTable>());
         Assert.Equal(5, documentTable.Cells.GetLength(0));
         Assert.Equal(4, documentTable.Cells.GetLength(1));
 
@@ -112,7 +112,7 @@ public abstract class DocumentReaderConformanceTests
 
         SimpleAsserts(document, filePath, filePath);
         var elements = document.ToArray();
-        Assert.Contains(elements, element => element is DocumentImage img && img.Content.HasValue && !string.IsNullOrEmpty(img.MediaType));
+        Assert.Contains(elements, element => element is IngestionDocumentImage img && img.Content.HasValue && !string.IsNullOrEmpty(img.MediaType));
     }
 
     [Fact]

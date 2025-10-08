@@ -20,7 +20,7 @@ public class MarkItDownReader : DocumentReader
         _exePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
     }
 
-    public override async Task<Document> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -68,7 +68,7 @@ public class MarkItDownReader : DocumentReader
         return MarkdownReader.Parse(outputContent, identifier);
     }
 
-    public override async Task<Document> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

@@ -27,8 +27,8 @@ internal sealed class ElementsChunker
     // Goals:
     // 1. Create chunks that do not exceed _maxTokensPerChunk when tokenized.
     // 2. Maintain context in each chunk.
-    // 3. If a single DocumentElement exceeds _maxTokensPerChunk, it should be split intelligently (e.g., paragraphs can be split into sentences, tables into rows).
-    internal void Process(Document document, List<DocumentChunk> chunks, string context, List<DocumentElement> elements)
+    // 3. If a single IngestionDocumentElement exceeds _maxTokensPerChunk, it should be split intelligently (e.g., paragraphs can be split into sentences, tables into rows).
+    internal void Process(IngestionDocument document, List<DocumentChunk> chunks, string context, List<IngestionDocumentElement> elements)
     {
         // Token count != character count, but StringBuilder will grow as needed.
         _currentChunk ??= new(capacity: _maxTokensPerChunk);
@@ -44,7 +44,7 @@ internal sealed class ElementsChunker
 
         for (int elementIndex = 0; elementIndex < elements.Count; elementIndex++)
         {
-            DocumentElement element = elements[elementIndex];
+            IngestionDocumentElement element = elements[elementIndex];
             string? semanticContent = element switch
             {
                 // Image exposes:
@@ -52,7 +52,7 @@ internal sealed class ElementsChunker
                 // - AlternativeText: usually a short description of the image, can be null or empty. It is usually less than 50 words.
                 // - Text: result of OCR, can be longer, but also can be null or empty. It can be several hundred words.
                 // We prefer  AlternativeText over Text, as it is usually more relevant.
-                DocumentImage image => image.AlternativeText ?? image.Text,
+                IngestionDocumentImage image => image.AlternativeText ?? image.Text,
                 _ => element.Markdown
             };
 
@@ -67,7 +67,7 @@ internal sealed class ElementsChunker
                 totalTokenCount += elementTokenCount;
                 AppendNewLineAndSpan(_currentChunk, semanticContent.AsSpan());
             }
-            else if (element is DocumentTable table)
+            else if (element is IngestionDocumentTable table)
             {
                 ValueStringBuilder tableBuilder = new(initialCapacity: 8000);
                 AddMarkdownTableRow(table, rowIndex: 0, ref tableBuilder);
@@ -220,7 +220,7 @@ internal sealed class ElementsChunker
         );
     }
 
-    private static void AddMarkdownTableRow(DocumentTable table, int rowIndex, ref ValueStringBuilder vsb)
+    private static void AddMarkdownTableRow(IngestionDocumentTable table, int rowIndex, ref ValueStringBuilder vsb)
     {
         for (int columnIndex = 0; columnIndex < table.Cells.GetLength(1); columnIndex++)
         {

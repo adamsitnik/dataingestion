@@ -18,12 +18,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task NoheaderDocument()
         {
-            Document noHeaerDoc = new Document("noHeaderDoc");
-            noHeaerDoc.Sections.Add(new DocumentSection
+            IngestionDocument noHeaerDoc = new IngestionDocument("noHeaderDoc");
+            noHeaerDoc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentParagraph("This is a document without headers.")
+                    new IngestionDocumentParagraph("This is a document without headers.")
                 }
             });
 
@@ -39,16 +39,16 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task SingleHeaderDocument()
         {
-            Document singleHeaderDoc = new Document("singleHeaderDoc");
-            singleHeaderDoc.Sections.Add(new DocumentSection
+            IngestionDocument singleHeaderDoc = new IngestionDocument("singleHeaderDoc");
+            singleHeaderDoc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentHeader("# Header 1")
+                    new IngestionDocumentHeader("# Header 1")
                     {
                         Level = 1
                     },
-                    new DocumentParagraph("This is the content under header 1.")
+                    new IngestionDocumentParagraph("This is the content under header 1.")
                 }
             });
 
@@ -63,17 +63,17 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task SingleHeaderTwoParagraphDocument()
         {
-            Document singleHeaderTwoParagraphDoc = new Document("singleHeaderTwoParagraphDoc");
-            singleHeaderTwoParagraphDoc.Sections.Add(new DocumentSection
+            IngestionDocument singleHeaderTwoParagraphDoc = new IngestionDocument("singleHeaderTwoParagraphDoc");
+            singleHeaderTwoParagraphDoc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentHeader("# Header 1")
+                    new IngestionDocumentHeader("# Header 1")
                     {
                         Level = 1
                     },
-                    new DocumentParagraph("This is the first paragraph."),
-                    new DocumentParagraph("This is the second paragraph.")
+                    new IngestionDocumentParagraph("This is the first paragraph."),
+                    new IngestionDocumentParagraph("This is the second paragraph.")
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker();
@@ -90,21 +90,21 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         {
             string content1 = "This is the content under header 1.".ReplaceLineEndings();
             string content2 = "This is the content under header 2.".ReplaceLineEndings();
-            Document multiHeaderDoc = new Document("singleHeaderTwoParagraphDoc");
-            multiHeaderDoc.Sections.Add(new DocumentSection
+            IngestionDocument multiHeaderDoc = new IngestionDocument("singleHeaderTwoParagraphDoc");
+            multiHeaderDoc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentHeader("# Header 1")
+                    new IngestionDocumentHeader("# Header 1")
                     {
                         Level = 1
                     },
-                    new DocumentParagraph(content1),
-                    new DocumentHeader("## Header 2")
+                    new IngestionDocumentParagraph(content1),
+                    new IngestionDocumentHeader("## Header 2")
                     {
                         Level = 2
                     },
-                    new DocumentParagraph(content2)
+                    new IngestionDocumentParagraph(content2)
                 }
             });
             IDocumentChunker chunker = new MarkdownChunker();
@@ -125,21 +125,21 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         {
             string content1 = "This is the content under header 1.".ReplaceLineEndings();
             string content2 = "This is the content under header 2.".ReplaceLineEndings();
-            Document twoHeaderDoc = new Document("singleHeaderTwoParagraphDoc");
-            twoHeaderDoc.Sections.Add(new DocumentSection
+            IngestionDocument twoHeaderDoc = new IngestionDocument("singleHeaderTwoParagraphDoc");
+            twoHeaderDoc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentHeader("# Header 1")
+                    new IngestionDocumentHeader("# Header 1")
                     {
                         Level = 1
                     },
-                    new DocumentParagraph(content1),
-                    new DocumentHeader("# Header 2")
+                    new IngestionDocumentParagraph(content1),
+                    new IngestionDocumentHeader("# Header 2")
                     {
                         Level = 1
                     },
-                    new DocumentParagraph(content2)
+                    new IngestionDocumentParagraph(content2)
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker();
@@ -162,31 +162,31 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             string content2 = "This is the content under header 2.".ReplaceLineEndings();
             string content3 = "This is the content under header 3.".ReplaceLineEndings();
             string content4 = "This is the content under header 4.".ReplaceLineEndings();
-            Document complexDoc = new Document("complexDoc");
-            complexDoc.Sections.Add(new DocumentSection
+            IngestionDocument complexDoc = new IngestionDocument("complexDoc");
+            complexDoc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentHeader("# Header 1")
+                    new IngestionDocumentHeader("# Header 1")
                     {
                         Level = 1
                     },
-                    new DocumentParagraph(content1),
-                    new DocumentHeader("## Header 2")
+                    new IngestionDocumentParagraph(content1),
+                    new IngestionDocumentHeader("## Header 2")
                     {
                         Level = 2
                     },
-                    new DocumentParagraph(content2),
-                    new DocumentHeader("### Header 3")
+                    new IngestionDocumentParagraph(content2),
+                    new IngestionDocumentHeader("### Header 3")
                     {
                         Level = 3
                     },
-                    new DocumentParagraph(content3),
-                    new DocumentHeader("## Header 4")
+                    new IngestionDocumentParagraph(content3),
+                    new IngestionDocumentHeader("## Header 4")
                     {
                         Level = 2
                     },
-                    new DocumentParagraph(content4)
+                    new IngestionDocumentParagraph(content4)
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker();
@@ -218,31 +218,31 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             string content2 = "This is the content under header 2.".ReplaceLineEndings();
             string content3 = "This is the content under header 3.".ReplaceLineEndings();
             string content4 = "This is the content under header 4.".ReplaceLineEndings();
-            Document complexDoc = new Document("complexDoc");
-            complexDoc.Sections.Add(new DocumentSection
+            IngestionDocument complexDoc = new IngestionDocument("complexDoc");
+            complexDoc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentHeader("# Header 1")
+                    new IngestionDocumentHeader("# Header 1")
                     {
                         Level = 1
                     },
-                    new DocumentParagraph(content1),
-                    new DocumentHeader("## Header 2")
+                    new IngestionDocumentParagraph(content1),
+                    new IngestionDocumentHeader("## Header 2")
                     {
                         Level = 2
                     },
-                    new DocumentParagraph(content2),
-                    new DocumentHeader("### Header 3")
+                    new IngestionDocumentParagraph(content2),
+                    new IngestionDocumentHeader("### Header 3")
                     {
                         Level = 3
                     },
-                    new DocumentParagraph(content3),
-                    new DocumentHeader("## Header 4")
+                    new IngestionDocumentParagraph(content3),
+                    new IngestionDocumentHeader("## Header 4")
                     {
                         Level = 2
                     },
-                    new DocumentParagraph(content4)
+                    new IngestionDocumentParagraph(content4)
                 }
             });
             IDocumentChunker chunker = new MarkdownChunker(2);

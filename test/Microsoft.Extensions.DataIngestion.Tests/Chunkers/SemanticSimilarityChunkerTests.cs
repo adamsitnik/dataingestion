@@ -37,12 +37,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         public async Task SingleParagph()
         {
             string text = ".NET is a free, cross-platform, open-source developer platform for building many kinds of applications. It can run programs written in multiple languages, with C# being the most popular. It relies on a high-performance runtime that is used in production by many high-scale apps.";
-            Document doc = new Document("doc");
-            doc.Sections.Add(new DocumentSection
+            IngestionDocument doc = new IngestionDocument("doc");
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentParagraph(text)
+                    new IngestionDocumentParagraph(text)
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker();
@@ -54,17 +54,17 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task TwoTopicsParagraphs()
         {
-            Document doc = new Document("doc");
+            IngestionDocument doc = new IngestionDocument("doc");
             string text1 = ".NET is a free, cross-platform, open-source developer platform for building many kinds of applications. It can run programs written in multiple languages, with C# being the most popular.";
             string text2 = "It relies on a high-performance runtime that is used in production by many high-scale apps.";
             string text3 = "Zeus is the chief deity of the Greek pantheon. He is a sky and thunder god in ancient Greek religion and mythology.";
-            doc.Sections.Add(new DocumentSection
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentParagraph(text1),
-                    new DocumentParagraph(text2),
-                    new DocumentParagraph(text3)
+                    new IngestionDocumentParagraph(text1),
+                    new IngestionDocumentParagraph(text2),
+                    new IngestionDocumentParagraph(text3)
                 }
             });
 
@@ -104,19 +104,19 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 | Dionysus | Wine & Festivity | Grapes | Bacchus |
 | Hermes | Messages & Trade | Caduceus | Mercury |";
 
-            Document doc = new("dotnet-languages");
-            doc.Sections.Add(new DocumentSection
+            IngestionDocument doc = new("dotnet-languages");
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentHeader("# .NET Supported Languages") { Level = 1 },
-                    new DocumentParagraph("The .NET platform supports multiple programming languages:"),
-                    new DocumentTable(dotNetTableMarkdown, CreateLanguageTableCells()),
-                    new DocumentParagraph("C# remains the most popular language for .NET development."),
-                    new DocumentHeader("# Ancient Greek Olympian Gods") { Level = 1 },
-                    new DocumentParagraph("The twelve Olympian gods were the principal deities of the Greek pantheon:"),
-                    new DocumentTable(godsTableMarkdown, CreateGreekGodsTableCells()),
-                    new DocumentParagraph("These gods resided on Mount Olympus and ruled over different aspects of mortal and divine life.")
+                    new IngestionDocumentHeader("# .NET Supported Languages") { Level = 1 },
+                    new IngestionDocumentParagraph("The .NET platform supports multiple programming languages:"),
+                    new IngestionDocumentTable(dotNetTableMarkdown, CreateLanguageTableCells()),
+                    new IngestionDocumentParagraph("C# remains the most popular language for .NET development."),
+                    new IngestionDocumentHeader("# Ancient Greek Olympian Gods") { Level = 1 },
+                    new IngestionDocumentParagraph("The twelve Olympian gods were the principal deities of the Greek pantheon:"),
+                    new IngestionDocumentTable(godsTableMarkdown, CreateGreekGodsTableCells()),
+                    new IngestionDocumentParagraph("These gods resided on Mount Olympus and ruled over different aspects of mortal and divine life.")
                 }
             });
 

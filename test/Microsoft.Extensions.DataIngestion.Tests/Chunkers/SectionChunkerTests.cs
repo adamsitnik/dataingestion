@@ -20,13 +20,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task OneSection()
         {
-            Document doc = new Document("doc");
-            doc.Sections.Add(new DocumentSection
+            IngestionDocument doc = new IngestionDocument("doc");
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentParagraph("This is a paragraph."),
-                    new DocumentParagraph("This is another paragraph.")
+                    new IngestionDocumentParagraph("This is a paragraph."),
+                    new IngestionDocumentParagraph("This is another paragraph.")
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker();
@@ -39,7 +39,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task TwoSections()
         {
-            Document doc = new("doc")
+            IngestionDocument doc = new("doc")
             {
                 Sections =
                 {
@@ -47,16 +47,16 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     {
                         Elements =
                         {
-                            new DocumentParagraph("This is a paragraph."),
-                            new DocumentParagraph("This is another paragraph.")
+                            new IngestionDocumentParagraph("This is a paragraph."),
+                            new IngestionDocumentParagraph("This is another paragraph.")
                         }
                     },
                     new()
                     {
                         Elements =
                         {
-                            new DocumentParagraph("This is a paragraph in section 2."),
-                            new DocumentParagraph("This is another paragraph in section 2.")
+                            new IngestionDocumentParagraph("This is a paragraph in section 2."),
+                            new IngestionDocumentParagraph("This is another paragraph in section 2.")
                         }
                     }
                 }
@@ -75,8 +75,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task EmptySection()
         {
-            Document doc = new Document("doc");
-            doc.Sections.Add(new DocumentSection
+            IngestionDocument doc = new IngestionDocument("doc");
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements = { }
             });
@@ -88,7 +88,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task NestedSections()
         {
-            Document doc = new("doc")
+            IngestionDocument doc = new("doc")
             {
                 Sections =
                 {
@@ -96,16 +96,16 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     {
                         Elements =
                         {
-                            new DocumentHeader("# Section title"),
-                            new DocumentParagraph("This is a paragraph in section 1."),
-                            new DocumentParagraph("This is another paragraph in section 1."),
-                            new DocumentSection
+                            new IngestionDocumentHeader("# Section title"),
+                            new IngestionDocumentParagraph("This is a paragraph in section 1."),
+                            new IngestionDocumentParagraph("This is another paragraph in section 1."),
+                            new IngestionDocumentSection
                             {
                                 Elements =
                                 {
-                                    new DocumentHeader("## Subsection title"),
-                                    new DocumentParagraph("This is a paragraph in subsection 1.1."),
-                                    new DocumentParagraph("This is another paragraph in subsection 1.1.")
+                                    new IngestionDocumentHeader("## Subsection title"),
+                                    new IngestionDocumentParagraph("This is a paragraph in subsection 1.1."),
+                                    new IngestionDocumentParagraph("This is another paragraph in subsection 1.1.")
                                 }
                             }
                         }
@@ -127,12 +127,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         public async Task SizeLimit_TwoChunks()
         {
             string text = string.Join(" ", Enumerable.Repeat("word", 600)); // each word is 1 token
-            Document doc = new Document("twoChunksNoOverlapDoc");
-            doc.Sections.Add(new DocumentSection
+            IngestionDocument doc = new IngestionDocument("twoChunksNoOverlapDoc");
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentParagraph(text)
+                    new IngestionDocumentParagraph(text)
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 512);
@@ -146,14 +146,14 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task SectionWithHeader()
         {
-            Document doc = new Document("doc");
-            doc.Sections.Add(new DocumentSection
+            IngestionDocument doc = new IngestionDocument("doc");
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentHeader("Section 1"),
-                    new DocumentParagraph("This is a paragraph in section 1."),
-                    new DocumentParagraph("This is another paragraph in section 1.")
+                    new IngestionDocumentHeader("Section 1"),
+                    new IngestionDocumentParagraph("This is a paragraph in section 1."),
+                    new IngestionDocumentParagraph("This is another paragraph in section 1.")
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker();

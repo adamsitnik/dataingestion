@@ -21,12 +21,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         public async Task TwoChunks()
         {
             string text = string.Join(" ", Enumerable.Repeat("word", 600)); // each word is 1 token
-            Document doc = new Document("twoChunksNoOverlapDoc");
-            doc.Sections.Add(new DocumentSection
+            IngestionDocument doc = new IngestionDocument("twoChunksNoOverlapDoc");
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentParagraph(text)
+                    new IngestionDocumentParagraph(text)
                 }
             });
             IDocumentChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 512);

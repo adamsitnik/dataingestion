@@ -144,7 +144,7 @@ public sealed class VectorStoreWriter : IDocumentChunkWriter
     /// We are about to insert new chunks for the given document, so we need to delete the existing ones first.
     /// By doing that, we ensure that there are no duplicates and that the chunks are up-to-date.
     /// </summary>
-    private async Task DeletePreExistingChunksForGivenDocument(Document document, CancellationToken cancellationToken)
+    private async Task DeletePreExistingChunksForGivenDocument(IngestionDocument document, CancellationToken cancellationToken)
     {
         if (!_options.IncrementalIngestion)
         {

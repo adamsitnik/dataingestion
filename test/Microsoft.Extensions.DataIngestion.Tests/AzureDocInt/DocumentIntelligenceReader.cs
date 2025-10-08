@@ -31,7 +31,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         _extractImages = extractImages;
     }
 
-    public override async Task<Document> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -49,7 +49,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), identifier, cancellationToken);
     }
 
-    public override Task<Document> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
+    public override Task<IngestionDocument> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -65,7 +65,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         return ReadAsync(new AnalyzeDocumentOptions(_modelName, source), identifier, cancellationToken);
     }
 
-    public async Task<Document> ReadAsync(Stream stream, string identifier, CancellationToken cancellationToken = default)
+    public async Task<IngestionDocument> ReadAsync(Stream stream, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -82,7 +82,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), identifier, cancellationToken);
     }
 
-    private async Task<Document> ReadAsync(AnalyzeDocumentOptions options, string identifier, CancellationToken cancellationToken)
+    private async Task<IngestionDocument> ReadAsync(AnalyzeDocumentOptions options, string identifier, CancellationToken cancellationToken)
     {
         options.OutputContentFormat = DocumentContentFormat.Markdown;
         if (_extractImages)
@@ -109,9 +109,9 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         return figures;
     }
 
-    private static Document MapToDocument(AnalyzeResult parsed, Dictionary<string, BinaryData> figures, string identifier)
+    private static IngestionDocument MapToDocument(AnalyzeResult parsed, Dictionary<string, BinaryData> figures, string identifier)
     {
-        Document document = new(identifier)
+        IngestionDocument document = new(identifier)
         {
             Markdown = parsed.Content,
         };
@@ -119,13 +119,13 @@ public sealed class DocumentIntelligenceReader : DocumentReader
 #if DEBUG
         HashSet<int> visitedSections = [];
 #endif
-        DocumentSection rootSection = new();
+        IngestionDocumentSection rootSection = new();
         HandleSection(sectionIndex: 0, rootSection, parsed.Content);
 
         // If the root section consists only of sections, add those sections directly to flatten the structure.
-        if (rootSection.Elements.All(element => element is DocumentSection))
+        if (rootSection.Elements.All(element => element is IngestionDocumentSection))
         {
-            document.Sections.AddRange(rootSection.Elements.OfType<DocumentSection>());
+            document.Sections.AddRange(rootSection.Elements.OfType<IngestionDocumentSection>());
         }
         else
         {
@@ -137,7 +137,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
 
         return document;
 
-        void HandleSection(int sectionIndex, DocumentSection section, string entireContent)
+        void HandleSection(int sectionIndex, IngestionDocumentSection section, string entireContent)
         {
 #if DEBUG
             Debug.Assert(visitedSections.Add(sectionIndex), "Section should not be visited more than once.");
@@ -150,7 +150,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                 switch (kind)
                 {
                     case "section":
-                        DocumentSection subSection = new();
+                        IngestionDocumentSection subSection = new();
                         section.Elements.Add(subSection);
                         HandleSection(index, subSection, entireContent);
                         break;
@@ -166,7 +166,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                         break;
                     case "table":
                         var parsedTable = parsed.Tables[index];
-                        section.Elements.Add(new DocumentTable(GetMarkdown(parsedTable.Spans, entireContent), GetCells(parsedTable))
+                        section.Elements.Add(new IngestionDocumentTable(GetMarkdown(parsedTable.Spans, entireContent), GetCells(parsedTable))
                         {
                             PageNumber = GetPageNumber(parsedTable.BoundingRegions),
                             Metadata =
@@ -182,7 +182,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                     case "figure":
                         var figure = parsed.Figures[index];
                         BinaryData? content = figures.TryGetValue(figure.Id, out var data) ? data : null;
-                        section.Elements.Add(new DocumentImage(GetMarkdown(figure.Spans, entireContent))
+                        section.Elements.Add(new IngestionDocumentImage(GetMarkdown(figure.Spans, entireContent))
                         {
                             Content = content?.ToMemory(),
                             MediaType = content?.MediaType ?? "image/png",
@@ -237,29 +237,29 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         }
     }
 
-    private static DocumentElement MapToElement(AdiParagraph parsedParagraph, string markdown)
+    private static IngestionDocumentElement MapToElement(AdiParagraph parsedParagraph, string markdown)
     {
         if (parsedParagraph.Role is null)
         {
-            return new DocumentParagraph(markdown)
+            return new IngestionDocumentParagraph(markdown)
             {
                 Text = parsedParagraph.Content,
             };
         }
         else if (parsedParagraph.Role.Equals(ParagraphRole.PageHeader)
-            || parsedParagraph.Role.Equals(ParagraphRole.SectionHeading) // If other parsers expose similar information, we could extend DocumentSection with DocumentHeader property.
-            || parsedParagraph.Role.Equals(ParagraphRole.Title)) // Same as DocumentHeader, but for Presentations.
+            || parsedParagraph.Role.Equals(ParagraphRole.SectionHeading) // If other parsers expose similar information, we could extend IngestionDocumentSection with IngestionDocumentHeader property.
+            || parsedParagraph.Role.Equals(ParagraphRole.Title)) // Same as IngestionDocumentHeader, but for Presentations.
         {
-            return new DocumentHeader(markdown)
+            return new IngestionDocumentHeader(markdown)
             {
                 Text = parsedParagraph.Content,
                 Level = GetLevel(markdown)
             };
         }
         else if (parsedParagraph.Role.Equals(ParagraphRole.PageFooter)
-            || parsedParagraph.Role.Equals(ParagraphRole.Footnote)) // Same as DocumentFooter, but for Presentations.
+            || parsedParagraph.Role.Equals(ParagraphRole.Footnote)) // Same as IngestionDocumentFooter, but for Presentations.
         {
-            return new DocumentFooter(markdown)
+            return new IngestionDocumentFooter(markdown)
             {
                 Text = parsedParagraph.Content,
             };

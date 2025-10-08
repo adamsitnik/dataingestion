@@ -11,11 +11,11 @@ namespace Microsoft.Extensions.DataIngestion;
 // The reason is that Stream does not provide the necessary information like the MIME type or the file name.
 public abstract class DocumentReader
 {
-    public Task<Document> ReadAsync(string filePath, CancellationToken cancellationToken = default)
+    public Task<IngestionDocument> ReadAsync(string filePath, CancellationToken cancellationToken = default)
     {
         if (cancellationToken.IsCancellationRequested)
         {
-            return Task.FromCanceled<Document>(cancellationToken);
+            return Task.FromCanceled<IngestionDocument>(cancellationToken);
         }
 
         if (string.IsNullOrEmpty(filePath))
@@ -27,13 +27,13 @@ public abstract class DocumentReader
         return ReadAsync(filePath, identifier, cancellationToken);
     }
 
-    public abstract Task<Document> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default);
+    public abstract Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default);
 
-    public Task<Document> ReadAsync(Uri source, CancellationToken cancellationToken = default)
+    public Task<IngestionDocument> ReadAsync(Uri source, CancellationToken cancellationToken = default)
     {
         if (cancellationToken.IsCancellationRequested)
         {
-            return Task.FromCanceled<Document>(cancellationToken);
+            return Task.FromCanceled<IngestionDocument>(cancellationToken);
         }
 
         if (source is null)
@@ -45,5 +45,5 @@ public abstract class DocumentReader
         return ReadAsync(source, identifier, cancellationToken);
     }
 
-    public abstract Task<Document> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default);
+    public abstract Task<IngestionDocument> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default);
 }

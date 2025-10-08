@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion;
 
 /// <summary>
-/// Enriches DocumentImage elements with alternative text using an AI service,
+/// Enriches <see cref="IngestionDocumentImage"/> elements with alternative text using an AI service,
 /// so the generated embeddings can include the image content information.
 /// </summary>
 public sealed class AlternativeTextEnricher : IDocumentProcessor
@@ -24,7 +24,7 @@ public sealed class AlternativeTextEnricher : IDocumentProcessor
         _chatOptions = chatOptions;
     }
 
-    public async Task<Document> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public async Task<IngestionDocument> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -33,7 +33,7 @@ public sealed class AlternativeTextEnricher : IDocumentProcessor
             throw new ArgumentNullException(nameof(document));
         }
 
-        foreach (DocumentImage image in document.OfType<DocumentImage>())
+        foreach (IngestionDocumentImage image in document.OfType<IngestionDocumentImage>())
         {
             if (image.Content.HasValue && !string.IsNullOrEmpty(image.MediaType)
                 && string.IsNullOrEmpty(image.AlternativeText))

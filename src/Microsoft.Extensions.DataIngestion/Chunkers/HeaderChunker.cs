@@ -22,15 +22,15 @@ public sealed class HeaderChunker : IDocumentChunker
     public HeaderChunker(Tokenizer tokenizer, ChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         List<DocumentChunk> chunks = new();
-        List<DocumentElement> elements = new(20);
+        List<IngestionDocumentElement> elements = new(20);
         string?[] headers = new string?[MaxHeaderLevel + 1];
 
-        foreach (DocumentElement element in document)
+        foreach (IngestionDocumentElement element in document)
         {
-            if (element is DocumentHeader header)
+            if (element is IngestionDocumentHeader header)
             {
                 SplitIntoChunks(document, chunks, headers, elements);
 
@@ -50,7 +50,7 @@ public sealed class HeaderChunker : IDocumentChunker
         return Task.FromResult(chunks);
     }
 
-    private void SplitIntoChunks(Document document, List<DocumentChunk> chunks, string?[] headers, List<DocumentElement> elements)
+    private void SplitIntoChunks(IngestionDocument document, List<DocumentChunk> chunks, string?[] headers, List<IngestionDocumentElement> elements)
     {
         if (elements.Count > 0)
         {

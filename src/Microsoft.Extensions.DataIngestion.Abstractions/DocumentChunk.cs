@@ -14,7 +14,7 @@ public sealed class DocumentChunk
 
     public string Content { get; }
 
-    public Document Document { get; }
+    public IngestionDocument Document { get; }
 
     public int? TokenCount { get; }
 
@@ -22,7 +22,7 @@ public sealed class DocumentChunk
 
     public Dictionary<string, object> Metadata => _metadata ??= new();
 
-    public DocumentChunk(string content, Document document, int? tokenCount = null, string? context = null)
+    public DocumentChunk(string content, IngestionDocument document, int? tokenCount = null, string? context = null)
     {
         if (string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
