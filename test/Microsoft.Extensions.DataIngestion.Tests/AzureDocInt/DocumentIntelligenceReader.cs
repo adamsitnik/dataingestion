@@ -234,7 +234,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         }
     }
 
-    private static IngestionDocumentElement MapToElement(AdiParagraph parsedParagraph, string markdown)
+    private static IngestionDocumentElement MapToElement(DocumentParagraph parsedParagraph, string markdown)
     {
         if (parsedParagraph.Role is null)
         {
@@ -308,18 +308,22 @@ public sealed class DocumentIntelligenceReader : DocumentReader
         return null;
     }
 
-    private static string[,] GetCells(global::Azure.AI.DocumentIntelligence.DocumentTable parsedTable)
+    private static IngestionDocumentElement?[,] GetCells(DocumentTable parsedTable)
     {
-        string[,] cells = new string[parsedTable.RowCount, parsedTable.ColumnCount];
+        var cells = new IngestionDocumentElement?[parsedTable.RowCount, parsedTable.ColumnCount];
 
         foreach (var cell in parsedTable.Cells)
         {
             // Azure Document Intelligence uses HTML to represent merged cells.
             // DataIngestion uses a simple list of lists, so we duplicate the content in the merged cells.
             int columnSpan = Math.Max(1, cell.ColumnSpan.GetValueOrDefault());
+            IngestionDocumentElement? element = string.IsNullOrEmpty(cell.Content)
+                ? null // IngestionDocumentParagraph can't represent empty content.
+                : new IngestionDocumentParagraph(cell.Content);
+
             for (int i = 0; i < columnSpan; i++)
             {
-                cells[cell.RowIndex, cell.ColumnIndex + i] = cell.Content;
+                cells[cell.RowIndex, cell.ColumnIndex + i] = element;
             }
         }
 

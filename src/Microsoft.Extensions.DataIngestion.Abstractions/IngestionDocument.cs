@@ -127,7 +127,7 @@ public sealed class IngestionDocumentFooter : IngestionDocumentElement
 
 public sealed class IngestionDocumentTable : IngestionDocumentElement
 {
-    public IngestionDocumentTable(string markdown, string[,] cells) : base(markdown)
+    public IngestionDocumentTable(string markdown, IngestionDocumentElement?[,] cells) : base(markdown)
     {
         Cells = cells ?? throw new ArgumentNullException(nameof(cells));
     }
@@ -136,9 +136,10 @@ public sealed class IngestionDocumentTable : IngestionDocumentElement
     /// Each table can be represented as a multidimensional array of cell contents, with the first row being the headers.
     /// </summary>
     /// <remarks>
-    /// This information is useful when chunking large tables that exceed token count limit.
+    /// <para>This information is useful when chunking large tables that exceed token count limit.</para>
+    /// <para>Null represents an empty cell (<see cref="IngestionDocumentElement.GetMarkdown()"/> can't return an empty string).</para>
     /// </remarks>
-    public string[,] Cells { get; }
+    public IngestionDocumentElement?[,] Cells { get; }
 }
 
 public sealed class IngestionDocumentImage : IngestionDocumentElement

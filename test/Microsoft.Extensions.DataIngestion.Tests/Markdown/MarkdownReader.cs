@@ -8,6 +8,7 @@ using Markdig.Syntax.Inlines;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -134,7 +135,7 @@ public sealed class MarkdownReader : DocumentReader
             {
                 Text = GetText(footer.Inline),
             },
-            ParagraphBlock image when image.Inline!.FirstChild is LinkInline link && link.IsImage => new IngestionDocumentImage(elementMarkdown)
+            ParagraphBlock image when image.Inline!.Descendants<LinkInline>().FirstOrDefault() is LinkInline link && link.IsImage => new IngestionDocumentImage(elementMarkdown)
             {
                 // ![Alt text](data:image/png;base64,...)
                 AlternativeText = link.FirstChild is LiteralInline literal ? literal.Content.ToString() : null,
@@ -241,10 +242,10 @@ public sealed class MarkdownReader : DocumentReader
         return content.ToString();
     }
 
-    private static string[,] GetCells(Table table, string outputContent)
+    private static IngestionDocumentElement?[,] GetCells(Table table, string outputContent)
     {
         int firstRowIndex = SkipFirstRow(table, outputContent) ? 1 : 0;
-        string[,] cells = new string[table.Count - firstRowIndex, table.ColumnDefinitions.Count - 1];
+        var cells = new IngestionDocumentElement?[table.Count - firstRowIndex, table.ColumnDefinitions.Count - 1];
 
         for (int rowIndex = firstRowIndex; rowIndex < table.Count; rowIndex++)
         {
@@ -253,10 +254,10 @@ public sealed class MarkdownReader : DocumentReader
             for (int cellIndex = 0; cellIndex < tableRow.Count; cellIndex++)
             {
                 TableCell tableCell = (TableCell)tableRow[cellIndex];
-                string content = tableCell.Count switch
+                var content = tableCell.Count switch
                 {
-                    0 => string.Empty,
-                    1 => MapBlock(outputContent, previousWasBreak: false, tableCell[0]).Text ?? string.Empty,
+                    0 => null,
+                    1 => MapBlock(outputContent, previousWasBreak: false, tableCell[0]),
                     _ => throw new NotSupportedException($"Cells with {tableCell.Count} elements are not supported.")
                 };
 

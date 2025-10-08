@@ -111,11 +111,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 {
                     new IngestionDocumentHeader("# .NET Supported Languages") { Level = 1 },
                     new IngestionDocumentParagraph("The .NET platform supports multiple programming languages:"),
-                    new IngestionDocumentTable(dotNetTableMarkdown, CreateLanguageTableCells()),
+                    new IngestionDocumentTable(dotNetTableMarkdown,
+                        CreateLanguageTableCells().Map(txt => new IngestionDocumentParagraph(txt))),
                     new IngestionDocumentParagraph("C# remains the most popular language for .NET development."),
                     new IngestionDocumentHeader("# Ancient Greek Olympian Gods") { Level = 1 },
                     new IngestionDocumentParagraph("The twelve Olympian gods were the principal deities of the Greek pantheon:"),
-                    new IngestionDocumentTable(godsTableMarkdown, CreateGreekGodsTableCells()),
+                    new IngestionDocumentTable(godsTableMarkdown,
+                        CreateGreekGodsTableCells().Map(txt => new IngestionDocumentParagraph(txt))),
                     new IngestionDocumentParagraph("These gods resided on Mount Olympus and ruled over different aspects of mortal and divine life.")
                 }
             });

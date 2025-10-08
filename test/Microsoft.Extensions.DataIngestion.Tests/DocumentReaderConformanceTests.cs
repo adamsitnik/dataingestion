@@ -90,7 +90,40 @@ public abstract class DocumentReaderConformanceTests
             { "Emissions Review", "Dec 2029", "All", "25% Emissions Cut" }
         };
 
-        Assert.Equal(expected, documentTable.Cells);
+        Assert.Equal(expected, documentTable.Cells.Map(element => NormalizeCell(element)));
+    }
+
+    [Fact]
+    public virtual Task SupportsTablesWithImages()
+        => SupportsTablesWithImagesCore(Path.Combine("TestFiles", "TableWithImage.docx"));
+
+    protected async Task<IngestionDocumentTable> SupportsTablesWithImagesCore(string filePath)
+    {
+        var reader = CreateDocumentReader(extractImages: true);
+        var document = await reader.ReadAsync(filePath);
+
+        var table = Assert.Single(document.EnumerateContent().OfType<IngestionDocumentTable>());
+        Assert.Equal(5, table.Cells.GetLength(0));
+        Assert.Equal(2, table.Cells.GetLength(1));
+
+        // Each reader properly recognizes the text from the first column.
+        // When it comes to the images, MarkItDown extracts them as images, while
+        // other readers return nothing or ORCed text.
+        Assert.Equal("Years", NormalizeCell(table.Cells[0, 0]));
+        Assert.Equal("2020-2025", NormalizeCell(table.Cells[1, 0]));
+        Assert.Equal("2015-2020", NormalizeCell(table.Cells[2, 0]));
+        Assert.Equal("2010-2015", NormalizeCell(table.Cells[3, 0]));
+        Assert.Equal("2000-2010", NormalizeCell(table.Cells[4, 0]));
+
+        return table;
+    }
+
+    private string? NormalizeCell(IngestionDocumentElement? ingestionDocumentElement)
+    {
+        Assert.NotNull(ingestionDocumentElement);
+
+        // Some readers add extra spaces or asterisks for bold/italic text for headers.
+        return ingestionDocumentElement.GetMarkdown().Trim().Trim('*');
     }
 
     public static IEnumerable<object[]> Images

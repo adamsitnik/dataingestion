@@ -9,7 +9,12 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class IngestionDocumentTests
 {
-    private readonly string[,] rows = { { "header" }, { "row1" }, { "row2" } };
+    private readonly IngestionDocumentElement?[,] rows =
+    {
+        { new IngestionDocumentParagraph("header") },
+        { new IngestionDocumentParagraph("row1") },
+        { new IngestionDocumentParagraph("row2") }
+    };
 
     [Fact]
     public void EnumeratorFlattensTheStructureAndPreservesOrder()

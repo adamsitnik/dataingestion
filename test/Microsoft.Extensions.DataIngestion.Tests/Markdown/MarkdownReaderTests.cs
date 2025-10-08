@@ -50,4 +50,18 @@ public class MarkdownReaderTests : DocumentReaderConformanceTests
     [Theory]
     [MemberData(nameof(Images))]
     public override Task SupportsImages(string filePath) => base.SupportsImages(filePath);
+
+    public override async Task SupportsTablesWithImages()
+    {
+        var table = await SupportsTablesWithImagesCore(Path.Combine("TestFiles", "TableWithImage.md"));
+
+        for (int rowIndex = 1; rowIndex < table.Cells.GetLength(0); rowIndex++)
+        {
+            IngestionDocumentImage img = Assert.IsType<IngestionDocumentImage>(table.Cells[rowIndex, 1]);
+
+            Assert.Equal("image/png", img.MediaType);
+            Assert.NotNull(img.Content);
+            Assert.False(img.Content.Value.IsEmpty);
+        }
+    }
 }
