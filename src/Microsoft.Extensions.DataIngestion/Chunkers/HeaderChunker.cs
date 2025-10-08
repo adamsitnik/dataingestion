@@ -28,7 +28,7 @@ public sealed class HeaderChunker : IDocumentChunker
         List<IngestionDocumentElement> elements = new(20);
         string?[] headers = new string?[MaxHeaderLevel + 1];
 
-        foreach (IngestionDocumentElement element in document)
+        foreach (IngestionDocumentElement element in document.EnumerateContent())
         {
             if (element is IngestionDocumentHeader header)
             {

@@ -33,7 +33,7 @@ public sealed class AlternativeTextEnricher : IDocumentProcessor
             throw new ArgumentNullException(nameof(document));
         }
 
-        foreach (IngestionDocumentImage image in document.OfType<IngestionDocumentImage>())
+        foreach (IngestionDocumentImage image in document.EnumerateContent().OfType<IngestionDocumentImage>())
         {
             if (image.Content.HasValue && !string.IsNullOrEmpty(image.MediaType)
                 && string.IsNullOrEmpty(image.AlternativeText))

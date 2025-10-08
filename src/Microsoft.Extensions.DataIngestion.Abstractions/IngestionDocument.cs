@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <summary>
 /// A format-agnostic container that normalizes diverse input formats into a structured hierarchy.
 /// </summary>
-public sealed class IngestionDocument : IEnumerable<IngestionDocumentElement>
+public sealed class IngestionDocument
 {
     public IngestionDocument(string identifier)
     {
@@ -29,7 +29,7 @@ public sealed class IngestionDocument : IEnumerable<IngestionDocumentElement>
     /// <remarks>
     /// Sections themselves are not included.
     /// </remarks>
-    public IEnumerator<IngestionDocumentElement> GetEnumerator()
+    public IEnumerable<IngestionDocumentElement> EnumerateContent()
     {
         Stack<IngestionDocumentElement> elementsToProcess = new();
 
@@ -55,8 +55,6 @@ public sealed class IngestionDocument : IEnumerable<IngestionDocumentElement>
             }
         }
     }
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
 [DebuggerDisplay("{GetType().Name}: {GetMarkdown}")]

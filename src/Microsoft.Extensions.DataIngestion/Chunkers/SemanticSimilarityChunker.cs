@@ -55,7 +55,7 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
         List<(IngestionDocumentElement element, float distance)> elementDistance = [];
         List<string> semanticContents = [];
 
-        foreach (IngestionDocumentElement element in documents)
+        foreach (IngestionDocumentElement element in documents.EnumerateContent())
         {
             string? semanticContent = element is IngestionDocumentImage img
                 ? img.AlternativeText ?? img.Text

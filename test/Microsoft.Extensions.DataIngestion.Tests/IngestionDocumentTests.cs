@@ -41,7 +41,7 @@ public class IngestionDocumentTests
             }
         });
 
-        IngestionDocumentElement[] flatElements = doc.ToArray();
+        IngestionDocumentElement[] flatElements = doc.EnumerateContent().ToArray();
 
         Assert.IsType<IngestionDocumentHeader>(flatElements[0]);
         Assert.Equal("header", flatElements[0].GetMarkdown());

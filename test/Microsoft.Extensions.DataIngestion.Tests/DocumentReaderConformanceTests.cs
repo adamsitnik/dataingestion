@@ -31,7 +31,7 @@ public abstract class DocumentReaderConformanceTests
         Assert.Equal(expectedId, document.Identifier);
         Assert.NotEmpty(document.Sections);
 
-        var elements = document.ToArray();
+        var elements = document.EnumerateContent().ToArray();
         Assert.Contains(elements, element => element is IngestionDocumentHeader);
         Assert.Contains(elements, element => element is IngestionDocumentParagraph);
         Assert.Contains(elements, element => element is IngestionDocumentTable);
@@ -77,7 +77,7 @@ public abstract class DocumentReaderConformanceTests
         var reader = CreateDocumentReader();
         var document = await reader.ReadAsync(filePath);
 
-        IngestionDocumentTable documentTable = Assert.Single(document.OfType<IngestionDocumentTable>());
+        IngestionDocumentTable documentTable = Assert.Single(document.EnumerateContent().OfType<IngestionDocumentTable>());
         Assert.Equal(5, documentTable.Cells.GetLength(0));
         Assert.Equal(4, documentTable.Cells.GetLength(1));
 
@@ -110,7 +110,7 @@ public abstract class DocumentReaderConformanceTests
         var document = await reader.ReadAsync(filePath);
 
         SimpleAsserts(document, filePath, filePath);
-        var elements = document.ToArray();
+        var elements = document.EnumerateContent().ToArray();
         Assert.Contains(elements, element => element is IngestionDocumentImage img && img.Content.HasValue && !string.IsNullOrEmpty(img.MediaType));
     }
 
