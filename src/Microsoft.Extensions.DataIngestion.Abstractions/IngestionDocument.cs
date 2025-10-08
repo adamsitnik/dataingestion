@@ -96,6 +96,8 @@ public abstract class IngestionDocumentElement
 
     public int? PageNumber { get; set; }
 
+    public bool HasMetadata => _metadata?.Count > 0;
+
     public Dictionary<string, object?> Metadata => _metadata ??= [];
 }
 

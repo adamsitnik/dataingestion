@@ -94,9 +94,12 @@ public sealed class VectorStoreWriter : IDocumentChunkWriter
                 [DocumentIdName] = chunk.Document.Identifier,
             };
 
-            foreach (var metadata in chunk.Metadata)
+            if (chunk.HasMetadata)
             {
-                record[metadata.Key] = metadata.Value;
+                foreach (var metadata in chunk.Metadata)
+                {
+                    record[metadata.Key] = metadata.Value;
+                }
             }
 
             await _vectorStoreCollection.UpsertAsync(record, cancellationToken).ConfigureAwait(false);
@@ -125,16 +128,19 @@ public sealed class VectorStoreWriter : IDocumentChunkWriter
             }
         };
 
-        foreach (var metadata in representativeChunk.Metadata)
+        if (representativeChunk.HasMetadata)
         {
-            Type propertyType = metadata.Value.GetType();
-            definition.Properties.Add(new VectorStoreDataProperty(metadata.Key, propertyType)
+            foreach (var metadata in representativeChunk.Metadata)
             {
-                // We use lowercase storage names to ensure compatibility with various vector stores.
-                StorageName = metadata.Key.ToLowerInvariant()
-                // We could consider indexing for certain keys like classification etc. but for now we leave it as non-indexed.
-                // The reason is that not every DB supports it, moreover we would need to expose the ability to configure it.
-            });
+                Type propertyType = metadata.Value.GetType();
+                definition.Properties.Add(new VectorStoreDataProperty(metadata.Key, propertyType)
+                {
+                    // We use lowercase storage names to ensure compatibility with various vector stores.
+                    StorageName = metadata.Key.ToLowerInvariant()
+                    // We could consider indexing for certain keys like classification etc. but for now we leave it as non-indexed.
+                    // The reason is that not every DB supports it, moreover we would need to expose the ability to configure it.
+                });
+            }
         }
 
         return definition;

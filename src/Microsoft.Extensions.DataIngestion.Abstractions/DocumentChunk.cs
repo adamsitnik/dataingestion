@@ -20,6 +20,8 @@ public sealed class DocumentChunk
 
     public string? Context { get; }
 
+    public bool HasMetadata => _metadata?.Count > 0;
+
     public Dictionary<string, object> Metadata => _metadata ??= new();
 
     public DocumentChunk(string content, IngestionDocument document, int? tokenCount = null, string? context = null)
