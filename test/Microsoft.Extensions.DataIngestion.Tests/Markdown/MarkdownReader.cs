@@ -73,7 +73,6 @@ public sealed class MarkdownReader : DocumentReader
         IngestionDocumentSection rootSection = new(outputContent);
         IngestionDocument result = new(identifier)
         {
-            Markdown = outputContent,
             Sections = { rootSection }
         };
 

@@ -14,10 +14,7 @@ public class IngestionDocumentTests
     [Fact]
     public void EnumeratorFlattensTheStructureAndPreservesOrder()
     {
-        IngestionDocument doc = new("withSubSections")
-        {
-            Markdown = "same",
-        };
+        IngestionDocument doc = new("withSubSections");
         doc.Sections.Add(new IngestionDocumentSection("first section")
         {
             Elements =
@@ -67,14 +64,4 @@ public class IngestionDocumentTests
     [InlineData("")]
     public void EmptyParagraphDocumentCantBeCreated(string? input)
         => Assert.Throws<ArgumentNullException>(() => new IngestionDocumentParagraph(input!));
-
-    [Fact]
-    public void EmptyMarkdownIsNotBeingCached()
-    {
-        IngestionDocument doc = new("sut");
-        Assert.Empty(doc.Markdown);
-
-        doc.Sections.Add(new IngestionDocumentSection("section markdown"));
-        Assert.Equal(doc.Markdown, doc.Sections[0].Markdown);
-    }
 }

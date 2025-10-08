@@ -17,7 +17,6 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
         Assert.NotNull(document);
         Assert.Equal(expectedId, document.Identifier);
         Assert.NotEmpty(document.Sections);
-        Assert.NotEmpty(document.Markdown);
 
         var elements = document.ToArray();
 

@@ -14,8 +14,6 @@ namespace Microsoft.Extensions.DataIngestion;
 /// </summary>
 public sealed class IngestionDocument : IEnumerable<IngestionDocumentElement>
 {
-    private string? _markdown;
-
     public IngestionDocument(string identifier)
     {
         Identifier = identifier ?? throw new ArgumentNullException(nameof(identifier));
@@ -24,21 +22,6 @@ public sealed class IngestionDocument : IEnumerable<IngestionDocumentElement>
     public string Identifier { get; }
 
     public List<IngestionDocumentSection> Sections { get; } = [];
-
-    public string Markdown
-    {
-        get
-        {
-            // In case there are no Sections, we don't want to cache an empty string.
-            if (string.IsNullOrEmpty(_markdown))
-            {
-                _markdown = string.Join(Environment.NewLine, Sections.Select(section => section.Markdown));
-            }
-
-            return _markdown!;
-        }
-        set => _markdown = value;
-    }
 
     /// <summary>
     /// Iterate over all elements in the document, including those in nested sections.

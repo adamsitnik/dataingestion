@@ -32,7 +32,6 @@ public class RemovalProcessorTests
         Assert.Equal(paragraph.Markdown, updatedParagraph.Markdown);
         Assert.Equal(paragraph.Metadata, updatedParagraph.Metadata);
         Assert.Equal(ExpectedMarkdown, updated.Sections[0].Markdown);
-        Assert.Equal(ExpectedMarkdown, updated.Markdown);
     }
 
     [Fact]
@@ -75,6 +74,5 @@ public class RemovalProcessorTests
         IngestionDocumentParagraph updatedParagraph = Assert.IsType<IngestionDocumentParagraph>(updated.Sections[0].Elements[0]);
         Assert.Equal(ExpectedMarkdown, updatedParagraph.Markdown);
         Assert.Equal(ExpectedMarkdown, updated.Sections[0].Markdown);
-        Assert.Equal(ExpectedMarkdown, updated.Markdown);
     }
 }

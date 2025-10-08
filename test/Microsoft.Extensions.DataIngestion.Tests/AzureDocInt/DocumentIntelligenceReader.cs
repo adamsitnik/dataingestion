@@ -111,10 +111,7 @@ public sealed class DocumentIntelligenceReader : DocumentReader
 
     private static IngestionDocument MapToDocument(AnalyzeResult parsed, Dictionary<string, BinaryData> figures, string identifier)
     {
-        IngestionDocument document = new(identifier)
-        {
-            Markdown = parsed.Content,
-        };
+        IngestionDocument document = new(identifier);
 
 #if DEBUG
         HashSet<int> visitedSections = [];
