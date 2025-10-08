@@ -3,7 +3,6 @@
 
 using Microsoft.Extensions.AI;
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,24 +32,42 @@ public sealed class AlternativeTextEnricher : IDocumentProcessor
             throw new ArgumentNullException(nameof(document));
         }
 
-        foreach (IngestionDocumentImage image in document.EnumerateContent().OfType<IngestionDocumentImage>())
+        foreach (var element in document.EnumerateContent())
         {
-            if (image.Content.HasValue && !string.IsNullOrEmpty(image.MediaType)
-                && string.IsNullOrEmpty(image.AlternativeText))
+            if (element is IngestionDocumentImage image)
             {
-                var response = await _chatClient.GetResponseAsync(
-                [
-                    new(ChatRole.User,
-                    [
-                        new TextContent("Write a detailed alternative text for this image with less than 50 words."),
-                        new DataContent(image.Content.Value, image.MediaType!),
-                    ])
-                ], _chatOptions, cancellationToken: cancellationToken);
-
-                image.AlternativeText = response.Text;
+                await ProcessAsync(image, cancellationToken);
+            }
+            else if (element is IngestionDocumentTable table)
+            {
+                foreach (var cell in table.Cells)
+                {
+                    if (cell is IngestionDocumentImage cellImage)
+                    {
+                        await ProcessAsync(cellImage, cancellationToken);
+                    }
+                }
             }
         }
 
         return document;
+    }
+
+    private async Task ProcessAsync(IngestionDocumentImage image, CancellationToken cancellationToken)
+    {
+        if (image.Content.HasValue && !string.IsNullOrEmpty(image.MediaType)
+            && string.IsNullOrEmpty(image.AlternativeText))
+        {
+            var response = await _chatClient.GetResponseAsync(
+            [
+                new(ChatRole.User,
+                [
+                    new TextContent("Write a detailed alternative text for this image with less than 50 words."),
+                    new DataContent(image.Content.Value, image.MediaType!),
+                ])
+            ], _chatOptions, cancellationToken: cancellationToken);
+
+            image.AlternativeText = response.Text;
+        }
     }
 }

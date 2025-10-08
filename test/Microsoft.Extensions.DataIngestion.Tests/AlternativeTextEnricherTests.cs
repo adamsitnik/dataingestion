@@ -24,6 +24,14 @@ public class AlternativeTextEnricherTests : ChatClientTestBase
             MediaType = "image/png"
         };
 
+        IngestionDocumentImage tableCell = new($"![]({imagePath})")
+        {
+            AlternativeText = null,
+            Content = imageContent,
+            MediaType = "image/png"
+        };
+
+
         IngestionDocument document = new("withImage")
         {
             Sections =
@@ -32,7 +40,8 @@ public class AlternativeTextEnricherTests : ChatClientTestBase
                 {
                     Elements =
                     {
-                        documentImage
+                        documentImage,
+                        new IngestionDocumentTable("nvm", new[,] { { tableCell } })
                     }
                 }
             }
@@ -42,5 +51,8 @@ public class AlternativeTextEnricherTests : ChatClientTestBase
 
         Assert.NotNull(documentImage.AlternativeText);
         Assert.NotEmpty(documentImage.AlternativeText);
+
+        Assert.NotNull(tableCell.AlternativeText);
+        Assert.NotEmpty(tableCell.AlternativeText);
     }
 }
