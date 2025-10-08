@@ -10,7 +10,9 @@ namespace AspireSamples.Web.Services.Ingestion;
 public class DataIngestor(
     ILoggerFactory loggerFactory,
     VectorStore vectorStore,
+#pragma warning disable CS9113 // Parameter is unread, but we may use it for demo purposes if needed.
     IChatClient chatClient,
+#pragma warning restore CS9113
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
 {
     public async Task IngestDataAsync(DirectoryInfo directory, string searchPattern)
