@@ -203,14 +203,16 @@ public class LlamaParseReader : DocumentReader
         }
     }
 
-    private static string[,] GetCells(List<List<string>> rows)
+    private static IngestionDocumentElement?[,] GetCells(List<List<string>> rows)
     {
-        string[,] cells = new string[rows.Count, rows[0].Count];
+        var cells = new IngestionDocumentElement?[rows.Count, rows[0].Count];
         for (int i = 0; i < rows.Count; i++)
         {
             for (int j = 0; j < rows[i].Count; j++)
             {
-                cells[i,j] = rows[i][j];
+                cells[i,j] = string.IsNullOrEmpty(rows[i][j])
+                    ? null // IngestionDocumentParagraph does not accept empty strings
+                    : new IngestionDocumentParagraph(rows[i][j]);
             }
         }
         return cells;

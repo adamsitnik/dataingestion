@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -57,7 +56,7 @@ public sealed class IngestionDocument
     }
 }
 
-[DebuggerDisplay("{GetType().Name}: {GetMarkdown}")]
+[DebuggerDisplay("{GetType().Name}: {GetMarkdown()}")]
 public abstract class IngestionDocumentElement
 {
     protected string _markdown;
@@ -128,7 +127,7 @@ public sealed class IngestionDocumentFooter : IngestionDocumentElement
 
 public sealed class IngestionDocumentTable : IngestionDocumentElement
 {
-    public IngestionDocumentTable(string markdown, string[,] cells) : base(markdown)
+    public IngestionDocumentTable(string markdown, IngestionDocumentElement?[,] cells) : base(markdown)
     {
         Cells = cells ?? throw new ArgumentNullException(nameof(cells));
     }
@@ -137,9 +136,10 @@ public sealed class IngestionDocumentTable : IngestionDocumentElement
     /// Each table can be represented as a multidimensional array of cell contents, with the first row being the headers.
     /// </summary>
     /// <remarks>
-    /// This information is useful when chunking large tables that exceed token count limit.
+    /// <para>This information is useful when chunking large tables that exceed token count limit.</para>
+    /// <para>Null represents an empty cell (<see cref="IngestionDocumentElement.GetMarkdown()"/> can't return an empty string).</para>
     /// </remarks>
-    public string[,] Cells { get; }
+    public IngestionDocumentElement?[,] Cells { get; }
 }
 
 public sealed class IngestionDocumentImage : IngestionDocumentElement

@@ -226,7 +226,13 @@ internal sealed class ElementsChunker
         {
             vsb.Append('|');
             vsb.Append(' ');
-            vsb.Append(table.Cells[rowIndex, columnIndex]);
+            string? cellContent = table.Cells[rowIndex, columnIndex] switch
+            {
+                null => null,
+                IngestionDocumentImage img => img.AlternativeText ?? img.Text,
+                IngestionDocumentElement other => other.GetMarkdown()
+            };
+            vsb.Append(cellContent);
             vsb.Append(' ');
         }
         vsb.Append('|');

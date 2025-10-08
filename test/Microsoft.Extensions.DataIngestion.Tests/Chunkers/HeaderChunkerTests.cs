@@ -236,16 +236,16 @@ And some follow up.", chunks[5].Content, ignoreLineEndingDifferences: true);
 
         return doc;
 
-        static string[,] CreateTableCells()
+        static IngestionDocumentElement?[,] CreateTableCells()
         {
-            string[,] cells = new string[6, 5]; // 6 rows (1 header + 5 data rows), 5 columns
+            var cells = new IngestionDocumentElement[6, 5]; // 6 rows (1 header + 5 data rows), 5 columns
 
             // Header row
-            cells[0, 0] = "one";
-            cells[0, 1] = "two";
-            cells[0, 2] = "three";
-            cells[0, 3] = "four";
-            cells[0, 4] = "five";
+            cells[0, 0] = new IngestionDocumentParagraph("one");
+            cells[0, 1] = new IngestionDocumentParagraph("two");
+            cells[0, 2] = new IngestionDocumentParagraph("three");
+            cells[0, 3] = new IngestionDocumentParagraph("four");
+            cells[0, 4] = new IngestionDocumentParagraph("five");
 
             // Data rows (0-29)
             int number = 0;
@@ -253,7 +253,7 @@ And some follow up.", chunks[5].Content, ignoreLineEndingDifferences: true);
             {
                 for (int col = 0; col < 5; col++)
                 {
-                    cells[row, col] = number.ToString();
+                    cells[row, col] = new IngestionDocumentParagraph(number.ToString());
                     number++;
                 }
             }

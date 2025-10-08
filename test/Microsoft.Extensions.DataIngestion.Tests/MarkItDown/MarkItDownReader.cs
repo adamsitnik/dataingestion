@@ -14,10 +14,12 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 public class MarkItDownReader : DocumentReader
 {
     private readonly string _exePath;
+    private readonly bool _extractImages;
 
-    public MarkItDownReader(string exePath = "markitdown")
+    public MarkItDownReader(string exePath = "markitdown", bool extractImages = false)
     {
         _exePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
+        _extractImages = extractImages;
     }
 
     public override async Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
@@ -48,6 +50,11 @@ public class MarkItDownReader : DocumentReader
         startInfo.Environment["LANG"] = "C.UTF-8";
 
         startInfo.ArgumentList.Add(filePath);
+
+        if (_extractImages)
+        {
+            startInfo.ArgumentList.Add("--keep-data-uris");
+        }
 
         string outputContent = "";
         using (Process process = new() { StartInfo = startInfo })

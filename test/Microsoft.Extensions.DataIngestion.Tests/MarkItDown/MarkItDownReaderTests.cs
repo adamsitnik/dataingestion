@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -10,7 +11,8 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class MarkItDownReaderTests : DocumentReaderConformanceTests
 {
-    protected override DocumentReader CreateDocumentReader(bool extractImages = false) => new MarkItDownReader();
+    protected override DocumentReader CreateDocumentReader(bool extractImages = false)
+        => new MarkItDownReader(extractImages: extractImages);
 
     protected override void SimpleAsserts(IngestionDocument document, string source, string expectedId)
     {
@@ -32,11 +34,23 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
         Assert.All(elements, element => Assert.NotEmpty(element.GetMarkdown()));
     }
 
+    // The original purpose of the MarkItDown library was to support text-only LLMs.
+    // Source: https://github.com/microsoft/markitdown/issues/56#issuecomment-2546357264
+    // It can extract images, but the support is limited to some formats like docx.
     public override Task SupportsImages(string filePath)
-    {
-        // MarkItDown currently does not support images (the original purpose of the library was to support text-only LLMs).
-        // Source: https://github.com/microsoft/markitdown/issues/56#issuecomment-2546357264
+        => base.SupportsImages(Path.Combine("TestFiles", "SampleWithImage.docx"));
 
-        return Task.CompletedTask;
+    public override async Task SupportsTablesWithImages()
+    {
+        var table = await SupportsTablesWithImagesCore(Path.Combine("TestFiles", "TableWithImage.docx"));
+
+        for (int rowIndex = 1; rowIndex < table.Cells.GetLength(0); rowIndex++)
+        {
+            IngestionDocumentImage img = Assert.IsType<IngestionDocumentImage>(table.Cells[rowIndex, 1]);
+
+            Assert.Equal("image/png", img.MediaType);
+            Assert.NotNull(img.Content);
+            Assert.False(img.Content.Value.IsEmpty);
+        }
     }
 }
