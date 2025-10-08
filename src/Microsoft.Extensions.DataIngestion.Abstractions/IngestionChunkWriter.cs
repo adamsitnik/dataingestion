@@ -8,7 +8,17 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public interface IngestionChunkWriter : IDisposable
+public abstract class IngestionChunkWriter : IDisposable
 {
-    Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default);
+    public abstract Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default);
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+    }
 }

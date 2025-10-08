@@ -48,13 +48,13 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
     public VectorStoreCollection<object, Dictionary<string, object?>> VectorStoreCollection
         => _vectorStoreCollection ?? throw new InvalidOperationException("The collection has not been initialized yet. Call WriteAsync first.");
 
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
         _vectorStore.Dispose();
         _vectorStoreCollection?.Dispose();
     }
 
-    public async Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

@@ -32,7 +32,7 @@ public sealed class SemanticSimilarityChunker : IngestionChunker
             : thresholdPercentile ;
     }
 
-    public async Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override async Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

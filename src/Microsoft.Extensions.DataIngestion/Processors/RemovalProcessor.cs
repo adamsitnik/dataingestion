@@ -19,7 +19,7 @@ public sealed class RemovalProcessor : IngestionDocumentProcessor
 
     public RemovalProcessor(Predicate<IngestionDocumentElement> shouldRemove) => _shouldRemove = shouldRemove;
 
-    public Task<IngestionDocument> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override Task<IngestionDocument> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

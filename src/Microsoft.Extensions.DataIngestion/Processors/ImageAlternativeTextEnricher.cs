@@ -23,7 +23,7 @@ public sealed class ImageAlternativeTextEnricher : IngestionDocumentProcessor
         _chatOptions = chatOptions;
     }
 
-    public async Task<IngestionDocument> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

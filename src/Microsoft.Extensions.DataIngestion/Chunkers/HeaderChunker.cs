@@ -22,7 +22,7 @@ public sealed class HeaderChunker : IngestionChunker
     public HeaderChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         List<IngestionChunk> chunks = new();
         List<IngestionDocumentElement> elements = new(20);

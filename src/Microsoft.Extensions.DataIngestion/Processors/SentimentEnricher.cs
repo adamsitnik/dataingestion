@@ -35,7 +35,7 @@ public sealed class SentimentEnricher : IngestionChunkProcessor
 
     public static string MetadataKey => "sentiment";
 
-    public async Task<List<IngestionChunk>> ProcessAsync(List<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task<List<IngestionChunk>> ProcessAsync(List<IngestionChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
