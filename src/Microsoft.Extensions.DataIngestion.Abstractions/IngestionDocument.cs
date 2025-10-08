@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -57,7 +56,7 @@ public sealed class IngestionDocument
     }
 }
 
-[DebuggerDisplay("{GetType().Name}: {GetMarkdown}")]
+[DebuggerDisplay("{GetType().Name}: {GetMarkdown()}")]
 public abstract class IngestionDocumentElement
 {
     protected string _markdown;
