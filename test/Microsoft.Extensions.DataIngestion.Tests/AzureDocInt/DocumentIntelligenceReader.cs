@@ -12,8 +12,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using AdiParagraph = Azure.AI.DocumentIntelligence.DocumentParagraph;
-
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public sealed class DocumentIntelligenceReader : DocumentReader
@@ -156,8 +154,8 @@ public sealed class DocumentIntelligenceReader : DocumentReader
                         var markdown = GetMarkdown(parsedParagraph.Spans, entireContent);
                         var paragraph = MapToElement(parsedParagraph, markdown);
                         paragraph.PageNumber = GetPageNumber(parsedParagraph.BoundingRegions);
-                        paragraph.Metadata[nameof(AdiParagraph.BoundingRegions)] = parsedParagraph.BoundingRegions;
-                        paragraph.Metadata[nameof(AdiParagraph.Role)] = parsedParagraph.Role;
+                        paragraph.Metadata[nameof(DocumentParagraph.BoundingRegions)] = parsedParagraph.BoundingRegions;
+                        paragraph.Metadata[nameof(DocumentParagraph.Role)] = parsedParagraph.Role;
 
                         section.Elements.Add(paragraph);
                         break;
