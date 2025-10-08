@@ -28,12 +28,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             int chunkOverlap = 1;
 
             var chunker = new DocumentTokenChunker(tokenizer, new() {  MaxTokensPerChunk = chunkSize, OverlapTokens = chunkOverlap });
-            Document doc = new Document("overlapExample");
-            doc.Sections.Add(new DocumentSection
+            IngestionDocument doc = new IngestionDocument("overlapExample");
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentParagraph(text)
+                    new IngestionDocumentParagraph(text)
                 }
             });
 

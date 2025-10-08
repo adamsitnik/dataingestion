@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Extensions.DataIngestion.Chunkers;
 
 /// <summary>
-/// Splits a <see cref="Document"/> into chunks based on semantic similarity between its elements.
+/// Splits a <see cref="IngestionDocument"/> into chunks based on semantic similarity between its elements.
 /// </summary>
 public sealed class SemanticSimilarityChunker : IDocumentChunker
 {
@@ -32,7 +32,7 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
             : thresholdPercentile ;
     }
 
-    public async Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+    public async Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -46,20 +46,20 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
             return [];
         }
 
-        List<(DocumentElement, float)> distances = await CalculateDistances(document);
+        List<(IngestionDocumentElement, float)> distances = await CalculateDistances(document);
         return MakeChunks(document, distances);
     }
 
-    private async Task<List<(DocumentElement element, float distance)>> CalculateDistances(Document documents)
+    private async Task<List<(IngestionDocumentElement element, float distance)>> CalculateDistances(IngestionDocument documents)
     {
-        List<(DocumentElement element, float distance)> elementDistance = [];
+        List<(IngestionDocumentElement element, float distance)> elementDistance = [];
         List<string> semanticContents = [];
 
-        foreach (DocumentElement element in documents)
+        foreach (IngestionDocumentElement element in documents.EnumerateContent())
         {
-            string? semanticContent = element is DocumentImage img
+            string? semanticContent = element is IngestionDocumentImage img
                 ? img.AlternativeText ?? img.Text
-                : element.Markdown;
+                : element.GetMarkdown();
 
             if (!string.IsNullOrEmpty(semanticContent))
             {
@@ -79,12 +79,12 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
         return elementDistance;
     }
 
-    private List<DocumentChunk> MakeChunks(Document document, List<(DocumentElement element, float distance)> elementDistances)
+    private List<DocumentChunk> MakeChunks(IngestionDocument document, List<(IngestionDocumentElement element, float distance)> elementDistances)
     {
         List<DocumentChunk> chunks = [];
         float distanceThreshold = Percentile(elementDistances);
 
-        List<DocumentElement> elementAccumulator = [];
+        List<IngestionDocumentElement> elementAccumulator = [];
         string context = string.Empty; // we could implement some simple heuristic
         foreach (var (element, distance) in elementDistances)
         {
@@ -104,7 +104,7 @@ public sealed class SemanticSimilarityChunker : IDocumentChunker
         return chunks;
     }
 
-    private float Percentile(List<(DocumentElement element, float distance)> elementDistances)
+    private float Percentile(List<(IngestionDocumentElement element, float distance)> elementDistances)
     {
         if (elementDistances.Count == 0)
         {

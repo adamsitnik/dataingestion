@@ -17,18 +17,18 @@ public class AlternativeTextEnricherTests : ChatClientTestBase
         string imagePath = Path.Combine("TestFiles", "SampleImage.png");
         ReadOnlyMemory<byte> imageContent = await File.ReadAllBytesAsync(imagePath);
 
-        DocumentImage documentImage = new($"![]({imagePath})")
+        IngestionDocumentImage documentImage = new($"![]({imagePath})")
         {
             AlternativeText = null,
             Content = imageContent,
             MediaType = "image/png"
         };
 
-        Document document = new("withImage")
+        IngestionDocument document = new("withImage")
         {
             Sections =
             {
-                new DocumentSection
+                new IngestionDocumentSection
                 {
                     Elements =
                     {

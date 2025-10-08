@@ -26,7 +26,7 @@ public class LlamaParseReader : DocumentReader
 
     public LlamaParseReader(LlamaParseClient client) => _client = client;
 
-    public override async Task<Document> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -50,7 +50,7 @@ public class LlamaParseReader : DocumentReader
         return MapToDocument(rawResults, imageDocuments, identifier);
     }
 
-    public override async Task<Document> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -100,9 +100,9 @@ public class LlamaParseReader : DocumentReader
         return (parsed, images);
     }
 
-    private static Document MapToDocument(List<RawResult> parsed, List<ImageDocument> images, string identifier)
+    private static IngestionDocument MapToDocument(List<RawResult> parsed, List<ImageDocument> images, string identifier)
     {
-        Document result = new(identifier);
+        IngestionDocument result = new(identifier);
 
         foreach (var rawResult in parsed)
         {
@@ -113,11 +113,11 @@ public class LlamaParseReader : DocumentReader
         return result;
     }
 
-    private static IEnumerable<DocumentSection> Map(LlamaParseDocument document, List<ImageDocument> images)
+    private static IEnumerable<IngestionDocumentSection> Map(LlamaParseDocument document, List<ImageDocument> images)
     {
         foreach (var parsedPage in document.Pages)
         {
-            DocumentSection page = new(parsedPage.Markdown)
+            IngestionDocumentSection page = new(parsedPage.Markdown)
             {
                 Text = parsedPage.Text,
                 PageNumber = parsedPage.PageNumber,
@@ -131,7 +131,7 @@ public class LlamaParseReader : DocumentReader
 
             if (!string.IsNullOrEmpty(parsedPage.PageHeaderMarkdown))
             {
-                page.Elements.Add(new DocumentHeader(parsedPage.PageHeaderMarkdown)
+                page.Elements.Add(new IngestionDocumentHeader(parsedPage.PageHeaderMarkdown)
                 {
                     // It's weird: Page Header is exposed as Markdown, but not as Text.
                     Text = parsedPage.PageHeaderMarkdown.TrimStart('#'),
@@ -145,18 +145,18 @@ public class LlamaParseReader : DocumentReader
                     continue; // Workaround a LlamaParse bug
                 }
 
-                DocumentElement element = item switch
+                IngestionDocumentElement element = item switch
                 {
-                    TextPageItem text => new DocumentParagraph(item.Markdown)
+                    TextPageItem text => new IngestionDocumentParagraph(item.Markdown)
                     {
                         Text = text.Value,
                     },
-                    HeadingPageItem heading => new DocumentHeader(item.Markdown)
+                    HeadingPageItem heading => new IngestionDocumentHeader(item.Markdown)
                     {
                         Text = heading.Value,
                         Level = heading.Level,
                     },
-                    TablePageItem table => new DocumentTable(table.Markdown, GetCells(table.Rows)),
+                    TablePageItem table => new IngestionDocumentTable(table.Markdown, GetCells(table.Rows)),
                     _ => throw new InvalidOperationException()
                 };
                 element.PageNumber = parsedPage.PageNumber;
@@ -174,7 +174,7 @@ public class LlamaParseReader : DocumentReader
                 // the Base64 string might become the standard instead of BinaryData.
                 ReadOnlyMemory<byte> binaryData = Convert.FromBase64String(image.Image!);
 
-                DocumentImage documentImage = new($"![]({image.ImageUrl})")
+                IngestionDocumentImage documentImage = new($"![]({image.ImageUrl})")
                 {
                     Content = binaryData,
                     MediaType = image.ImageMimetype,
@@ -192,7 +192,7 @@ public class LlamaParseReader : DocumentReader
 
             if (!string.IsNullOrEmpty(parsedPage.PageFooterMarkdown))
             {
-                page.Elements.Add(new DocumentFooter(parsedPage.PageFooterMarkdown)
+                page.Elements.Add(new IngestionDocumentFooter(parsedPage.PageFooterMarkdown)
                 {
                     // It's weird: Page Footer is exposed as Markdown, but not as Text.
                     Text = parsedPage.PageFooterMarkdown.TrimStart('#'),

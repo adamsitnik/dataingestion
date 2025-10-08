@@ -22,7 +22,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         [Fact]
         public async Task EmptyDocument()
         {
-            Document emptyDoc = new("emptyDoc");
+            IngestionDocument emptyDoc = new("emptyDoc");
             IDocumentChunker chunker = CreateDocumentChunker();
 
             List<DocumentChunk> chunks = await chunker.ProcessAsync(emptyDoc);

@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class SummaryEnricherTests : ChatClientTestBase
 {
-    private static readonly Document document = new("test");
+    private static readonly IngestionDocument document = new("test");
 
     [Fact]
     public async Task CanProvideSummary()

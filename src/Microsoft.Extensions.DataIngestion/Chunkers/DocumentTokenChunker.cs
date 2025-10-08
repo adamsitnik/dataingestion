@@ -5,6 +5,7 @@ using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,18 +31,22 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _chunkOverlap = options.OverlapTokens;
         }
 
-        public Task<List<DocumentChunk>> ProcessAsync(Document document, CancellationToken cancellationToken = default)
+        public Task<List<DocumentChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
         {
-            if (document is null) throw new ArgumentNullException(nameof(document));
+            if (document is null)
+            {
+                throw new ArgumentNullException(nameof(document));
+            }
 
-            int[] tokens = _tokenizer.EncodeToIds(document.Markdown).ToArray();
+            string documentMarkdown = GetDocumentMarkdown(document);
+            int[] tokens = _tokenizer.EncodeToIds(documentMarkdown).ToArray();
             List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
             return Task.FromResult(tokenGroups.Select(g => GroupToChunk(document, g)).ToList());
         }
 
         private List<ArraySegment<int>> CreateGroups(int[] tokens)
         {
-            List<ArraySegment<int>> groups = new List<ArraySegment<int>>();
+            List<ArraySegment<int>> groups = [];
             for (int i = 0; i < tokens.Length; i += (_maxTokensPerChunk - _chunkOverlap))
             {
                 int count = Math.Min(_maxTokensPerChunk, tokens.Length - i);
@@ -50,10 +55,24 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return groups;
         }
 
-        private DocumentChunk GroupToChunk(Document document, ArraySegment<int> tokenGroup)
+        private DocumentChunk GroupToChunk(IngestionDocument document, ArraySegment<int> tokenGroup)
         {
             string text = _tokenizer.Decode(tokenGroup);
             return new DocumentChunk(text, document, tokenGroup.Count);
+        }
+
+        private static string GetDocumentMarkdown(IngestionDocument document)
+        {
+            StringBuilder sb = new();
+            for (int i = 0; i < document.Sections.Count; i++)
+            {
+                sb.Append(document.Sections[i].GetMarkdown());
+                if (i != document.Sections.Count - 1)
+                {
+                    sb.AppendLine();
+                }
+            }
+            return sb.ToString();
         }
     }
 }

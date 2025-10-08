@@ -131,7 +131,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
             using (Activity? processFileActivity = StartActivity(ProcessFile.ActivityName, parent: rootActivity))
             {
                 processFileActivity?.SetTag(ProcessFile.FilePathTagName, filePath);
-                Document? document = null;
+                IngestionDocument? document = null;
 
                 using (Activity? readerActivity = StartActivity(ReadDocument.ActivityName, ActivityKind.Client, processFileActivity))
                 {
@@ -190,7 +190,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
                 using (Activity? processUriActivity = StartActivity(ProcessUri.ActivityName, parent: rootActivity))
                 {
                     processUriActivity?.SetTag(ProcessUri.UriTagName, source);
-                    Document? document = null;
+                    IngestionDocument? document = null;
 
                     using (Activity? readerActivity = StartActivity(ReadDocument.ActivityName, ActivityKind.Client, processUriActivity))
                     {
@@ -209,7 +209,7 @@ public sealed class DocumentPipeline : IDocumentPipeline
         }
     }
 
-    private async Task ProcessAsync(Document document, Activity? parentActivity, CancellationToken cancellationToken)
+    private async Task ProcessAsync(IngestionDocument document, Activity? parentActivity, CancellationToken cancellationToken)
     {
         foreach (IDocumentProcessor processor in _processors)
         {

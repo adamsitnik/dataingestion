@@ -12,25 +12,24 @@ public class MarkItDownReaderTests : DocumentReaderConformanceTests
 {
     protected override DocumentReader CreateDocumentReader(bool extractImages = false) => new MarkItDownReader();
 
-    protected override void SimpleAsserts(Document document, string source, string expectedId)
+    protected override void SimpleAsserts(IngestionDocument document, string source, string expectedId)
     {
         Assert.NotNull(document);
         Assert.Equal(expectedId, document.Identifier);
         Assert.NotEmpty(document.Sections);
-        Assert.NotEmpty(document.Markdown);
 
-        var elements = document.ToArray();
+        var elements = document.EnumerateContent().ToArray();
 
         bool isPdf = source.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
         if (!isPdf)
         {
             // MarkItDown does a bad job of recognizing Headers and Tables even for simple PDF files.
-            Assert.Contains(elements, element => element is DocumentHeader);
-            Assert.Contains(elements, element => element is DocumentTable);
+            Assert.Contains(elements, element => element is IngestionDocumentHeader);
+            Assert.Contains(elements, element => element is IngestionDocumentTable);
         }
 
-        Assert.Contains(elements, element => element is DocumentParagraph);
-        Assert.All(elements, element => Assert.NotEmpty(element.Markdown));
+        Assert.Contains(elements, element => element is IngestionDocumentParagraph);
+        Assert.All(elements, element => Assert.NotEmpty(element.GetMarkdown()));
     }
 
     public override Task SupportsImages(string filePath)

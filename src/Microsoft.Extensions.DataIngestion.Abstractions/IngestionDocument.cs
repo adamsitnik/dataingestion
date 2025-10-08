@@ -12,33 +12,16 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <summary>
 /// A format-agnostic container that normalizes diverse input formats into a structured hierarchy.
 /// </summary>
-public sealed class Document : IEnumerable<DocumentElement>
+public sealed class IngestionDocument
 {
-    private string? _markdown;
-
-    public Document(string identifier)
+    public IngestionDocument(string identifier)
     {
         Identifier = identifier ?? throw new ArgumentNullException(nameof(identifier));
     }
 
     public string Identifier { get; }
 
-    public List<DocumentSection> Sections { get; } = [];
-
-    public string Markdown
-    {
-        get
-        {
-            // In case there are no Sections, we don't want to cache an empty string.
-            if (string.IsNullOrEmpty(_markdown))
-            {
-                _markdown = string.Join(Environment.NewLine, Sections.Select(section => section.Markdown));
-            }
-
-            return _markdown!;
-        }
-        set => _markdown = value;
-    }
+    public List<IngestionDocumentSection> Sections { get; } = [];
 
     /// <summary>
     /// Iterate over all elements in the document, including those in nested sections.
@@ -46,9 +29,9 @@ public sealed class Document : IEnumerable<DocumentElement>
     /// <remarks>
     /// Sections themselves are not included.
     /// </remarks>
-    public IEnumerator<DocumentElement> GetEnumerator()
+    public IEnumerable<IngestionDocumentElement> EnumerateContent()
     {
-        Stack<DocumentElement> elementsToProcess = new();
+        Stack<IngestionDocumentElement> elementsToProcess = new();
 
         for (int sectionIndex = Sections.Count - 1; sectionIndex >= 0; sectionIndex--)
         {
@@ -57,9 +40,9 @@ public sealed class Document : IEnumerable<DocumentElement>
 
         while (elementsToProcess.Count > 0)
         {
-            DocumentElement currentElement = elementsToProcess.Pop();
+            IngestionDocumentElement currentElement = elementsToProcess.Pop();
 
-            if (currentElement is not DocumentSection nestedSection)
+            if (currentElement is not IngestionDocumentSection nestedSection)
             {
                 yield return currentElement;
             }
@@ -72,29 +55,29 @@ public sealed class Document : IEnumerable<DocumentElement>
             }
         }
     }
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
-[DebuggerDisplay("{GetType().Name}: {Markdown}")]
-public abstract class DocumentElement
+[DebuggerDisplay("{GetType().Name}: {GetMarkdown}")]
+public abstract class IngestionDocumentElement
 {
     protected string _markdown;
 
-    protected internal DocumentElement(string markdown)
+    protected internal IngestionDocumentElement(string markdown)
     {
         _markdown = string.IsNullOrEmpty(markdown) ? throw new ArgumentNullException(nameof(markdown)) : markdown;
     }
 
-    protected internal DocumentElement() => _markdown = null!;
+    protected internal IngestionDocumentElement() => _markdown = null!;
 
     private Dictionary<string, object?>? _metadata;
 
     public string? Text { get; set; }
 
-    public virtual string Markdown => _markdown;
+    public virtual string GetMarkdown() => _markdown;
 
     public int? PageNumber { get; set; }
+
+    public bool HasMetadata => _metadata?.Count > 0;
 
     public Dictionary<string, object?> Metadata => _metadata ??= [];
 }
@@ -102,60 +85,50 @@ public abstract class DocumentElement
 /// <summary>
 /// A section can be just a page or a logical grouping of elements in a document.
 /// </summary>
-public sealed class DocumentSection : DocumentElement
+public sealed class IngestionDocumentSection : IngestionDocumentElement
 {
-    public DocumentSection(string markdown) : base(markdown)
+    public IngestionDocumentSection(string markdown) : base(markdown)
     {
     }
 
     // the user is not providing the Markdown, we will compute it from the elements
-    public DocumentSection() : base()
+    public IngestionDocumentSection() : base()
     {
     }
 
-    public List<DocumentElement> Elements { get; } = [];
+    public List<IngestionDocumentElement> Elements { get; } = [];
 
-    public override string Markdown
-    {
-        get
-        {
-            // In case there are no Elements, we don't want to cache an empty string.
-            if (string.IsNullOrEmpty(_markdown))
-            {
-                _markdown = string.Join(Environment.NewLine, Elements.Select(e => e.Markdown));
-            }
-
-            return _markdown;
-        }
-    }
+    // The result is not being cached, as elements can be added, removed or modified.
+    public override string GetMarkdown()
+        => string.Join(Environment.NewLine, Elements.Select(e => e.GetMarkdown()));
 }
 
-public sealed class DocumentParagraph : DocumentElement
+public sealed class IngestionDocumentParagraph : IngestionDocumentElement
 {
-    public DocumentParagraph(string markdown) : base(markdown)
+    public IngestionDocumentParagraph(string markdown) : base(markdown)
     {
     }
 }
 
-public sealed class DocumentHeader : DocumentElement
+public sealed class IngestionDocumentHeader : IngestionDocumentElement
 {
-    public DocumentHeader(string markdown) : base(markdown)
+    public IngestionDocumentHeader(string markdown) : base(markdown)
     {
     }
 
     public int? Level { get; set; }
 }
 
-public sealed class DocumentFooter : DocumentElement
+public sealed class IngestionDocumentFooter : IngestionDocumentElement
 {
-    public DocumentFooter(string markdown) : base(markdown)
+    public IngestionDocumentFooter(string markdown) : base(markdown)
     {
     }
 }
 
-public sealed class DocumentTable : DocumentElement
+public sealed class IngestionDocumentTable : IngestionDocumentElement
 {
-    public DocumentTable(string markdown, string[,] cells) : base(markdown)
+    public IngestionDocumentTable(string markdown, string[,] cells) : base(markdown)
     {
         Cells = cells ?? throw new ArgumentNullException(nameof(cells));
     }
@@ -169,9 +142,9 @@ public sealed class DocumentTable : DocumentElement
     public string[,] Cells { get; }
 }
 
-public sealed class DocumentImage : DocumentElement
+public sealed class IngestionDocumentImage : IngestionDocumentElement
 {
-    public DocumentImage(string markdown) : base(markdown)
+    public IngestionDocumentImage(string markdown) : base(markdown)
     {
     }
 

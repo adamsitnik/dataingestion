@@ -42,7 +42,7 @@ public class VectorStoreWriterTests
             vectorStore,
             dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
-        Document document = new(documentId);
+        IngestionDocument document = new(documentId);
         List<DocumentChunk> chunks = new()
         {
             new DocumentChunk("some content", document)
@@ -90,7 +90,7 @@ public class VectorStoreWriterTests
                 IncrementalIngestion = true,
             });
 
-        Document document = new(documentId);
+        IngestionDocument document = new(documentId);
         List<DocumentChunk> chunks = new()
         {
             new DocumentChunk("first chunk", document)

@@ -14,12 +14,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         public async Task SingleChunkText()
         {
             string text = "This is a short document that fits within a single chunk.";
-            Document doc = new Document("singleChunkDoc");
-            doc.Sections.Add(new DocumentSection
+            IngestionDocument doc = new IngestionDocument("singleChunkDoc");
+            doc.Sections.Add(new IngestionDocumentSection
             {
                 Elements =
                 {
-                    new DocumentParagraph(text)
+                    new IngestionDocumentParagraph(text)
                 }
             });
 
