@@ -31,7 +31,6 @@ public class AlternativeTextEnricherTests : ChatClientTestBase
             MediaType = "image/png"
         };
 
-
         IngestionDocument document = new("withImage")
         {
             Sections =
