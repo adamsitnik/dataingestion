@@ -6,8 +6,8 @@ using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
@@ -22,17 +22,22 @@ public sealed class HeaderChunker : IngestionChunker
     public HeaderChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public override Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IngestionDocument document,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        List<IngestionChunk> chunks = new();
         List<IngestionDocumentElement> elements = new(20);
         string?[] headers = new string?[MaxHeaderLevel + 1];
 
         foreach (IngestionDocumentElement element in document.EnumerateContent())
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (element is IngestionDocumentHeader header)
             {
-                SplitIntoChunks(document, chunks, headers, elements);
+                foreach (var chunk in SplitIntoChunks(document, headers, elements))
+                {
+                    yield return chunk;
+                }
 
                 int headerLevel = header.Level.GetValueOrDefault();
                 headers[headerLevel] = header.GetMarkdown();
@@ -45,18 +50,22 @@ public sealed class HeaderChunker : IngestionChunker
         }
 
         // take care of any remaining paragraphs
-        SplitIntoChunks(document, chunks, headers, elements);
-
-        return Task.FromResult<IReadOnlyList<IngestionChunk>>(chunks);
+        foreach (var chunk in SplitIntoChunks(document, headers, elements))
+        {
+            yield return chunk;
+        }
     }
 
-    private void SplitIntoChunks(IngestionDocument document, List<IngestionChunk> chunks, string?[] headers, List<IngestionDocumentElement> elements)
+    private IEnumerable<IngestionChunk> SplitIntoChunks(IngestionDocument document, string?[] headers, List<IngestionDocumentElement> elements)
     {
         if (elements.Count > 0)
         {
             string chunkHeader = string.Join(" ", headers.Where(h => !string.IsNullOrEmpty(h)));
 
-            _elementsChunker.Process(document, chunks, chunkHeader, elements);
+            foreach (var chunk in _elementsChunker.Process(document, chunkHeader, elements))
+            {
+                yield return chunk;
+            }
 
             elements.Clear();
         }

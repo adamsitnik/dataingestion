@@ -24,11 +24,11 @@ public sealed class QAWriter : IngestionChunkWriter
         _chatClient.Dispose();
     }
 
-    public override async Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(IAsyncEnumerable<IngestionChunk> chunks, CancellationToken cancellationToken = default)
     {
         await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken);
 
-        foreach (var chunk in chunks)
+        await foreach (var chunk in chunks.WithCancellation(cancellationToken))
         {
             ChatResponse<QA[]> chatResponse = await _chatClient.GetResponseAsync<QA[]>([
                 new(ChatRole.User,

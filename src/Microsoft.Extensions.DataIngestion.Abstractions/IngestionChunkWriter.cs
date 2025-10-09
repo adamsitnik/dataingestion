@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public abstract class IngestionChunkWriter : IDisposable
 {
-    public abstract Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default);
+    public abstract Task WriteAsync(IAsyncEnumerable<IngestionChunk> chunks, CancellationToken cancellationToken = default);
 
     public void Dispose()
     {

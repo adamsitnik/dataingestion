@@ -16,21 +16,19 @@ public class ClassificationEnricherTests : ChatClientTestBase
     public async Task CanClassify()
     {
         ClassificationEnricher sut = new(ChatClient, ["AI", "Animals", "Sports"], fallbackClass: "UFO");
-        List<IngestionChunk> chunks = CreateChunks();
 
-        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(CreateChunks()).ToListAsync();
 
-        Assert.Same(chunks, got);
-        Assert.Equal(3, chunks.Count);
-        Assert.Equal("AI", chunks[0].Metadata[ClassificationEnricher.MetadataKey]);
-        Assert.Equal("Animals", chunks[1].Metadata[ClassificationEnricher.MetadataKey]);
-        Assert.Equal("UFO", chunks[2].Metadata[ClassificationEnricher.MetadataKey]);
+        Assert.Equal(3, got.Count);
+        Assert.Equal("AI", got[0].Metadata[ClassificationEnricher.MetadataKey]);
+        Assert.Equal("Animals", got[1].Metadata[ClassificationEnricher.MetadataKey]);
+        Assert.Equal("UFO", got[2].Metadata[ClassificationEnricher.MetadataKey]);
     }
 
-    private static List<IngestionChunk> CreateChunks() =>
-    [
-        new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document),
-        new ("Rabbits are small mammals in the family Leporidae of the order Lagomorpha (along with the hare and the pika). They are herbivorous animals and are known for their long ears, large hind legs, and short fluffy tails.", document),
-        new("This text does not belong to any category.", document),
-    ];
+    private static async IAsyncEnumerable<IngestionChunk> CreateChunks()
+    {
+        yield return new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document);
+        yield return new("Rabbits are small mammals in the family Leporidae of the order Lagomorpha (along with the hare and the pika). They are herbivorous animals and are known for their long ears, large hind legs, and short fluffy tails.", document);
+        yield return new("This text does not belong to any category.", document);
+    }
 }

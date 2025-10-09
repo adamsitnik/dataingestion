@@ -17,15 +17,7 @@ public class SentimentEnricherTests : ChatClientTestBase
     {
         SentimentEnricher sut = new(ChatClient);
 
-        List<IngestionChunk> chunks = new()
-        {
-            new("I love programming! It's so much fun and rewarding.", document),
-            new("I hate bugs. They are so frustrating and time-consuming.", document),
-            new("The weather is okay, not too bad but not great either.", document),
-            new("I hate you. I am sorry, I actually don't. I am not sure myself what my feelings are.", document)
-        };
-
-        chunks = await sut.ProcessAsync(chunks).ToListAsync();
+        var chunks = await sut.ProcessAsync(CreateChunks()).ToListAsync();
 
         Assert.Equal(4, chunks.Count);
 
@@ -33,5 +25,13 @@ public class SentimentEnricherTests : ChatClientTestBase
         Assert.Equal("Negative", chunks[1].Metadata[SentimentEnricher.MetadataKey]);
         Assert.Equal("Neutral", chunks[2].Metadata[SentimentEnricher.MetadataKey]);
         Assert.Equal("Unknown", chunks[3].Metadata[SentimentEnricher.MetadataKey]);
+    }
+
+    private static async IAsyncEnumerable<IngestionChunk> CreateChunks()
+    {
+        yield return new("I love programming! It's so much fun and rewarding.", document);
+        yield return new("I hate bugs. They are so frustrating and time-consuming.", document);
+        yield return new("The weather is okay, not too bad but not great either.", document);
+        yield return new("I hate you. I am sorry, I actually don't. I am not sure myself what my feelings are.", document);
     }
 }

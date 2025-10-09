@@ -161,53 +161,13 @@ public sealed class DocumentPipeline : IngestionPipeline
             }
         }
 
-        IReadOnlyList<IngestionChunk>? chunks = null;
-        using (Activity? chunkerActivity = StartActivity(ChunkDocument.ActivityName, parent: parentActivity))
-        {
-            chunkerActivity?.SetTag(ChunkDocument.ChunkerTagName, GetShortName(_chunker));
-            _logger?.LogInformation("Chunking document '{DocumentId}' with '{Chunker}'.", document.Identifier, GetShortName(_chunker));
-
-            chunks = await TryAsync(() => _chunker.ProcessAsync(document, cancellationToken), chunkerActivity);
-
-            parentActivity?.SetTag(ProcessSource.ChunkCountTagName, chunks.Count);
-            _logger?.LogInformation("Chunked document into {ChunkCount} chunks.", chunks.Count);
-        }
-
+        IAsyncEnumerable<IngestionChunk>? chunks = _chunker.ProcessAsync(document, cancellationToken);
         foreach (IngestionChunkProcessor processor in _chunkProcessors)
         {
-            using (Activity? processorActivity = StartActivity(ProcessChunk.ActivityName, parent: parentActivity))
-            {
-                processorActivity?.SetTag(ProcessChunk.ProcessorTagName, GetShortName(processor));
-                _logger?.LogInformation("Processing {ChunkCount} chunks for document '{DocumentId}' with '{Processor}'.", chunks.Count, document.Identifier, GetShortName(processor));
-
-                chunks = await TryAsync(() => ProcessChunksAsync(chunks, processor, cancellationToken), processorActivity);
-
-                // A ChunkProcessor might change the number of chunks, so update the chunk count tag.
-                parentActivity?.SetTag(ProcessSource.ChunkCountTagName, chunks.Count);
-                _logger?.LogInformation("Processed chunks for document '{DocumentId}'.", document.Identifier);
-            }
+            chunks = processor.ProcessAsync(chunks, cancellationToken);
         }
 
-        using (Activity? writerActivity = StartActivity(WriteDocument.ActivityName, ActivityKind.Client, parentActivity))
-        {
-            writerActivity?.SetTag(WriteDocument.WriterTagName, GetShortName(_writer));
-            _logger?.LogInformation("Persisting chunks with '{Writer}'.", GetShortName(_writer));
-
-            await TryAsync(() => _writer.WriteAsync(chunks, cancellationToken), writerActivity);
-
-            _logger?.LogInformation("Persisted chunks for document '{DocumentId}'.", document.Identifier);
-        }
-    }
-
-    private static async Task<IReadOnlyList<IngestionChunk>> ProcessChunksAsync(IReadOnlyList<IngestionChunk> chunks, IngestionChunkProcessor processor, CancellationToken cancellationToken)
-    {
-        List<IngestionChunk> processed = new(chunks.Count);
-        await foreach (IngestionChunk chunk in processor.ProcessAsync(chunks, cancellationToken).WithCancellation(cancellationToken))
-        {
-            processed.Add(chunk);
-        }
-
-        return processed;
+        await _writer.WriteAsync(chunks, cancellationToken);
     }
 
     private string GetShortName(object any)

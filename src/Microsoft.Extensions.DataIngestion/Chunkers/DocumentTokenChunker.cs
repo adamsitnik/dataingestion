@@ -5,9 +5,9 @@ using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
@@ -31,7 +31,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _chunkOverlap = options.OverlapTokens;
         }
 
-        public override Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+        public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IngestionDocument document,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             if (document is null)
             {
@@ -41,7 +42,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             string documentMarkdown = GetDocumentMarkdown(document);
             int[] tokens = _tokenizer.EncodeToIds(documentMarkdown).ToArray();
             List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
-            return Task.FromResult<IReadOnlyList<IngestionChunk>>(tokenGroups.Select(g => GroupToChunk(document, g)).ToList());
+
+            foreach (var chunk in tokenGroups.Select(g => GroupToChunk(document, g)))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                yield return chunk;
+            }
         }
 
         private List<ArraySegment<int>> CreateGroups(int[] tokens)

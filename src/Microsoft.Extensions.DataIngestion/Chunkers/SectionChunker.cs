@@ -4,6 +4,7 @@
 using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,7 +20,8 @@ public sealed class SectionChunker : IngestionChunker
     public SectionChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public override Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IngestionDocument document,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (document is null)
         {
@@ -29,10 +31,15 @@ public sealed class SectionChunker : IngestionChunker
         List<IngestionChunk> chunks = [];
         foreach (IngestionDocumentSection section in document.Sections)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             Process(document, section, chunks);
         }
 
-        return Task.FromResult<IReadOnlyList<IngestionChunk>>(chunks);
+        foreach (var chunk in chunks)
+        {
+            yield return chunk;
+        }
     }
 
     private void Process(IngestionDocument document, IngestionDocumentSection section, List<IngestionChunk> chunks, string? parentContext = null)
@@ -67,7 +74,10 @@ public sealed class SectionChunker : IngestionChunker
         {
             if (elements.Count > 0)
             {
-                _elementsChunker.Process(document, chunks, context, elements);
+                foreach (var chunk in _elementsChunker.Process(document, context, elements))
+                {
+                    chunks.Add(chunk);
+                }
                 elements.Clear();
             }
         }

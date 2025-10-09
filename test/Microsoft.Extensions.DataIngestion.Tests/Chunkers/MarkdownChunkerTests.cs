@@ -28,7 +28,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             });
 
             IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(noHeaerDoc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(noHeaerDoc).ToListAsync();
             Assert.True(chunks.Count == 1);
 
             IngestionChunk chunk = chunks.First();
@@ -53,7 +53,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             });
 
             IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(singleHeaderDoc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(singleHeaderDoc).ToListAsync();
             Assert.Single(chunks);
             IngestionChunk chunk = chunks.First();
             ChunkAssertions.ContextEquals("# Header 1", chunk);
@@ -77,7 +77,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
             IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(singleHeaderTwoParagraphDoc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(singleHeaderTwoParagraphDoc).ToListAsync();
             Assert.Single(chunks);
             IngestionChunk chunk = chunks.First();
             ChunkAssertions.ContextEquals("# Header 1", chunk);
@@ -108,7 +108,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
             IngestionChunker chunker = new MarkdownChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(multiHeaderDoc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(multiHeaderDoc).ToListAsync();
             Assert.Equal(2, chunks.Count);
 
             IngestionChunk chunk1 = chunks[0];
@@ -143,7 +143,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
             IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(twoHeaderDoc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(twoHeaderDoc).ToListAsync();
             Assert.Equal(2, chunks.Count);
 
             IngestionChunk chunk1 = chunks[0];
@@ -191,7 +191,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             });
             IngestionChunker chunker = CreateDocumentChunker();
 
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(complexDoc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(complexDoc).ToListAsync();
             Assert.Equal(4, chunks.Count);
 
             IngestionChunk chunk1 = chunks[0];
@@ -247,7 +247,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             });
             IngestionChunker chunker = new MarkdownChunker(2);
 
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(complexDoc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(complexDoc).ToListAsync();
             Assert.Equal(3, chunks.Count);
 
             IngestionChunk chunk1 = chunks[0];

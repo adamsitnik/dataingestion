@@ -28,8 +28,10 @@ internal sealed class ElementsChunker
     // 1. Create chunks that do not exceed _maxTokensPerChunk when tokenized.
     // 2. Maintain context in each chunk.
     // 3. If a single IngestionDocumentElement exceeds _maxTokensPerChunk, it should be split intelligently (e.g., paragraphs can be split into sentences, tables into rows).
-    internal void Process(IngestionDocument document, List<IngestionChunk> chunks, string context, List<IngestionDocumentElement> elements)
+    internal IEnumerable<IngestionChunk> Process(IngestionDocument document, string context, List<IngestionDocumentElement> elements)
     {
+        // Not using yield return here as we use ref structs.
+        List<IngestionChunk> chunks = [];
         // Token count != character count, but StringBuilder will grow as needed.
         _currentChunk ??= new(capacity: _maxTokensPerChunk);
 
@@ -186,6 +188,8 @@ internal sealed class ElementsChunker
             chunks.Add(new(_currentChunk.ToString(), document, totalTokenCount, context));
         }
         _currentChunk.Clear();
+
+        return chunks;
 
         void Commit()
         {

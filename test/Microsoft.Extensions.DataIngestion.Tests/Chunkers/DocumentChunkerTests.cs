@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -16,7 +17,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         public async Task ProcessAsync_ThrowsArgumentNullException_WhenDocumentIsNull()
         {
             var chunker = CreateDocumentChunker();
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await chunker.ProcessAsync(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await chunker.ProcessAsync(null!).ToListAsync());
         }
 
         [Fact]
@@ -25,7 +26,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             IngestionDocument emptyDoc = new("emptyDoc");
             IngestionChunker chunker = CreateDocumentChunker();
 
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(emptyDoc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(emptyDoc).ToListAsync();
             Assert.Empty(chunks);
         }
     }

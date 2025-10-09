@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
@@ -40,7 +41,7 @@ public sealed class ClassificationEnricher : IngestionChunkProcessor
 
     public static string MetadataKey => "classification";
 
-    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IReadOnlyList<IngestionChunk> chunks,
+    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IAsyncEnumerable<IngestionChunk> chunks,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -50,7 +51,7 @@ public sealed class ClassificationEnricher : IngestionChunkProcessor
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        foreach (IngestionChunk chunk in chunks)
+        await foreach (IngestionChunk chunk in chunks.WithCancellation(cancellationToken))
         {
             var response = await _chatClient.GetResponseAsync(
             [

@@ -54,7 +54,7 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
         _vectorStoreCollection?.Dispose();
     }
 
-    public override async Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(IAsyncEnumerable<IngestionChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -63,26 +63,23 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        if (chunks.Count == 0)
-        {
-            return;
-        }
-
-        // We assume that every chunk has the same metadata schema so we use the first chunk as representative.
-        IngestionChunk representativeChunk = chunks[0];
-
-        if (_vectorStoreCollection is null)
-        {
-            _vectorStoreCollection = _vectorStore.GetDynamicCollection(_options.CollectionName, GetVectorStoreRecordDefinition(representativeChunk));
-
-            await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        await DeletePreExistingChunksForGivenDocument(representativeChunk.Document, cancellationToken).ConfigureAwait(false);
-
-        foreach (IngestionChunk chunk in chunks)
+        bool deletedPreExisting = false;
+        await foreach (IngestionChunk chunk in chunks.WithCancellation(cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (_vectorStoreCollection is null)
+            {
+                _vectorStoreCollection = _vectorStore.GetDynamicCollection(_options.CollectionName, GetVectorStoreRecordDefinition(chunk));
+
+                await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            if (!deletedPreExisting)
+            {
+                await DeletePreExistingChunksForGivenDocument(chunk.Document, cancellationToken).ConfigureAwait(false);
+                deletedPreExisting = true;
+            }
 
             Guid key = Guid.NewGuid();
             Dictionary<string, object?> record = new()

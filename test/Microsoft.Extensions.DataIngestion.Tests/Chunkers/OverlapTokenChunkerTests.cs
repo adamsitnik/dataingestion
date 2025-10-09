@@ -37,7 +37,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
 
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Equal(3, chunks.Count);
             ChunkAssertions.ContentEquals("The quick brown fox", chunks[0]);
             ChunkAssertions.ContentEquals("fox jumps over the", chunks[1]);

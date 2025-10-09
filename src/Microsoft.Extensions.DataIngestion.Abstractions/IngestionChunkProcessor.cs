@@ -8,5 +8,5 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public abstract class IngestionChunkProcessor
 {
-    public abstract IAsyncEnumerable<IngestionChunk> ProcessAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default);
+    public abstract IAsyncEnumerable<IngestionChunk> ProcessAsync(IAsyncEnumerable<IngestionChunk> chunks, CancellationToken cancellationToken = default);
 }

@@ -6,6 +6,7 @@ using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Numerics.Tensors;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,7 +33,8 @@ public sealed class SemanticSimilarityChunker : IngestionChunker
             : thresholdPercentile ;
     }
 
-    public override async Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IngestionDocument document,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -43,14 +45,17 @@ public sealed class SemanticSimilarityChunker : IngestionChunker
 
         if (document.Sections.Count == 0)
         {
-            return [];
+            yield break;
         }
 
-        List<(IngestionDocumentElement, float)> distances = await CalculateDistances(document);
-        return MakeChunks(document, distances);
+        List<(IngestionDocumentElement, float)> distances = await CalculateDistances(document, cancellationToken);
+        foreach (var chunk in MakeChunks(document, distances))
+        {
+            yield return chunk;
+        }
     }
 
-    private async Task<List<(IngestionDocumentElement element, float distance)>> CalculateDistances(IngestionDocument documents)
+    private async Task<List<(IngestionDocumentElement element, float distance)>> CalculateDistances(IngestionDocument documents, CancellationToken cancellationToken)
     {
         List<(IngestionDocumentElement element, float distance)> elementDistance = [];
         List<string> semanticContents = [];
@@ -68,7 +73,7 @@ public sealed class SemanticSimilarityChunker : IngestionChunker
             }
         }
 
-        var embeddings = await _embeddingGenerator.GenerateAsync(semanticContents).ConfigureAwait(false);
+        var embeddings = await _embeddingGenerator.GenerateAsync(semanticContents, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         for (int i = 0; i < elementDistance.Count - 1; i++)
         {
@@ -79,9 +84,8 @@ public sealed class SemanticSimilarityChunker : IngestionChunker
         return elementDistance;
     }
 
-    private List<IngestionChunk> MakeChunks(IngestionDocument document, List<(IngestionDocumentElement element, float distance)> elementDistances)
+    private IEnumerable<IngestionChunk> MakeChunks(IngestionDocument document, List<(IngestionDocumentElement element, float distance)> elementDistances)
     {
-        List<IngestionChunk> chunks = [];
         float distanceThreshold = Percentile(elementDistances);
 
         List<IngestionDocumentElement> elementAccumulator = [];
@@ -91,17 +95,21 @@ public sealed class SemanticSimilarityChunker : IngestionChunker
             elementAccumulator.Add(element);
             if (distance > distanceThreshold)
             {
-                _elementsChunker.Process(document, chunks, context, elementAccumulator);
+                foreach (var chunk in _elementsChunker.Process(document, context, elementAccumulator))
+                {
+                    yield return chunk;
+                }
                 elementAccumulator.Clear();
             }
         }
 
         if (elementAccumulator.Count > 0)
         {
-            _elementsChunker.Process(document, chunks, context, elementAccumulator);
+            foreach (var chunk in _elementsChunker.Process(document, context, elementAccumulator))
+            {
+                yield return chunk;
+            }
         }
-
-        return chunks;
     }
 
     private float Percentile(List<(IngestionDocumentElement element, float distance)> elementDistances)
