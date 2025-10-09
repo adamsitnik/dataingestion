@@ -29,25 +29,25 @@ public sealed class DocumentIntelligenceReader : IngestionDocumentReader
         _extractImages = extractImages;
     }
 
-    public override async Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(FileInfo source, string identifier, string? mediaType = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (string.IsNullOrEmpty(filePath))
+        if (source is null)
         {
-            throw new ArgumentNullException(nameof(filePath));
+            throw new ArgumentNullException(nameof(source));
         }
         else if (string.IsNullOrEmpty(identifier))
         {
             throw new ArgumentNullException(nameof(identifier));
         }
 
-        byte[] bytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
+        byte[] bytes = await File.ReadAllBytesAsync(source.FullName, cancellationToken);
         BinaryData binaryData = BinaryData.FromBytes(bytes);
         return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), identifier, cancellationToken);
     }
 
-    public override Task<IngestionDocument> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
+    public Task<IngestionDocument> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -63,7 +63,7 @@ public sealed class DocumentIntelligenceReader : IngestionDocumentReader
         return ReadAsync(new AnalyzeDocumentOptions(_modelName, source), identifier, cancellationToken);
     }
 
-    public async Task<IngestionDocument> ReadAsync(Stream stream, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(Stream stream, string identifier, string mediaType, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

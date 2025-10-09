@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,31 +25,7 @@ public class LlamaParseReader : IngestionDocumentReader
 
     public LlamaParseReader(LlamaParseClient client) => _client = client;
 
-    public override async Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (string.IsNullOrEmpty(filePath))
-        {
-            throw new ArgumentNullException(nameof(filePath));
-        }
-        else if (string.IsNullOrEmpty(identifier))
-        {
-            throw new ArgumentNullException(nameof(identifier));
-        }
-
-        FileInfo fileInfo = new(filePath);
-        (List<RawResult> rawResults, List<ImageDocument> imageDocuments) = await LoadDataAsync(
-            _client.LoadDataRawAsync(
-                fileInfo,
-                resultType: ResultType.Json,
-                cancellationToken: cancellationToken),
-            cancellationToken);
-
-        return MapToDocument(rawResults, imageDocuments, identifier);
-    }
-
-    public override async Task<IngestionDocument> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(FileInfo source, string identifier, string? mediaType = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -63,12 +38,45 @@ public class LlamaParseReader : IngestionDocumentReader
             throw new ArgumentNullException(nameof(identifier));
         }
 
-        HttpClient httpClient = new();
-        using HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        (List<RawResult> rawResults, List<ImageDocument> imageDocuments) = await LoadDataAsync(
+            _client.LoadDataRawAsync(
+                source,
+                resultType: ResultType.Json,
+                cancellationToken: cancellationToken),
+            cancellationToken);
 
-        Memory<byte> content = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-        InMemoryFile inMemoryFile = new(content, source.Segments[^1]);
+        return MapToDocument(rawResults, imageDocuments, identifier);
+    }
+
+    public override async Task<IngestionDocument> ReadAsync(Stream stream, string identifier, string mediaType, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (stream is null)
+        {
+            throw new ArgumentNullException(nameof(stream));
+        }
+        else if (string.IsNullOrEmpty(identifier))
+        {
+            throw new ArgumentNullException(nameof(identifier));
+        }
+        else if (string.IsNullOrEmpty(mediaType))
+        {
+            throw new ArgumentNullException(nameof(mediaType));
+        }
+
+        using MemoryStream copy = stream.CanSeek
+            ? new((int)(stream.Length - stream.Position))
+            : new MemoryStream();
+
+        await stream.CopyToAsync(copy, cancellationToken);
+
+        Memory<byte> content = copy.GetBuffer().AsMemory(0, (int)copy.Length);
+        // When mimeType is not provided, the LlamaParseClient will try to guess it based on the file extension.
+        // Since we are dealing with a Stream (does not expose Media Type information),
+        // and we use the identifier as the file name (which might not have an extension at all),
+        // we require the caller to provide the mediaType in explicit way.
+        InMemoryFile inMemoryFile = new(content, fileName: identifier, mimeType: mediaType);
 
         (List<RawResult> rawResults, List<ImageDocument> imageDocuments) = await LoadDataAsync(
             _client.LoadDataRawAsync(

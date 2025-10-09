@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -40,10 +41,14 @@ public abstract class DocumentReaderConformanceTests
 
     [Theory]
     [MemberData(nameof(Sources))]
-    public virtual async Task SupportsUris(string uri)
+    public virtual async Task SupportsStreams(string uri)
     {
+        HttpClient httpClient = new();
+        using HttpResponseMessage response = await httpClient.GetAsync(new Uri(uri));
+        response.EnsureSuccessStatusCode();
+
         var reader = CreateDocumentReader();
-        var document = await reader.ReadAsync(new Uri(uri));
+        var document = await reader.ReadAsync(response.Content.ReadAsStream(), uri, mediaType: response.Content.Headers.ContentType?.MediaType!);
 
         SimpleAsserts(document, uri, uri);
     }
@@ -63,10 +68,11 @@ public abstract class DocumentReaderConformanceTests
     [MemberData(nameof(Files))]
     public virtual async Task SupportsFiles(string filePath)
     {
+        FileInfo source = new(filePath);
         var reader = CreateDocumentReader();
-        var document = await reader.ReadAsync(filePath);
+        var document = await reader.ReadAsync(source);
 
-        SimpleAsserts(document, filePath, filePath);
+        SimpleAsserts(document, filePath, expectedId: source.FullName);
     }
 
     [Fact]
@@ -75,7 +81,7 @@ public abstract class DocumentReaderConformanceTests
     protected async Task SupportsTablesCore(string filePath)
     {
         var reader = CreateDocumentReader();
-        var document = await reader.ReadAsync(filePath);
+        var document = await reader.ReadAsync(new FileInfo(filePath));
 
         IngestionDocumentTable documentTable = Assert.Single(document.EnumerateContent().OfType<IngestionDocumentTable>());
         Assert.Equal(5, documentTable.Cells.GetLength(0));
@@ -100,7 +106,7 @@ public abstract class DocumentReaderConformanceTests
     protected async Task<IngestionDocumentTable> SupportsTablesWithImagesCore(string filePath)
     {
         var reader = CreateDocumentReader(extractImages: true);
-        var document = await reader.ReadAsync(filePath);
+        var document = await reader.ReadAsync(new FileInfo(filePath));
 
         var table = Assert.Single(document.EnumerateContent().OfType<IngestionDocumentTable>());
         Assert.Equal(5, table.Cells.GetLength(0));
@@ -139,10 +145,11 @@ public abstract class DocumentReaderConformanceTests
     [MemberData(nameof(Images))]
     public virtual async Task SupportsImages(string filePath)
     {
+        FileInfo source = new(filePath);
         var reader = CreateDocumentReader(extractImages: true);
-        var document = await reader.ReadAsync(filePath);
+        var document = await reader.ReadAsync(source);
 
-        SimpleAsserts(document, filePath, filePath);
+        SimpleAsserts(document, filePath, expectedId: source.FullName);
         var elements = document.EnumerateContent().ToArray();
         Assert.Contains(elements, element => element is IngestionDocumentImage img && img.Content.HasValue && !string.IsNullOrEmpty(img.MediaType));
     }
@@ -152,20 +159,23 @@ public abstract class DocumentReaderConformanceTests
     {
         var reader = CreateDocumentReader();
 
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync(new Uri("https://www.microsoft.com/"), identifier: null!));
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync(new Uri("https://www.microsoft.com/"), identifier: string.Empty));
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync("fileName.txt", identifier: null!));
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync("fileName.txt", identifier: string.Empty));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync(new FileInfo("fileName.txt"), identifier: null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync(new FileInfo("fileName.txt"), identifier: string.Empty));
+
+        using MemoryStream stream = new();
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync(stream, identifier: null!, mediaType: "some"));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await reader.ReadAsync(stream, identifier: string.Empty, mediaType: "some"));
     }
 
     [Fact]
-    public async Task ThrowsIfCancellationRequestedUrl()
+    public async Task ThrowsIfCancellationRequestedStream()
     {
         var reader = CreateDocumentReader();
         using CancellationTokenSource cts = new();
         cts.Cancel();
 
-        await Assert.ThrowsAsync<TaskCanceledException>(async () => await reader.ReadAsync(new Uri("https://www.microsoft.com/"), cts.Token));
+        using MemoryStream stream = new();
+        await Assert.ThrowsAsync<OperationCanceledException>(async () => await reader.ReadAsync(stream, "id", "mediaType", cts.Token));
     }
 
     [Fact]
@@ -180,7 +190,7 @@ public abstract class DocumentReaderConformanceTests
 
         try
         {
-            await Assert.ThrowsAsync<TaskCanceledException>(async () => await reader.ReadAsync(filePath, cts.Token)); // File path
+            await Assert.ThrowsAsync<TaskCanceledException>(async () => await reader.ReadAsync(new FileInfo(filePath), cts.Token));
         }
         finally
         {

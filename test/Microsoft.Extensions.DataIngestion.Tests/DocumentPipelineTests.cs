@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -23,28 +24,28 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DocumentPipelineTests
 {
-    public static TheoryData<string[], IngestionDocumentReader, IngestionChunker> FilesAndReaders
+    public static TheoryData<FileInfo[], IngestionDocumentReader, IngestionChunker> FilesAndReaders
     {
         get
         {
-            string[] nonMarkdownFiles =
+            FileInfo[] nonMarkdownFiles =
             {
-                Path.Combine("TestFiles", "Sample.pdf"),
-                Path.Combine("TestFiles", "Sample.docx")
+                new(Path.Combine("TestFiles", "Sample.pdf")),
+                new(Path.Combine("TestFiles", "Sample.docx"))
             };
 
-            string[] markdownFiles =
+            FileInfo[] markdownFiles =
             {
-                Path.Combine("TestFiles", "Sample.md"),
+                new(Path.Combine("TestFiles", "Sample.md")),
             };
 
             List<IngestionDocumentReader> documentReaders = CreateReaders();
             List<IngestionChunker> documentChunkers = CreateChunkers();
 
-            TheoryData<string[], IngestionDocumentReader, IngestionChunker> theoryData = new();
+            TheoryData<FileInfo[], IngestionDocumentReader, IngestionChunker> theoryData = new();
             foreach (IngestionDocumentReader reader in documentReaders)
             {
-                string[] filePaths = reader switch
+                FileInfo[] filePaths = reader switch
                 {
                     MarkdownReader => markdownFiles,
                     _ => nonMarkdownFiles
@@ -62,7 +63,7 @@ public class DocumentPipelineTests
 
     [Theory]
     [MemberData(nameof(FilesAndReaders))]
-    public async Task CanProcessDocuments(string[] filePaths, IngestionDocumentReader reader, IngestionChunker chunker)
+    public async Task CanProcessDocuments(FileInfo[] files, IngestionDocumentReader reader, IngestionChunker chunker)
     {
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
@@ -77,12 +78,12 @@ public class DocumentPipelineTests
         using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
         using DocumentPipeline pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
-        await pipeline.ProcessAsync(filePaths);
+        await pipeline.ProcessAsync(files);
 
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
 
         Dictionary<string, object?>[] retrieved = await vectorStoreWriter.VectorStoreCollection
-            .GetAsync(record => filePaths.Contains(record["documentid"]), top: 1000)
+            .GetAsync(record => files.Any(info => info.FullName == (string)record["documentid"]!), top: 1000)
             .ToArrayAsync();
 
         Assert.NotEmpty(retrieved);
@@ -90,7 +91,7 @@ public class DocumentPipelineTests
         {
             Assert.NotEmpty((string)retrieved[i]["key"]!);
             Assert.NotEmpty((string)retrieved[i]["content"]!);
-            Assert.Contains((string)retrieved[i]["documentid"]!, filePaths);
+            Assert.Contains((string)retrieved[i]["documentid"]!, files.Select(info => info.FullName));
         }
 
         AssertActivities(activities, "ProcessFiles");
@@ -160,11 +161,7 @@ public class DocumentPipelineTests
 
         using DocumentPipeline pipeline = new(new ThrowingReader(), documentProcessors, documentChunker, [], vectorStoreWriter);
 
-        await Assert.ThrowsAsync<ExpectedException>(() => pipeline.ProcessAsync(["ReaderWillThrowAnyway.cs"]));
-        AssertErrorActivities(activities);
-        activities.Clear();
-
-        await Assert.ThrowsAsync<ExpectedException>(() => pipeline.ProcessAsync([new Uri("https://readerwillthrow.anyway/")]));
+        await Assert.ThrowsAsync<ExpectedException>(() => pipeline.ProcessAsync([new FileInfo("ReaderWillThrowAnyway.cs")]));
         AssertErrorActivities(activities);
         activities.Clear();
 
@@ -241,10 +238,10 @@ public class DocumentPipelineTests
 
     private class ThrowingReader : IngestionDocumentReader
     {
-        public override Task<IngestionDocument> ReadAsync(string filePath, string identifier, System.Threading.CancellationToken cancellationToken = default)
+        public override Task<IngestionDocument> ReadAsync(FileInfo source, string identifier, string? mediaType = null, CancellationToken cancellationToken = default)
             => throw new ExpectedException();
 
-        public override Task<IngestionDocument> ReadAsync(Uri source, string identifier, System.Threading.CancellationToken cancellationToken = default)
+        public override Task<IngestionDocument> ReadAsync(Stream source, string identifier, string mediaType, CancellationToken cancellationToken = default)
             => throw new ExpectedException();
     }
 

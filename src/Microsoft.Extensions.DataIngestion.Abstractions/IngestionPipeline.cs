@@ -12,6 +12,5 @@ namespace Microsoft.Extensions.DataIngestion;
 public interface IngestionPipeline : IDisposable
 {
     Task ProcessAsync(DirectoryInfo directory, string searchPattern = "*.*", SearchOption searchOption = SearchOption.TopDirectoryOnly, CancellationToken cancellationToken = default);
-    Task ProcessAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default);
-    Task ProcessAsync(IEnumerable<Uri> sources, CancellationToken cancellationToken = default);
+    Task ProcessAsync(IEnumerable<FileInfo> files, CancellationToken cancellationToken = default);
 }
