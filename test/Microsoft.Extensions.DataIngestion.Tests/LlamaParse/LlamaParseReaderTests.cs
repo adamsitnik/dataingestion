@@ -3,7 +3,10 @@
 
 using LlamaParse;
 using System;
+using System.IO;
 using System.Net.Http;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
@@ -25,5 +28,16 @@ public class LlamaParseReaderTests : DocumentReaderConformanceTests
         }
 
         return new LlamaParseReader(new LlamaParseClient(new HttpClient(), configuration));
+    }
+
+    [Fact]
+    public async Task MediaTypeIsRequiredForStream()
+    {
+        using MemoryStream stream = new();
+
+        var reader = CreateDocumentReader();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => reader.ReadAsync(stream, "id", mediaType: null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => reader.ReadAsync(stream, "id", mediaType: ""));
     }
 }

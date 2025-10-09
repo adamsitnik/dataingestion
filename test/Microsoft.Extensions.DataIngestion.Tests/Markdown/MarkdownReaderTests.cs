@@ -41,7 +41,7 @@ public class MarkdownReaderTests : DocumentReaderConformanceTests
 
     [Theory]
     [MemberData(nameof(Sources))]
-    public override Task SupportsUris(string uri) => base.SupportsUris(uri);
+    public override Task SupportsStreams(string uri) => base.SupportsStreams(uri);
 
     [Theory]
     [MemberData(nameof(Files))]

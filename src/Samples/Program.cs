@@ -25,7 +25,7 @@ namespace Samples
         }
 
         private static async Task<int> ProcessAsync(string readerId, bool extractImages, LogLevel logLevel,
-            FileInfo[]? files, Uri[]? links, string? searchValue, CancellationToken cancellationToken)
+            FileInfo[] files, string? searchValue, CancellationToken cancellationToken)
         {
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
@@ -45,15 +45,7 @@ namespace Samples
 
             using DocumentPipeline pipeline = new(reader, processors, chunker, chunkProcessors, writer, loggerFactory);
 
-            if (files?.Length > 0)
-            {
-                await pipeline.ProcessAsync(files.Select(info => info.FullName), cancellationToken);
-            }
-
-            if (links?.Length > 0)
-            {
-                await pipeline.ProcessAsync(links!, cancellationToken);
-            }
+            await pipeline.ProcessAsync(files, cancellationToken);
 
             if (!string.IsNullOrEmpty(searchValue))
             {
@@ -67,7 +59,7 @@ namespace Samples
         }
 
         private static async Task<int> FAQAsync(string readerId, LogLevel logLevel,
-            FileInfo[]? files, Uri[]? links, CancellationToken cancellationToken)
+            FileInfo[] files, CancellationToken cancellationToken)
         {
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
@@ -90,15 +82,7 @@ namespace Samples
 
             using DocumentPipeline pipeline = new(reader, processors, chunker, [], writer, loggerFactory);
 
-            if (files?.Length > 0)
-            {
-                await pipeline.ProcessAsync(files.Select(info => info.FullName), cancellationToken);
-            }
-
-            if (links?.Length > 0)
-            {
-                await pipeline.ProcessAsync(links!, cancellationToken);
-            }
+            await pipeline.ProcessAsync(files, cancellationToken);
 
             while (true)
             {
@@ -215,14 +199,9 @@ namespace Samples
             {
                 Description = "The files to process.",
                 AllowMultipleArgumentsPerToken = true,
+                Arity = ArgumentArity.OneOrMore
             };
             filesOption.AcceptExistingOnly();
-            Option<Uri[]> linksOptions = new("--links", "-l")
-            {
-                Description = "The URIs to process.",
-                AllowMultipleArgumentsPerToken = true,
-                CustomParser = result => result.Tokens.Select(t => new Uri(t.Value)).ToArray()
-            };
             Option<LogLevel> logLevelOption = new("--log-level")
             {
                 Description = "The minimum log level to use. Default is Information.",
@@ -238,16 +217,14 @@ namespace Samples
             {
                 readerOption,
                 filesOption,
-                linksOptions,
                 logLevelOption,
             };
             faqCommand.SetAction((parseResult, cancellationToken) =>
             {
                 string readerId = parseResult.GetRequiredValue(readerOption);
                 LogLevel logLevel = parseResult.GetValue(logLevelOption);
-                FileInfo[]? files = parseResult.GetValue(filesOption);
-                Uri[]? links = parseResult.GetValue(linksOptions);
-                return FAQAsync(readerId, logLevel, files, links, cancellationToken);
+                FileInfo[] files = parseResult.GetValue(filesOption)!;
+                return FAQAsync(readerId, logLevel, files, cancellationToken);
             });
 
             RootCommand rootCommand = new("Data Ingestion Sample")
@@ -255,7 +232,6 @@ namespace Samples
                 readerOption,
                 extractImagesOption,
                 filesOption,
-                linksOptions,
                 logLevelOption,
                 searchValue,
                 faqCommand
@@ -263,11 +239,6 @@ namespace Samples
 
             rootCommand.Validators.Add(result =>
             {
-                if (result.GetResult(filesOption) is null && result.GetResult(linksOptions) is null)
-                {
-                    result.AddError("At least one of --files or --links options must be specified.");
-                }
-
                 if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")))
                 {
                     result.AddError("AZURE_OPENAI_ENDPOINT environment variable is not set.");
@@ -285,12 +256,11 @@ namespace Samples
                 string readerId = parseResult.GetRequiredValue(readerOption);
                 LogLevel logLevel = parseResult.GetValue(logLevelOption);
 
-                FileInfo[]? files = parseResult.GetValue(filesOption);
-                Uri[]? links = parseResult.GetValue(linksOptions);
+                FileInfo[] files = parseResult.GetValue(filesOption)!;
 
                 string? search = parseResult.GetValue(searchValue);
 
-                return ProcessAsync(readerId, extractImages, logLevel, files, links, search, cancellationToken);
+                return ProcessAsync(readerId, extractImages, logLevel, files, search, cancellationToken);
             });
 
             return rootCommand;

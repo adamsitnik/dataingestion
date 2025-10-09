@@ -72,11 +72,11 @@ public sealed class DocumentPipeline : IngestionPipeline
 
             _logger?.LogInformation("Starting to process files in directory '{Directory}' with search pattern '{SearchPattern}' and search option '{SearchOption}'.", directory.FullName, searchPattern, searchOption);
 
-            IEnumerable<string> filePaths = directory.EnumerateFiles(searchPattern, searchOption).Select(fileInfo => fileInfo.FullName);
+            IEnumerable<FileInfo> files = directory.EnumerateFiles(searchPattern, searchOption);
 
             try
             {
-                await ProcessAsync(filePaths, cancellationToken, rootActivity);
+                await ProcessAsync(files, cancellationToken, rootActivity);
             }
             catch (Exception ex)
             {
@@ -89,20 +89,20 @@ public sealed class DocumentPipeline : IngestionPipeline
         }
     }
 
-    public async Task ProcessAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+    public async Task ProcessAsync(IEnumerable<FileInfo> files, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (filePaths is null)
+        if (files is null)
         {
-            throw new ArgumentNullException(nameof(filePaths));
+            throw new ArgumentNullException(nameof(files));
         }
 
         using (Activity? rootActivity = StartActivity(ProcessFiles.ActivityName, ActivityKind.Internal))
         {
             try
             {
-                await ProcessAsync(filePaths, cancellationToken, rootActivity);
+                await ProcessAsync(files, cancellationToken, rootActivity);
             }
             catch (Exception ex)
             {
@@ -115,96 +115,36 @@ public sealed class DocumentPipeline : IngestionPipeline
         }
     }
 
-    private async Task ProcessAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken, Activity? rootActivity = default)
+    private async Task ProcessAsync(IEnumerable<FileInfo> files, CancellationToken cancellationToken, Activity? rootActivity = default)
     {
-        IReadOnlyList<string> filePathList = filePaths as IReadOnlyList<string> ?? filePaths.ToList();
-        if (filePathList.Count == 0)
+        IReadOnlyList<FileInfo> filesList = files as IReadOnlyList<FileInfo> ?? files.ToList();
+        if (filesList.Count == 0)
         {
             return;
         }
 
-        rootActivity?.SetTag(ProcessFiles.FileCountTagName, filePathList.Count);
-        _logger?.LogInformation("Processing {FileCount} files.", filePathList.Count);
+        rootActivity?.SetTag(ProcessFiles.FileCountTagName, filesList.Count);
+        _logger?.LogInformation("Processing {FileCount} files.", filesList.Count);
 
-        foreach (string filePath in filePathList)
+        foreach (FileInfo fileInfo in filesList)
         {
             using (Activity? processFileActivity = StartActivity(ProcessFile.ActivityName, parent: rootActivity))
             {
-                processFileActivity?.SetTag(ProcessFile.FilePathTagName, filePath);
+                processFileActivity?.SetTag(ProcessFile.FilePathTagName, fileInfo.FullName);
                 IngestionDocument? document = null;
 
                 using (Activity? readerActivity = StartActivity(ReadDocument.ActivityName, ActivityKind.Client, processFileActivity))
                 {
                     readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(_reader));
-                    _logger?.LogInformation("Reading file '{FilePath}' using '{Reader}'.", filePath, GetShortName(_reader));
+                    _logger?.LogInformation("Reading file '{FilePath}' using '{Reader}'.", fileInfo.FullName, GetShortName(_reader));
 
-                    document = await TryAsync(() => _reader.ReadAsync(filePath, cancellationToken), readerActivity, processFileActivity);
+                    document = await TryAsync(() => _reader.ReadAsync(fileInfo, cancellationToken), readerActivity, processFileActivity);
 
                     processFileActivity?.SetTag(ProcessSource.DocumentIdTagName, document.Identifier);
                     _logger?.LogInformation("Read document '{DocumentId}'.", document.Identifier);
                 }
 
                 await TryAsync(() => ProcessAsync(document, processFileActivity, cancellationToken), processFileActivity);
-            }
-        }
-    }
-
-    public async Task ProcessAsync(IEnumerable<Uri> sources, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (sources is null)
-        {
-            throw new ArgumentNullException(nameof(sources));
-        }
-
-        IReadOnlyList<Uri> sourcesList = sources as IReadOnlyList<Uri> ?? sources.ToList();
-        if (sourcesList.Count == 0)
-        {
-            return;
-        }
-
-        using (Activity? rootActivity = StartActivity(ProcessUris.ActivityName, ActivityKind.Internal))
-        {
-            rootActivity?.SetTag(ProcessUris.UriCountTagName, sourcesList.Count);
-            _logger?.LogInformation("Processing {UriCount} URIs.", sourcesList.Count);
-
-            try
-            {
-                await ProcessAsync(sourcesList, rootActivity, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                TraceException(rootActivity, ex);
-
-                _logger?.LogError(ex, "An error occurred while processing URIs.");
-
-                throw;
-            }
-        }
-
-        async Task ProcessAsync(IReadOnlyList<Uri> sourcesList, Activity? rootActivity, CancellationToken cancellationToken)
-        {
-            foreach (Uri source in sourcesList)
-            {
-                using (Activity? processUriActivity = StartActivity(ProcessUri.ActivityName, parent: rootActivity))
-                {
-                    processUriActivity?.SetTag(ProcessUri.UriTagName, source);
-                    IngestionDocument? document = null;
-
-                    using (Activity? readerActivity = StartActivity(ReadDocument.ActivityName, ActivityKind.Client, processUriActivity))
-                    {
-                        readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(_reader));
-                        _logger?.LogInformation("Reading URI '{Uri}' using '{Reader}'.", source, GetShortName(_reader));
-
-                        document = await TryAsync(() => _reader.ReadAsync(source, cancellationToken), readerActivity, processUriActivity);
-
-                        processUriActivity?.SetTag(ProcessSource.DocumentIdTagName, document.Identifier);
-                        _logger?.LogInformation("Read document '{DocumentId}'.", document.Identifier);
-                    }
-
-                    await TryAsync(() => this.ProcessAsync(document, processUriActivity, cancellationToken), processUriActivity);
-                }
             }
         }
     }

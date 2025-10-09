@@ -9,7 +9,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,24 +17,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public sealed class MarkdownReader : IngestionDocumentReader
 {
-    public override async Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (string.IsNullOrEmpty(filePath))
-        {
-            throw new ArgumentNullException(nameof(filePath));
-        }
-        else if (string.IsNullOrEmpty(identifier))
-        {
-            throw new ArgumentNullException(nameof(identifier));
-        }
-
-        string fileContent = await File.ReadAllTextAsync(filePath, cancellationToken);
-        return Parse(fileContent, identifier);
-    }
-
-    public override async Task<IngestionDocument> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(FileInfo source, string identifier, string? mediaType = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -48,11 +30,25 @@ public sealed class MarkdownReader : IngestionDocumentReader
             throw new ArgumentNullException(nameof(identifier));
         }
 
-        HttpClient httpClient = new();
-        using HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        string fileContent = await File.ReadAllTextAsync(source.FullName, cancellationToken);
+        return Parse(fileContent, identifier);
+    }
 
-        string fileContent = await response.Content.ReadAsStringAsync(cancellationToken);
+    public override async Task<IngestionDocument> ReadAsync(Stream source, string identifier, string mediaType, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (source is null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+        else if (string.IsNullOrEmpty(identifier))
+        {
+            throw new ArgumentNullException(nameof(identifier));
+        }
+
+        using StreamReader reader = new(source, leaveOpen: true);
+        string fileContent = await reader.ReadToEndAsync(cancellationToken);
         return Parse(fileContent, identifier);
     }
 

@@ -4,7 +4,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,17 +21,21 @@ public class MarkItDownReader : IngestionDocumentReader
         _extractImages = extractImages;
     }
 
-    public override async Task<IngestionDocument> ReadAsync(string filePath, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(FileInfo source, string identifier, string? mediaType = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (string.IsNullOrEmpty(filePath))
+        if (source is null)
         {
-            throw new ArgumentNullException(nameof(filePath));
+            throw new ArgumentNullException(nameof(source));
         }
         else if (string.IsNullOrEmpty(identifier))
         {
             throw new ArgumentNullException(nameof(identifier));
+        }
+        else if (!source.Exists)
+        {
+            throw new FileNotFoundException("The specified file does not exist.", source.FullName);
         }
 
         ProcessStartInfo startInfo = new()
@@ -49,7 +52,7 @@ public class MarkItDownReader : IngestionDocumentReader
         startInfo.Environment["LC_ALL"] = "C.UTF-8";
         startInfo.Environment["LANG"] = "C.UTF-8";
 
-        startInfo.ArgumentList.Add(filePath);
+        startInfo.ArgumentList.Add(source.FullName);
 
         if (_extractImages)
         {
@@ -75,7 +78,7 @@ public class MarkItDownReader : IngestionDocumentReader
         return MarkdownReader.Parse(outputContent, identifier);
     }
 
-    public override async Task<IngestionDocument> ReadAsync(Uri source, string identifier, CancellationToken cancellationToken = default)
+    public override async Task<IngestionDocument> ReadAsync(Stream source, string identifier, string mediaType, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -88,24 +91,19 @@ public class MarkItDownReader : IngestionDocumentReader
             throw new ArgumentNullException(nameof(identifier));
         }
 
-        HttpClient httpClient = new();
-        using HttpResponseMessage response = await httpClient.GetAsync(source, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
         // Instead of creating a temporary file, we could write to the StandardInput of the process.
         // MarkItDown says it supports reading from stdin, but it does not work as expected.
         // Even the sample command line does not work with stdin: "cat example.pdf | markitdown"
         // I can be doing something wrong, but for now, let's write to a temporary file.
-
         string inputFilePath = Path.GetTempFileName();
         using (FileStream inputFile = new(inputFilePath, FileMode.Open, FileAccess.Write, FileShare.None, bufferSize: 1, FileOptions.Asynchronous))
         {
-            await response.Content.CopyToAsync(inputFile, cancellationToken);
+            await source.CopyToAsync(inputFile, cancellationToken);
         }
 
         try
         {
-            return await ReadAsync(inputFilePath, identifier, cancellationToken);
+            return await ReadAsync(new FileInfo(inputFilePath), identifier, mediaType, cancellationToken);
         }
         finally
         {

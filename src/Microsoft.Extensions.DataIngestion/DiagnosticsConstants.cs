@@ -22,12 +22,6 @@ internal static class DiagnosticsConstants
         internal const string FileCountTagName = "di.file.count";
     }
 
-    internal static class ProcessUris
-    {
-        internal const string ActivityName = "ProcessUris";
-        internal const string UriCountTagName = "di.uri.count";
-    }
-
     internal static class ProcessSource
     {
         internal const string DocumentIdTagName = "di.document.id";
@@ -38,12 +32,6 @@ internal static class DiagnosticsConstants
     {
         internal const string ActivityName = "ProcessFile";
         internal const string FilePathTagName = "di.file.path";
-    }
-
-    internal static class ProcessUri
-    {
-        internal const string ActivityName = "ProcessUri";
-        internal const string UriTagName = "di.uri.path";
     }
 
     internal static class ReadDocument
