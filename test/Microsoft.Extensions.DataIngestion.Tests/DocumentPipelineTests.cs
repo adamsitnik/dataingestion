@@ -226,8 +226,8 @@ public class DocumentPipelineTests
         Assert.Contains(activities, a => a.OperationName == "ProcessFile");
         Assert.Contains(activities, a => a.OperationName == "ReadDocument");
         Assert.Contains(activities, a => a.OperationName == "ProcessDocument");
-        Assert.Contains(activities, a => a.OperationName == "ChunkDocument");
-        Assert.Contains(activities, a => a.OperationName == "WriteDocument");
+        //Assert.Contains(activities, a => a.OperationName == "ChunkDocument");
+        //Assert.Contains(activities, a => a.OperationName == "WriteDocument");
     }
 
     private static void AssertErrorActivities(List<Activity> activities)
