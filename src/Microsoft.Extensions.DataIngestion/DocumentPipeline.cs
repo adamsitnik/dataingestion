@@ -72,11 +72,9 @@ public sealed class DocumentPipeline : IngestionPipeline
 
             _logger?.LogInformation("Starting to process files in directory '{Directory}' with search pattern '{SearchPattern}' and search option '{SearchOption}'.", directory.FullName, searchPattern, searchOption);
 
-            IEnumerable<FileInfo> files = directory.EnumerateFiles(searchPattern, searchOption);
-
             try
             {
-                await ProcessAsync(files, cancellationToken, rootActivity);
+                await ProcessAsync(directory.EnumerateFiles(searchPattern, searchOption), cancellationToken, rootActivity);
             }
             catch (Exception ex)
             {
@@ -117,16 +115,13 @@ public sealed class DocumentPipeline : IngestionPipeline
 
     private async Task ProcessAsync(IEnumerable<FileInfo> files, CancellationToken cancellationToken, Activity? rootActivity = default)
     {
-        IReadOnlyList<FileInfo> filesList = files as IReadOnlyList<FileInfo> ?? files.ToList();
-        if (filesList.Count == 0)
+        if (files is IReadOnlyList<FileInfo> materialized)
         {
-            return;
+            rootActivity?.SetTag(ProcessFiles.FileCountTagName, materialized.Count);
+            _logger?.LogInformation("Processing {FileCount} files.", materialized.Count);
         }
 
-        rootActivity?.SetTag(ProcessFiles.FileCountTagName, filesList.Count);
-        _logger?.LogInformation("Processing {FileCount} files.", filesList.Count);
-
-        foreach (FileInfo fileInfo in filesList)
+        foreach (FileInfo fileInfo in files)
         {
             using (Activity? processFileActivity = StartActivity(ProcessFile.ActivityName, parent: rootActivity))
             {
