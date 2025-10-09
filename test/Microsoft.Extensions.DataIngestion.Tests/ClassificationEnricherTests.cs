@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -17,7 +18,7 @@ public class ClassificationEnricherTests : ChatClientTestBase
         ClassificationEnricher sut = new(ChatClient, ["AI", "Animals", "Sports"], fallbackClass: "UFO");
         List<IngestionChunk> chunks = CreateChunks();
 
-        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks);
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
 
         Assert.Same(chunks, got);
         Assert.Equal(3, chunks.Count);

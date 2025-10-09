@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -22,7 +23,7 @@ public class SummaryEnricherTests : ChatClientTestBase
             new("I hate bugs. They are so frustrating and time-consuming.", document)
         };
 
-        await sut.ProcessAsync(chunks);
+        chunks = await sut.ProcessAsync(chunks).ToListAsync();
 
         Assert.Equal(2, chunks.Count);
         Assert.All(chunks, chunk => Assert.NotEmpty((string)chunk.Metadata[SummaryEnricher.MetadataKey]!));

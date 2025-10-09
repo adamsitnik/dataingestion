@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -17,7 +18,7 @@ public class KeywordEnricherTests : ChatClientTestBase
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: null, confidenceThreshold: 0.5);
         List<IngestionChunk> chunks = CreateChunks();
 
-        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks);
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
 
         Assert.Same(chunks, got);
         IngestionChunk chunk = Assert.Single(chunks);
@@ -31,7 +32,7 @@ public class KeywordEnricherTests : ChatClientTestBase
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: ["AI", ".NET", "Animals", "Rabbits"], confidenceThreshold: 0.6);
         List<IngestionChunk> chunks = CreateChunks();
 
-        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks);
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
 
         Assert.Same(chunks, got);
         IngestionChunk chunk = Assert.Single(chunks);

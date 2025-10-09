@@ -180,7 +180,7 @@ public sealed class DocumentPipeline : IngestionPipeline
                 processorActivity?.SetTag(ProcessChunk.ProcessorTagName, GetShortName(processor));
                 _logger?.LogInformation("Processing {ChunkCount} chunks for document '{DocumentId}' with '{Processor}'.", chunks.Count, document.Identifier, GetShortName(processor));
 
-                chunks = await TryAsync(() => processor.ProcessAsync(chunks, cancellationToken), processorActivity);
+                chunks = await TryAsync(() => ProcessChunksAsync(chunks, processor, cancellationToken), processorActivity);
 
                 // A ChunkProcessor might change the number of chunks, so update the chunk count tag.
                 parentActivity?.SetTag(ProcessSource.ChunkCountTagName, chunks.Count);
@@ -197,6 +197,17 @@ public sealed class DocumentPipeline : IngestionPipeline
 
             _logger?.LogInformation("Persisted chunks for document '{DocumentId}'.", document.Identifier);
         }
+    }
+
+    private static async Task<IReadOnlyList<IngestionChunk>> ProcessChunksAsync(IReadOnlyList<IngestionChunk> chunks, IngestionChunkProcessor processor, CancellationToken cancellationToken)
+    {
+        List<IngestionChunk> processed = new(chunks.Count);
+        await foreach (IngestionChunk chunk in processor.ProcessAsync(chunks, cancellationToken).WithCancellation(cancellationToken))
+        {
+            processed.Add(chunk);
+        }
+
+        return processed;
     }
 
     private string GetShortName(object any)

@@ -4,8 +4,8 @@
 using Microsoft.Extensions.AI;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
@@ -35,7 +35,8 @@ public sealed class SentimentEnricher : IngestionChunkProcessor
 
     public static string MetadataKey => "sentiment";
 
-    public override async Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IReadOnlyList<IngestionChunk> chunks,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -56,8 +57,8 @@ public sealed class SentimentEnricher : IngestionChunkProcessor
             ], _chatOptions, cancellationToken: cancellationToken);
 
             chunk.Metadata[MetadataKey] = response.Text;
-        }
 
-        return chunks;
+            yield return chunk;
+        }
     }
 }

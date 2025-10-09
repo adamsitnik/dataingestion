@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -24,7 +25,7 @@ public class SentimentEnricherTests : ChatClientTestBase
             new("I hate you. I am sorry, I actually don't. I am not sure myself what my feelings are.", document)
         };
 
-        await sut.ProcessAsync(chunks);
+        chunks = await sut.ProcessAsync(chunks).ToListAsync();
 
         Assert.Equal(4, chunks.Count);
 
