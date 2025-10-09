@@ -19,7 +19,7 @@ public sealed class SectionChunker : IngestionChunker
     public SectionChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public override Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         if (document is null)
         {
@@ -32,7 +32,7 @@ public sealed class SectionChunker : IngestionChunker
             Process(document, section, chunks);
         }
 
-        return Task.FromResult(chunks);
+        return Task.FromResult<IReadOnlyList<IngestionChunk>>(chunks);
     }
 
     private void Process(IngestionDocument document, IngestionDocumentSection section, List<IngestionChunk> chunks, string? parentContext = null)

@@ -25,7 +25,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             IngestionDocument emptyDoc = new("emptyDoc");
             IngestionChunker chunker = CreateDocumentChunker();
 
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(emptyDoc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(emptyDoc);
             Assert.Empty(chunks);
         }
     }

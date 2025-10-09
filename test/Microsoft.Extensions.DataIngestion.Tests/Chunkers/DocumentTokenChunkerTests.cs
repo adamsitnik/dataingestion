@@ -24,7 +24,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             });
 
             IngestionChunker chunker = CreateDocumentChunker();
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Single(chunks);
             IngestionChunk chunk = chunks.First();
             ChunkAssertions.ContentEquals(text, chunk);

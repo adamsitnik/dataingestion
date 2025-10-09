@@ -17,7 +17,7 @@ public class ClassificationEnricherTests : ChatClientTestBase
         ClassificationEnricher sut = new(ChatClient, ["AI", "Animals", "Sports"], fallbackClass: "UFO");
         List<IngestionChunk> chunks = CreateChunks();
 
-        List<IngestionChunk> got = await sut.ProcessAsync(chunks);
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks);
 
         Assert.Same(chunks, got);
         Assert.Equal(3, chunks.Count);

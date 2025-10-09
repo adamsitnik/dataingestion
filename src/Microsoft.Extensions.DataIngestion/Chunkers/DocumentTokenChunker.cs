@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _chunkOverlap = options.OverlapTokens;
         }
 
-        public override Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+        public override Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
         {
             if (document is null)
             {
@@ -41,7 +41,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             string documentMarkdown = GetDocumentMarkdown(document);
             int[] tokens = _tokenizer.EncodeToIds(documentMarkdown).ToArray();
             List<ArraySegment<int>> tokenGroups = CreateGroups(tokens);
-            return Task.FromResult(tokenGroups.Select(g => GroupToChunk(document, g)).ToList());
+            return Task.FromResult<IReadOnlyList<IngestionChunk>>(tokenGroups.Select(g => GroupToChunk(document, g)).ToList());
         }
 
         private List<ArraySegment<int>> CreateGroups(int[] tokens)

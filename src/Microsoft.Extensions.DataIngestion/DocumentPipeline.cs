@@ -161,7 +161,7 @@ public sealed class DocumentPipeline : IngestionPipeline
             }
         }
 
-        List<IngestionChunk>? chunks = null;
+        IReadOnlyList<IngestionChunk>? chunks = null;
         using (Activity? chunkerActivity = StartActivity(ChunkDocument.ActivityName, parent: parentActivity))
         {
             chunkerActivity?.SetTag(ChunkDocument.ChunkerTagName, GetShortName(_chunker));

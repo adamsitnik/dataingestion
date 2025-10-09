@@ -39,7 +39,7 @@ public sealed class KeywordEnricher : IngestionChunkProcessor
 
     public static string MetadataKey => "keywords";
 
-    public override async Task<List<IngestionChunk>> ProcessAsync(List<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

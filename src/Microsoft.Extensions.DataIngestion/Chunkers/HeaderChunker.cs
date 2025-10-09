@@ -22,7 +22,7 @@ public sealed class HeaderChunker : IngestionChunker
     public HeaderChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public override Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+    public override Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         List<IngestionChunk> chunks = new();
         List<IngestionDocumentElement> elements = new(20);
@@ -47,7 +47,7 @@ public sealed class HeaderChunker : IngestionChunker
         // take care of any remaining paragraphs
         SplitIntoChunks(document, chunks, headers, elements);
 
-        return Task.FromResult(chunks);
+        return Task.FromResult<IReadOnlyList<IngestionChunk>>(chunks);
     }
 
     private void SplitIntoChunks(IngestionDocument document, List<IngestionChunk> chunks, string?[] headers, List<IngestionDocumentElement> elements)

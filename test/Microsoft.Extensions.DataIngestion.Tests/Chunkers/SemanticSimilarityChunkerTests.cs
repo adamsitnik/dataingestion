@@ -46,7 +46,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
             IngestionChunker chunker = CreateDocumentChunker();
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Single(chunks);
             Assert.Equal(text, chunks[0].Content);
         }
@@ -69,7 +69,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             });
 
             IngestionChunker chunker = CreateDocumentChunker();
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
             Assert.Equal(2, chunks.Count);
             Assert.Equal(text1 + Environment.NewLine + text2, chunks[0].Content);
             Assert.Equal(text3, chunks[1].Content);
@@ -123,7 +123,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             });
 
             IngestionChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 200, overlapTokens: 0);
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
             
             Assert.Equal(3, chunks.Count);
             Assert.All(chunks, chunk => Assert.Same(doc, chunk.Document));

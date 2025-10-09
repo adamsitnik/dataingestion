@@ -9,5 +9,5 @@ namespace Microsoft.Extensions.DataIngestion;
 
 public abstract class IngestionChunker
 {
-    public abstract Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default);
+    public abstract Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default);
 }

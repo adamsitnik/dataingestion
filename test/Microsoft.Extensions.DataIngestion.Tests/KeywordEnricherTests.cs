@@ -17,7 +17,7 @@ public class KeywordEnricherTests : ChatClientTestBase
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: null, confidenceThreshold: 0.5);
         List<IngestionChunk> chunks = CreateChunks();
 
-        List<IngestionChunk> got = await sut.ProcessAsync(chunks);
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks);
 
         Assert.Same(chunks, got);
         IngestionChunk chunk = Assert.Single(chunks);
@@ -31,7 +31,7 @@ public class KeywordEnricherTests : ChatClientTestBase
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: ["AI", ".NET", "Animals", "Rabbits"], confidenceThreshold: 0.6);
         List<IngestionChunk> chunks = CreateChunks();
 
-        List<IngestionChunk> got = await sut.ProcessAsync(chunks);
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks);
 
         Assert.Same(chunks, got);
         IngestionChunk chunk = Assert.Single(chunks);

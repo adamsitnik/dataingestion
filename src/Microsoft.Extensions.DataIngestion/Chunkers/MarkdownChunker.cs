@@ -27,14 +27,14 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _stripHeaders = stripHeaders;
         }
 
-        public override Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+        public override Task<IReadOnlyList<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
         {
             if (document is null) throw new ArgumentNullException(nameof(document));
 
             IEnumerable<IngestionDocumentElement> elements = document.EnumerateContent().Reverse();
             var sectionStack = new Stack<IngestionDocumentElement>(elements);
 
-            return Task.FromResult(ParseLevel(document, sectionStack, 1));
+            return Task.FromResult<IReadOnlyList<IngestionChunk>>(ParseLevel(document, sectionStack, 1));
         }
 
         private List<IngestionChunk> ParseLevel(IngestionDocument document, Stack<IngestionDocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)
