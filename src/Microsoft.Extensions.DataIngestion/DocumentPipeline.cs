@@ -117,28 +117,28 @@ public sealed class DocumentPipeline : IngestionPipeline
 
     private async Task ProcessAsync(IEnumerable<FileInfo> files, CancellationToken cancellationToken, Activity? rootActivity = default)
     {
-        IReadOnlyList<FileInfo> filesLisit = files as IReadOnlyList<FileInfo> ?? files.ToList();
-        if (filesLisit.Count == 0)
+        IReadOnlyList<FileInfo> filesList = files as IReadOnlyList<FileInfo> ?? files.ToList();
+        if (filesList.Count == 0)
         {
             return;
         }
 
-        rootActivity?.SetTag(ProcessFiles.FileCountTagName, filesLisit.Count);
-        _logger?.LogInformation("Processing {FileCount} files.", filesLisit.Count);
+        rootActivity?.SetTag(ProcessFiles.FileCountTagName, filesList.Count);
+        _logger?.LogInformation("Processing {FileCount} files.", filesList.Count);
 
-        foreach (FileInfo filePath in filesLisit)
+        foreach (FileInfo fileInfo in filesList)
         {
             using (Activity? processFileActivity = StartActivity(ProcessFile.ActivityName, parent: rootActivity))
             {
-                processFileActivity?.SetTag(ProcessFile.FilePathTagName, filePath);
+                processFileActivity?.SetTag(ProcessFile.FilePathTagName, fileInfo.FullName);
                 IngestionDocument? document = null;
 
                 using (Activity? readerActivity = StartActivity(ReadDocument.ActivityName, ActivityKind.Client, processFileActivity))
                 {
                     readerActivity?.SetTag(ReadDocument.ReaderTagName, GetShortName(_reader));
-                    _logger?.LogInformation("Reading file '{FilePath}' using '{Reader}'.", filePath, GetShortName(_reader));
+                    _logger?.LogInformation("Reading file '{FilePath}' using '{Reader}'.", fileInfo.FullName, GetShortName(_reader));
 
-                    document = await TryAsync(() => _reader.ReadAsync(filePath, cancellationToken), readerActivity, processFileActivity);
+                    document = await TryAsync(() => _reader.ReadAsync(fileInfo, cancellationToken), readerActivity, processFileActivity);
 
                     processFileActivity?.SetTag(ProcessSource.DocumentIdTagName, document.Identifier);
                     _logger?.LogInformation("Read document '{DocumentId}'.", document.Identifier);
