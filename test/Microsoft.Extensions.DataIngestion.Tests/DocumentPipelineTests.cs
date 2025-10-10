@@ -156,7 +156,7 @@ public class DocumentPipelineTests
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using VectorStoreWriter<DataContent> vectorStoreWriter = new(testVectorStore, dimensionCount: TestStringEmbeddingGenerator.DimensionCount);
+        using VectorStoreWriter<DataContent> vectorStoreWriter = new(testVectorStore, dimensionCount: TestDataContentEmbeddingGenerator.DimensionCount);
         using DocumentPipeline<DataContent> pipeline = new(reader, [], imageChunker, [], vectorStoreWriter);
 
         Assert.False(embeddingGenerator.WasCalled);
