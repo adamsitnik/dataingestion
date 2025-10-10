@@ -66,8 +66,6 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
         bool deletedPreExisting = false;
         await foreach (IngestionChunk chunk in chunks.WithCancellation(cancellationToken))
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             if (_vectorStoreCollection is null)
             {
                 _vectorStoreCollection = _vectorStore.GetDynamicCollection(_options.CollectionName, GetVectorStoreRecordDefinition(chunk));
