@@ -8,11 +8,11 @@ using System.Diagnostics;
 namespace Microsoft.Extensions.DataIngestion;
 
 [DebuggerDisplay("{Content}")]
-public sealed class IngestionChunk
+public sealed class IngestionChunk<T>
 {
     private Dictionary<string, object>? _metadata;
 
-    public string Content { get; }
+    public T Content { get; }
 
     public IngestionDocument Document { get; }
 
@@ -24,12 +24,23 @@ public sealed class IngestionChunk
 
     public Dictionary<string, object> Metadata => _metadata ??= new();
 
-    public IngestionChunk(string content, IngestionDocument document, int? tokenCount = null, string? context = null)
+    public IngestionChunk(T content, IngestionDocument document, int? tokenCount = null, string? context = null)
     {
-        if (string.IsNullOrWhiteSpace(content))
-            throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
+        if (content is null)
+        {
+            throw new ArgumentNullException(nameof(content));
+        }
+        if (typeof(T) == typeof(string))
+        {
+            if (string.IsNullOrWhiteSpace((string)(object)content))
+            {
+                throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
+            }
+        }
         if (tokenCount.HasValue && tokenCount.Value <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(tokenCount), "Token count must be greater than zero.");
+        }
 
         Content = content;
         Document = document ?? throw new ArgumentNullException(nameof(document));

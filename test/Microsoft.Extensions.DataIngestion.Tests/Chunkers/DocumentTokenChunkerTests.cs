@@ -23,10 +23,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
 
-            IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
-            Assert.Single(chunks);
-            IngestionChunk chunk = chunks.First();
+            IngestionChunker<string> chunker = CreateDocumentChunker();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+
+            IngestionChunk<string> chunk = Assert.Single(chunks);
             ChunkAssertions.ContentEquals(text, chunk);
         }
     }

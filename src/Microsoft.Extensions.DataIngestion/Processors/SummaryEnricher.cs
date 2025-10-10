@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <remarks>
 /// It adds "summary" text metadata to each chunk.
 /// </remarks>
-public sealed class SummaryEnricher : IngestionChunkProcessor
+public sealed class SummaryEnricher : IngestionChunkProcessor<string>
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -31,7 +31,7 @@ public sealed class SummaryEnricher : IngestionChunkProcessor
 
     public static string MetadataKey => "summary";
 
-    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IAsyncEnumerable<IngestionChunk> chunks,
+    public override async IAsyncEnumerable<IngestionChunk<string>> ProcessAsync(IAsyncEnumerable<IngestionChunk<string>> chunks,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -41,7 +41,7 @@ public sealed class SummaryEnricher : IngestionChunkProcessor
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        await foreach (IngestionChunk chunk in chunks.WithCancellation(cancellationToken))
+        await foreach (var chunk in chunks.WithCancellation(cancellationToken))
         {
             var response = await _chatClient.GetResponseAsync(
             [

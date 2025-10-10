@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DataIngestion;
 /// <remarks>
 /// It adds "sentiment" metadata to each chunk. It can be Positive, Negative, Neutral or Unknown when confidence score is below the threshold.
 /// </remarks>
-public sealed class SentimentEnricher : IngestionChunkProcessor
+public sealed class SentimentEnricher : IngestionChunkProcessor<string>
 {
     private readonly IChatClient _chatClient;
     private readonly ChatOptions? _chatOptions;
@@ -36,7 +36,7 @@ public sealed class SentimentEnricher : IngestionChunkProcessor
 
     public static string MetadataKey => "sentiment";
 
-    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IAsyncEnumerable<IngestionChunk> chunks,
+    public override async IAsyncEnumerable<IngestionChunk<string>> ProcessAsync(IAsyncEnumerable<IngestionChunk<string>> chunks,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -46,7 +46,7 @@ public sealed class SentimentEnricher : IngestionChunkProcessor
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        await foreach (IngestionChunk chunk in chunks.WithCancellation(cancellationToken))
+        await foreach (var chunk in chunks.WithCancellation(cancellationToken))
         {
             var response = await _chatClient.GetResponseAsync(
             [

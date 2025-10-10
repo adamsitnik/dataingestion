@@ -13,22 +13,22 @@ using static Microsoft.Extensions.DataIngestion.DiagnosticsConstants;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public sealed class DocumentPipeline : IngestionPipeline
+public sealed class DocumentPipeline<T> : IngestionPipeline
 {
     private readonly ActivitySource _activitySource;
     private readonly ILogger? _logger;
     private readonly IngestionDocumentReader _reader;
     private readonly IReadOnlyList<IngestionDocumentProcessor> _processors;
-    private readonly IngestionChunker _chunker;
-    private readonly IReadOnlyList<IngestionChunkProcessor> _chunkProcessors;
-    private readonly IngestionChunkWriter _writer;
+    private readonly IngestionChunker<T> _chunker;
+    private readonly IReadOnlyList<IngestionChunkProcessor<T>> _chunkProcessors;
+    private readonly IngestionChunkWriter<T> _writer;
 
     public DocumentPipeline(
         IngestionDocumentReader reader,
         IReadOnlyList<IngestionDocumentProcessor> documentProcessors,
-        IngestionChunker chunker,
-        IReadOnlyList<IngestionChunkProcessor> chunkProcessors,
-        IngestionChunkWriter writer,
+        IngestionChunker<T> chunker,
+        IReadOnlyList<IngestionChunkProcessor<T>> chunkProcessors,
+        IngestionChunkWriter<T> writer,
         ILoggerFactory? loggerFactory = default,
         string? sourceName = default)
     {
@@ -37,7 +37,7 @@ public sealed class DocumentPipeline : IngestionPipeline
         _chunker = chunker ?? throw new ArgumentNullException(nameof(chunker));
         _chunkProcessors = chunkProcessors ?? throw new ArgumentNullException(nameof(chunkProcessors));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
-        _logger = loggerFactory?.CreateLogger<DocumentPipeline>();
+        _logger = loggerFactory?.CreateLogger<DocumentPipeline<T>>();
         _activitySource = new ActivitySource(sourceName ?? ActivitySourceName);
     }
 
@@ -161,8 +161,8 @@ public sealed class DocumentPipeline : IngestionPipeline
             }
         }
 
-        IAsyncEnumerable<IngestionChunk> chunks = _chunker.ProcessAsync(document, cancellationToken);
-        foreach (IngestionChunkProcessor processor in _chunkProcessors)
+        IAsyncEnumerable<IngestionChunk<T>> chunks = _chunker.ProcessAsync(document, cancellationToken);
+        foreach (var processor in _chunkProcessors)
         {
             chunks = processor.ProcessAsync(chunks, cancellationToken);
         }
@@ -193,7 +193,7 @@ public sealed class DocumentPipeline : IngestionPipeline
         return _activitySource.StartActivity(name, activityKind, parent.Context);
     }
 
-    private static async Task<T> TryAsync<T>(Func<Task<T>> func, Activity? activity, Activity? parentActivity = default)
+    private static async Task<TResult> TryAsync<TResult>(Func<Task<TResult>> func, Activity? activity, Activity? parentActivity = default)
     {
         try
         {

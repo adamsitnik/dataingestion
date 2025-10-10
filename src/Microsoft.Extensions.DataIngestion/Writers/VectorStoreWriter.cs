@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public sealed class VectorStoreWriter : IngestionChunkWriter
+public sealed class VectorStoreWriter<T> : IngestionChunkWriter<T>
 {
     // The names are lowercase with no special characters to ensure compatibility with various vector stores.
     private const string KeyName = "key";
@@ -54,7 +54,7 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
         _vectorStoreCollection?.Dispose();
     }
 
-    public override async Task WriteAsync(IAsyncEnumerable<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(IAsyncEnumerable<IngestionChunk<T>> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -64,7 +64,7 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
         }
 
         List<object>? preExistingKeys = null;
-        await foreach (IngestionChunk chunk in chunks.WithCancellation(cancellationToken))
+        await foreach (IngestionChunk<T> chunk in chunks.WithCancellation(cancellationToken))
         {
             if (_vectorStoreCollection is null)
             {
@@ -108,20 +108,20 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
         }
     }
 
-    private VectorStoreCollectionDefinition GetVectorStoreRecordDefinition(IngestionChunk representativeChunk)
+    private VectorStoreCollectionDefinition GetVectorStoreRecordDefinition(IngestionChunk<T> representativeChunk)
     {
         VectorStoreCollectionDefinition definition = new()
         {
             Properties =
             {
                 new VectorStoreKeyProperty(KeyName, _keysAreStrings ? typeof(string) : typeof(Guid)),
-                // By using string as the type here we allow the vector store
-                // to handle the conversion from string to the actual vector type it supports.
-                new VectorStoreVectorProperty(EmbeddingName, typeof(string), _dimensionCount)
+                // By using T as the type here we allow the vector store
+                // to handle the conversion from T to the actual vector type it supports.
+                new VectorStoreVectorProperty(EmbeddingName, typeof(T), _dimensionCount)
                 {
                     DistanceFunction = _options.DistanceFunction
                 },
-                new VectorStoreDataProperty(ContentName, typeof(string)),
+                new VectorStoreDataProperty(ContentName, typeof(T)),
                 new VectorStoreDataProperty(ContextName, typeof(string)),
                 new VectorStoreDataProperty(DocumentIdName, typeof(string))
                 {

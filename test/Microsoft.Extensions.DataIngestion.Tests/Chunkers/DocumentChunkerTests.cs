@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public abstract class DocumentChunkerTests
     {
-        protected abstract IngestionChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500);
+        protected abstract IngestionChunker<string> CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500);
 
         [Fact]
         public async Task ProcessAsync_ThrowsArgumentNullException_WhenDocumentIsNull()
@@ -24,9 +24,9 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         public async Task EmptyDocument()
         {
             IngestionDocument emptyDoc = new("emptyDoc");
-            IngestionChunker chunker = CreateDocumentChunker();
+            IngestionChunker<string> chunker = CreateDocumentChunker();
 
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(emptyDoc).ToListAsync();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(emptyDoc).ToListAsync();
             Assert.Empty(chunks);
         }
     }

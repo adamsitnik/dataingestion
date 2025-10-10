@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public class SectionChunkerTests : DocumentChunkerTests
     {
-        protected override IngestionChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
+        protected override IngestionChunker<string> CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
             return new SectionChunker(tokenizer, new() { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = overlapTokens });
@@ -29,8 +29,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     new IngestionDocumentParagraph("This is another paragraph.")
                 }
             });
-            IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IngestionChunker<string> chunker = CreateDocumentChunker();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Single(chunks);
             string expectedResult = "This is a paragraph.\nThis is another paragraph.";
             Assert.Equal(expectedResult, chunks[0].Content, ignoreLineEndingDifferences: true);
@@ -62,8 +62,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             };
 
-            IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IngestionChunker<string> chunker = CreateDocumentChunker();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
 
             Assert.Equal(2, chunks.Count);
             string expectedResult1 = "This is a paragraph.\nThis is another paragraph.";
@@ -80,8 +80,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             {
                 Elements = { }
             });
-            IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IngestionChunker<string> chunker = CreateDocumentChunker();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Empty(chunks);
         }
 
@@ -123,8 +123,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             };
 
-            IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IngestionChunker<string> chunker = CreateDocumentChunker();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
 
             Assert.Equal(4, chunks.Count);
             Assert.Equal("# Section title", chunks[0].Context);
@@ -151,8 +151,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     new IngestionDocumentParagraph(text)
                 }
             });
-            IngestionChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 512);
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IngestionChunker<string> chunker = CreateDocumentChunker(maxTokensPerChunk: 512);
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Equal(2, chunks.Count);
             Assert.True(chunks[0].Content.Split(' ').Length <= 512);
             Assert.True(chunks[1].Content.Split(' ').Length <= 512);
@@ -172,9 +172,9 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     new IngestionDocumentParagraph("This is another paragraph in section 1.")
                 }
             });
-            IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
-            IngestionChunk chunk = Assert.Single(chunks);
+            IngestionChunker<string> chunker = CreateDocumentChunker();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IngestionChunk<string> chunk = Assert.Single(chunks);
             string expectedResult = "Section 1\nThis is a paragraph in section 1.\nThis is another paragraph in section 1.";
             Assert.Equal(expectedResult, chunk.Content, ignoreLineEndingDifferences: true);
             Assert.Equal("Section 1", chunk.Context);

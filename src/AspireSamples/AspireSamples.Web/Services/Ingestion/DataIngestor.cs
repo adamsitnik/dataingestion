@@ -17,7 +17,7 @@ public class DataIngestor(
 {
     public async Task IngestDataAsync(DirectoryInfo directory, string searchPattern)
     {
-        using VectorStoreWriter writer = new(vectorStore, dimensionCount: IngestedChunk.VectorDimensions, new()
+        using VectorStoreWriter<string> writer = new(vectorStore, dimensionCount: IngestedChunk.VectorDimensions, new()
         {
             CollectionName = IngestedChunk.CollectionName,
             DistanceFunction = IngestedChunk.VectorDistanceFunction,
@@ -25,7 +25,7 @@ public class DataIngestor(
             IncrementalIngestion = true
         });
 
-        using DocumentPipeline pipeline = new(
+        using DocumentPipeline<string> pipeline = new(
             new MarkItDownReader(), // requires MarkItDown to be installed and in PATH
             [RemovalProcessor.Footers, RemovalProcessor.EmptySections],
             new SemanticSimilarityChunker(embeddingGenerator, TiktokenTokenizer.CreateForModel("gpt-4o")),

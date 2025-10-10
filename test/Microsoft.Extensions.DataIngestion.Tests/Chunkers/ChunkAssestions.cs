@@ -7,12 +7,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public static class ChunkAssertions
     {
-        public static void ContentEquals(string expected, IngestionChunk chunk)
+        public static void ContentEquals(string expected, IngestionChunk<string> chunk)
         {
             Assert.Equal(expected, chunk.Content.Trim(), ignoreLineEndingDifferences: true);
         }
 
-        public static void ContextEquals(string expected, IngestionChunk chunk)
+        public static void ContextEquals(string expected, IngestionChunk<string> chunk)
         {
             Assert.Equal(expected, chunk.Context?.Trim() ?? string.Empty);
         }

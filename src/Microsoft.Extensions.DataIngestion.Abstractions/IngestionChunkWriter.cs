@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public abstract class IngestionChunkWriter : IDisposable
+public abstract class IngestionChunkWriter<T> : IDisposable
 {
-    public abstract Task WriteAsync(IAsyncEnumerable<IngestionChunk> chunks, CancellationToken cancellationToken = default);
+    public abstract Task WriteAsync(IAsyncEnumerable<IngestionChunk<T>> chunks, CancellationToken cancellationToken = default);
 
     public void Dispose()
     {

@@ -15,14 +15,14 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class VectorStoreWriterTests
 {
-    public static TheoryData<VectorStore, TestEmbeddingGenerator> VectorStoreTestData
+    public static TheoryData<VectorStore, TestStringEmbeddingGenerator> VectorStoreTestData
     {
         get
         {
-            TestEmbeddingGenerator first = new TestEmbeddingGenerator();
-            TestEmbeddingGenerator second = new TestEmbeddingGenerator();
+            TestStringEmbeddingGenerator first = new();
+            TestStringEmbeddingGenerator second = new();
 
-            return new TheoryData<VectorStore, TestEmbeddingGenerator>
+            return new TheoryData<VectorStore, TestStringEmbeddingGenerator>
             {
                 { new SqliteVectorStore($"Data Source={Path.GetTempFileName()};Pooling=false",
                     new() { EmbeddingGenerator = first }), first },
@@ -34,18 +34,18 @@ public class VectorStoreWriterTests
 
     [Theory]
     [MemberData(nameof(VectorStoreTestData))]
-    public async Task CanGenerateDynamicSchema(VectorStore vectorStore, TestEmbeddingGenerator testEmbeddingGenerator)
+    public async Task CanGenerateDynamicSchema(VectorStore vectorStore, TestStringEmbeddingGenerator testEmbeddingGenerator)
     {
         string documentId = Guid.NewGuid().ToString();
 
-        using VectorStoreWriter writer = new(
+        using VectorStoreWriter<string> writer = new(
             vectorStore,
-            dimensionCount: TestEmbeddingGenerator.DimensionCount);
+            dimensionCount: TestStringEmbeddingGenerator.DimensionCount);
 
         IngestionDocument document = new(documentId);
-        List<IngestionChunk> chunks = new()
-        {
-            new IngestionChunk("some content", document)
+        List<IngestionChunk<string>> chunks =
+        [
+            new("some content", document)
             {
                 Metadata =
                 {
@@ -55,7 +55,7 @@ public class VectorStoreWriterTests
                     { "key4", 123.45 },
                 }
             }
-        };
+        ];
 
         Assert.False(testEmbeddingGenerator.WasCalled);
         await writer.WriteAsync(chunks.ToAsyncEnumerable());
@@ -78,30 +78,30 @@ public class VectorStoreWriterTests
 
     [Theory]
     [MemberData(nameof(VectorStoreTestData))]
-    public async Task DoesSupportIncrementalIngestion(VectorStore vectorStore, TestEmbeddingGenerator _)
+    public async Task DoesSupportIncrementalIngestion(VectorStore vectorStore, TestStringEmbeddingGenerator _)
     {
         string documentId = Guid.NewGuid().ToString();
 
-        using VectorStoreWriter writer = new(
+        using VectorStoreWriter<string> writer = new(
             vectorStore,
-            dimensionCount: TestEmbeddingGenerator.DimensionCount,
+            dimensionCount: TestStringEmbeddingGenerator.DimensionCount,
             options: new()
             {
                 IncrementalIngestion = true,
             });
 
         IngestionDocument document = new(documentId);
-        List<IngestionChunk> chunks = new()
-        {
-            new IngestionChunk("first chunk", document)
+        List<IngestionChunk<string>> chunks =
+        [
+            new("first chunk", document)
             {
                 Metadata =
                 {
                     { "key1", "value1" }
                 }
             },
-            new IngestionChunk("second chunk", document)
-        };
+            new("second chunk", document)
+        ];
 
         await writer.WriteAsync(chunks.ToAsyncEnumerable());
 
@@ -111,16 +111,16 @@ public class VectorStoreWriterTests
         Assert.Equal(chunks.Count, recordCount);
 
         // Now we will do an incremental ingestion that updates the chunk(s).
-        List<IngestionChunk> updatedChunks = new()
-        {
-            new IngestionChunk("different content", document)
+        List<IngestionChunk<string>> updatedChunks =
+        [
+            new("different content", document)
             {
                 Metadata =
                 {
                     { "key1", "value2" },
                 }
             }
-        };
+        ];
 
         await writer.WriteAsync(updatedChunks.ToAsyncEnumerable());
 
