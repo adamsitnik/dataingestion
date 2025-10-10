@@ -115,13 +115,13 @@ public sealed class VectorStoreWriter<T> : IngestionChunkWriter<T>
             Properties =
             {
                 new VectorStoreKeyProperty(KeyName, _keysAreStrings ? typeof(string) : typeof(Guid)),
-                // By using string as the type here we allow the vector store
-                // to handle the conversion from string to the actual vector type it supports.
-                new VectorStoreVectorProperty(EmbeddingName, typeof(string), _dimensionCount)
+                // By using T as the type here we allow the vector store
+                // to handle the conversion from T to the actual vector type it supports.
+                new VectorStoreVectorProperty(EmbeddingName, typeof(T), _dimensionCount)
                 {
                     DistanceFunction = _options.DistanceFunction
                 },
-                new VectorStoreDataProperty(ContentName, typeof(string)),
+                new VectorStoreDataProperty(ContentName, typeof(T)),
                 new VectorStoreDataProperty(ContextName, typeof(string)),
                 new VectorStoreDataProperty(DocumentIdName, typeof(string))
                 {
