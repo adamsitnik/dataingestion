@@ -4,6 +4,7 @@
 using Azure;
 using Azure.AI.DocumentIntelligence;
 using LlamaParse;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion.Chunkers;
 using Microsoft.ML.Tokenizers;
 using Microsoft.SemanticKernel.Connectors.InMemory;
@@ -16,6 +17,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -69,13 +71,13 @@ public class DocumentPipelineTests
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
         IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
-        TestEmbeddingGenerator embeddingGenerator = new();
+        TestStringEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
+        using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestStringEmbeddingGenerator.DimensionCount);
 
         using DocumentPipeline<string> pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
         await pipeline.ProcessAsync(files);
@@ -108,13 +110,13 @@ public class DocumentPipelineTests
 
         IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
         IngestionChunker<string> documentChunker = new HeaderChunker(CreateTokenizer());
-        TestEmbeddingGenerator embeddingGenerator = new();
+        TestStringEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
+        using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestStringEmbeddingGenerator.DimensionCount);
 
         using DocumentPipeline<string> pipeline = new(reader, documentProcessors, documentChunker, [], vectorStoreWriter);
 
@@ -144,6 +146,49 @@ public class DocumentPipelineTests
     }
 
     [Fact]
+    public async Task ChunksCanBeMoreThanJustText()
+    {
+        MarkdownReader reader = new();
+        IngestionChunker<DataContent> imageChunker = new ImageChunker();
+        TestDataContentEmbeddingGenerator embeddingGenerator = new();
+        InMemoryVectorStoreOptions options = new()
+        {
+            EmbeddingGenerator = embeddingGenerator
+        };
+        using InMemoryVectorStore testVectorStore = new(options);
+        using VectorStoreWriter<DataContent> vectorStoreWriter = new(testVectorStore, dimensionCount: TestStringEmbeddingGenerator.DimensionCount);
+        using DocumentPipeline<DataContent> pipeline = new(reader, [], imageChunker, [], vectorStoreWriter);
+
+        Assert.False(embeddingGenerator.WasCalled);
+        await pipeline.ProcessAsync([new FileInfo(Path.Combine("TestFiles", "SampleWithImage.md"))]);
+
+        Dictionary<string, object?>[] retrieved = await vectorStoreWriter.VectorStoreCollection
+            .GetAsync(record => ((string)record["documentid"]!).EndsWith("SampleWithImage.md"), top: 100)
+            .ToArrayAsync();
+
+        Assert.True(embeddingGenerator.WasCalled);
+        Assert.NotEmpty(retrieved);
+        for (int i = 0; i < retrieved.Length; i++)
+        {
+            Assert.NotEmpty((string)retrieved[i]["key"]!);
+            Assert.EndsWith("SampleWithImage.md", (string)retrieved[i]["documentid"]!);
+        }
+    }
+
+    public class ImageChunker : IngestionChunker<DataContent>
+    {
+        public override IAsyncEnumerable<IngestionChunk<DataContent>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+            => document.EnumerateContent()
+                    .OfType<IngestionDocumentImage>()
+                    .Select(image => new IngestionChunk<DataContent>
+                    (
+                        content: new(image.Content.GetValueOrDefault(), image.MediaType!),
+                        document: document
+                    ))
+                    .ToAsyncEnumerable();
+    }
+
+    [Fact]
     public async Task CanTraceExceptions()
     {
         List<Activity> activities = [];
@@ -151,13 +196,13 @@ public class DocumentPipelineTests
 
         IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers];
         IngestionChunker<string> documentChunker = new SectionChunker(CreateTokenizer());
-        TestEmbeddingGenerator embeddingGenerator = new();
+        TestStringEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
+        using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestStringEmbeddingGenerator.DimensionCount);
 
         using DocumentPipeline<string> pipeline = new(new ThrowingReader(), documentProcessors, documentChunker, [], vectorStoreWriter);
 

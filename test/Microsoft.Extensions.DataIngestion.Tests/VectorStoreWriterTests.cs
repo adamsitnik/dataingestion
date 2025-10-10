@@ -15,14 +15,14 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class VectorStoreWriterTests
 {
-    public static TheoryData<VectorStore, TestEmbeddingGenerator> VectorStoreTestData
+    public static TheoryData<VectorStore, TestStringEmbeddingGenerator> VectorStoreTestData
     {
         get
         {
-            TestEmbeddingGenerator first = new();
-            TestEmbeddingGenerator second = new();
+            TestStringEmbeddingGenerator first = new();
+            TestStringEmbeddingGenerator second = new();
 
-            return new TheoryData<VectorStore, TestEmbeddingGenerator>
+            return new TheoryData<VectorStore, TestStringEmbeddingGenerator>
             {
                 { new SqliteVectorStore($"Data Source={Path.GetTempFileName()};Pooling=false",
                     new() { EmbeddingGenerator = first }), first },
@@ -34,13 +34,13 @@ public class VectorStoreWriterTests
 
     [Theory]
     [MemberData(nameof(VectorStoreTestData))]
-    public async Task CanGenerateDynamicSchema(VectorStore vectorStore, TestEmbeddingGenerator testEmbeddingGenerator)
+    public async Task CanGenerateDynamicSchema(VectorStore vectorStore, TestStringEmbeddingGenerator testEmbeddingGenerator)
     {
         string documentId = Guid.NewGuid().ToString();
 
         using VectorStoreWriter<string> writer = new(
             vectorStore,
-            dimensionCount: TestEmbeddingGenerator.DimensionCount);
+            dimensionCount: TestStringEmbeddingGenerator.DimensionCount);
 
         IngestionDocument document = new(documentId);
         List<IngestionChunk<string>> chunks =
@@ -78,13 +78,13 @@ public class VectorStoreWriterTests
 
     [Theory]
     [MemberData(nameof(VectorStoreTestData))]
-    public async Task DoesSupportIncrementalIngestion(VectorStore vectorStore, TestEmbeddingGenerator _)
+    public async Task DoesSupportIncrementalIngestion(VectorStore vectorStore, TestStringEmbeddingGenerator _)
     {
         string documentId = Guid.NewGuid().ToString();
 
         using VectorStoreWriter<string> writer = new(
             vectorStore,
-            dimensionCount: TestEmbeddingGenerator.DimensionCount,
+            dimensionCount: TestStringEmbeddingGenerator.DimensionCount,
             options: new()
             {
                 IncrementalIngestion = true,

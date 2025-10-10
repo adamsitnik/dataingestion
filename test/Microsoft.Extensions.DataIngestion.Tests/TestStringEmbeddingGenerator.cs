@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public class TestEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
+public class TestStringEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
 {
     public const int DimensionCount = 4;
 
