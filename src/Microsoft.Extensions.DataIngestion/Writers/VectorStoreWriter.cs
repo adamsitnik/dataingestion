@@ -64,7 +64,7 @@ public sealed class VectorStoreWriter<T> : IngestionChunkWriter<T>
         }
 
         List<object>? preExistingKeys = null;
-        await foreach (var chunk in chunks.WithCancellation(cancellationToken))
+        await foreach (IngestionChunk<T> chunk in chunks.WithCancellation(cancellationToken))
         {
             if (_vectorStoreCollection is null)
             {

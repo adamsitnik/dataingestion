@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public class SemanticSimilarityChunkerTests : DocumentChunkerTests
     {
-        protected override IngestionChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
+        protected override IngestionChunker<string> CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             EmbeddingClient embeddingClient = CreateEmbeddingClient();
             Tokenizer tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
@@ -46,8 +46,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     new IngestionDocumentParagraph(text)
                 }
             });
-            IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IngestionChunker<string> chunker = CreateDocumentChunker();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Single(chunks);
             Assert.Equal(text, chunks[0].Content);
         }
@@ -69,8 +69,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
 
-            IngestionChunker chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IngestionChunker<string> chunker = CreateDocumentChunker();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Equal(2, chunks.Count);
             Assert.Equal(text1 + Environment.NewLine + text2, chunks[0].Content);
             Assert.Equal(text3, chunks[1].Content);
@@ -123,8 +123,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
 
-            IngestionChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 200, overlapTokens: 0);
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IngestionChunker<string> chunker = CreateDocumentChunker(maxTokensPerChunk: 200, overlapTokens: 0);
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             
             Assert.Equal(3, chunks.Count);
             Assert.All(chunks, chunk => Assert.Same(doc, chunk.Document));

@@ -16,14 +16,14 @@ public class SummaryEnricherTests : ChatClientTestBase
     public async Task CanProvideSummary()
     {
         SummaryEnricher sut = new(ChatClient);
-
-        var chunks = await sut.ProcessAsync(CreateChunks().ToAsyncEnumerable()).ToListAsync();
+        var input = CreateChunks().ToAsyncEnumerable();
+        var chunks = await sut.ProcessAsync(input).ToListAsync();
 
         Assert.Equal(2, chunks.Count);
         Assert.All(chunks, chunk => Assert.NotEmpty((string)chunk.Metadata[SummaryEnricher.MetadataKey]!));
     }
 
-    private static List<IngestionChunk> CreateChunks() =>
+    private static List<IngestionChunk<string>> CreateChunks() =>
     [
         new("I love programming! It's so much fun and rewarding.", document),
         new("I hate bugs. They are so frustrating and time-consuming.", document)

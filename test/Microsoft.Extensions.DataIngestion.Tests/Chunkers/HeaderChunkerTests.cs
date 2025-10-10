@@ -37,7 +37,7 @@ public class HeaderChunkerTests
         });
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"));
-        IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+        IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
 
         Assert.Equal(5, chunks.Count);
         string nl = Environment.NewLine;
@@ -69,7 +69,7 @@ public class HeaderChunkerTests
         });
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 13 });
-        IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+        IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
 
         Assert.Equal(2, chunks.Count);
         Assert.Equal("Header A Header B Header C", chunks[0].Context);
@@ -119,7 +119,7 @@ With some text after the new line."),
         });
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 30 });
-        IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+        IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
 
         Assert.Equal(2, chunks.Count);
         Assert.Equal("Header A Header B Header C", chunks[0].Context);
@@ -146,7 +146,7 @@ With some text after the new line."),
         IngestionDocument document = CreateDocumentWithLargeTable();
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 100 });
-        IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(document).ToListAsync();
+        IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(document).ToListAsync();
 
         Assert.Equal(2, chunks.Count);
         Assert.All(chunks, chunk => Assert.Equal("Header A", chunk.Context));
@@ -173,7 +173,7 @@ And some follow up.", chunks[1].Content, ignoreLineEndingDifferences: true);
         IngestionDocument document = CreateDocumentWithLargeTable();
 
         HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 50 });
-        IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(document).ToListAsync();
+        IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(document).ToListAsync();
 
         Assert.Equal(6, chunks.Count);
         Assert.All(chunks, chunk => Assert.Equal("Header A", chunk.Context));

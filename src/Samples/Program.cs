@@ -31,9 +31,9 @@ namespace Samples
 
             IngestionDocumentReader reader = CreateReader(readerId, extractImages);
             List<IngestionDocumentProcessor> processors = CreateDocumentProcessors(extractImages);
-            IngestionChunkProcessor[] chunkProcessors = CreateChunkProcessors();
+            IngestionChunkProcessor<string>[] chunkProcessors = CreateChunkProcessors();
 
-            IngestionChunker chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
+            IngestionChunker<string> chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
 
             using SqlServerVectorStore sqlServerVectorStore = new(
                 Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,
@@ -41,9 +41,9 @@ namespace Samples
                 {
                     EmbeddingGenerator = CreateEmbeddingGenerator(),
                 });
-            using VectorStoreWriter writer = new(sqlServerVectorStore, 1536 /* text-embedding-3-small */);
+            using VectorStoreWriter<string> writer = new(sqlServerVectorStore, 1536 /* text-embedding-3-small */);
 
-            using DocumentPipeline pipeline = new(reader, processors, chunker, chunkProcessors, writer, loggerFactory);
+            using DocumentPipeline<string> pipeline = new(reader, processors, chunker, chunkProcessors, writer, loggerFactory);
 
             await pipeline.ProcessAsync(files, cancellationToken);
 
@@ -66,7 +66,7 @@ namespace Samples
             IngestionDocumentReader reader = CreateReader(readerId, extractImages: false);
             List<IngestionDocumentProcessor> processors = CreateDocumentProcessors(extractImages: false);
 
-            IngestionChunker chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
+            IngestionChunker<string> chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
 
             using SqlServerVectorStore sqlServerVectorStore = new(
                 Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,
@@ -80,7 +80,7 @@ namespace Samples
 
             using QAWriter writer = new(collection, openAIClient.GetChatClient("gpt-4.1").AsIChatClient());
 
-            using DocumentPipeline pipeline = new(reader, processors, chunker, [], writer, loggerFactory);
+            using DocumentPipeline<string> pipeline = new(reader, processors, chunker, [], writer, loggerFactory);
 
             await pipeline.ProcessAsync(files, cancellationToken);
 
@@ -135,7 +135,7 @@ namespace Samples
             return processors;
         }
 
-        private static IngestionChunkProcessor[] CreateChunkProcessors()
+        private static IngestionChunkProcessor<string>[] CreateChunkProcessors()
         {
             AzureOpenAIClient openAIClient = CreateOpenAiClient();
             return [new SummaryEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];

@@ -1,7 +1,6 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using Microsoft.Extensions.DataIngestion.Chunkers;
 using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
@@ -13,7 +12,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public class OverlapTokenChunkerTests : DocumentTokenChunkerTests
     {
-        protected override IngestionChunker CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
+        protected override IngestionChunker<string> CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
             return new DocumentTokenChunker(tokenizer, new() { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = overlapTokens });
@@ -37,7 +36,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
 
-            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
+            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Equal(3, chunks.Count);
             ChunkAssertions.ContentEquals("The quick brown fox", chunks[0]);
             ChunkAssertions.ContentEquals("fox jumps over the", chunks[1]);

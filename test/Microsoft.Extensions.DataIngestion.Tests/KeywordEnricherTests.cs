@@ -18,9 +18,9 @@ public class KeywordEnricherTests : ChatClientTestBase
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: null, confidenceThreshold: 0.5);
         var chunks = CreateChunks().ToAsyncEnumerable();
 
-        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
+        IReadOnlyList<IngestionChunk<string>> got = await sut.ProcessAsync(chunks).ToListAsync();
 
-        IngestionChunk chunk = Assert.Single(got);
+        IngestionChunk<string> chunk = Assert.Single(got);
         Assert.NotEmpty((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
         Assert.Contains((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!, keyword => keyword.Contains("artificial intelligence") || keyword.Contains("AI"));
     }
@@ -31,9 +31,9 @@ public class KeywordEnricherTests : ChatClientTestBase
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: ["AI", ".NET", "Animals", "Rabbits"], confidenceThreshold: 0.6);
         var chunks = CreateChunks().ToAsyncEnumerable();
 
-        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
+        IReadOnlyList<IngestionChunk<string>> got = await sut.ProcessAsync(chunks).ToListAsync();
 
-        IngestionChunk chunk = Assert.Single(got);
+        IngestionChunk<string> chunk = Assert.Single(got);
         Assert.NotEmpty((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
         Assert.Contains("AI", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
         Assert.Contains(".NET", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
@@ -41,7 +41,7 @@ public class KeywordEnricherTests : ChatClientTestBase
         Assert.DoesNotContain("Rabbits", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
     }
 
-    private static List<IngestionChunk> CreateChunks() =>
+    private static List<IngestionChunk<string>> CreateChunks() =>
     [
         new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document)
     ];

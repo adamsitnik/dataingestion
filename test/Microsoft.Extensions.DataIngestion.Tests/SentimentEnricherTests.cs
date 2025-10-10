@@ -28,7 +28,7 @@ public class SentimentEnricherTests : ChatClientTestBase
         Assert.Equal("Unknown", chunks[3].Metadata[SentimentEnricher.MetadataKey]);
     }
 
-    private static List<IngestionChunk> CreateChunks() =>
+    private static List<IngestionChunk<string>> CreateChunks() =>
     [
         new("I love programming! It's so much fun and rewarding.", document),
         new("I hate bugs. They are so frustrating and time-consuming.", document),

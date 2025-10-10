@@ -24,7 +24,7 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class DocumentPipelineTests
 {
-    public static TheoryData<FileInfo[], IngestionDocumentReader, IngestionChunker> FilesAndReaders
+    public static TheoryData<FileInfo[], IngestionDocumentReader, IngestionChunker<string>> FilesAndReaders
     {
         get
         {
@@ -40,9 +40,9 @@ public class DocumentPipelineTests
             };
 
             List<IngestionDocumentReader> documentReaders = CreateReaders();
-            List<IngestionChunker> documentChunkers = CreateChunkers();
+            List<IngestionChunker<string>> documentChunkers = CreateChunkers();
 
-            TheoryData<FileInfo[], IngestionDocumentReader, IngestionChunker> theoryData = new();
+            TheoryData<FileInfo[], IngestionDocumentReader, IngestionChunker<string>> theoryData = new();
             foreach (IngestionDocumentReader reader in documentReaders)
             {
                 FileInfo[] filePaths = reader switch
@@ -51,7 +51,7 @@ public class DocumentPipelineTests
                     _ => nonMarkdownFiles
                 };
 
-                foreach (IngestionChunker chunker in documentChunkers)
+                foreach (IngestionChunker<string> chunker in documentChunkers)
                 {
                     theoryData.Add(filePaths, reader, chunker);
                 }
@@ -63,7 +63,7 @@ public class DocumentPipelineTests
 
     [Theory]
     [MemberData(nameof(FilesAndReaders))]
-    public async Task CanProcessDocuments(FileInfo[] files, IngestionDocumentReader reader, IngestionChunker chunker)
+    public async Task CanProcessDocuments(FileInfo[] files, IngestionDocumentReader reader, IngestionChunker<string> chunker)
     {
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
@@ -75,9 +75,9 @@ public class DocumentPipelineTests
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
+        using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
-        using DocumentPipeline pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
+        using DocumentPipeline<string> pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
         await pipeline.ProcessAsync(files);
 
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
@@ -107,16 +107,16 @@ public class DocumentPipelineTests
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
         IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
-        IngestionChunker documentChunker = new HeaderChunker(CreateTokenizer());
+        IngestionChunker<string> documentChunker = new HeaderChunker(CreateTokenizer());
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
+        using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
-        using DocumentPipeline pipeline = new(reader, documentProcessors, documentChunker, [], vectorStoreWriter);
+        using DocumentPipeline<string> pipeline = new(reader, documentProcessors, documentChunker, [], vectorStoreWriter);
 
         DirectoryInfo directory = new("TestFiles");
         string searchPattern = reader switch
@@ -150,16 +150,16 @@ public class DocumentPipelineTests
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
         IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers];
-        IngestionChunker documentChunker = new SectionChunker(CreateTokenizer());
+        IngestionChunker<string> documentChunker = new SectionChunker(CreateTokenizer());
         TestEmbeddingGenerator embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
             EmbeddingGenerator = embeddingGenerator
         };
         using InMemoryVectorStore testVectorStore = new(options);
-        using VectorStoreWriter vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
+        using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator.DimensionCount);
 
-        using DocumentPipeline pipeline = new(new ThrowingReader(), documentProcessors, documentChunker, [], vectorStoreWriter);
+        using DocumentPipeline<string> pipeline = new(new ThrowingReader(), documentProcessors, documentChunker, [], vectorStoreWriter);
 
         await Assert.ThrowsAsync<ExpectedException>(() => pipeline.ProcessAsync([new FileInfo("ReaderWillThrowAnyway.cs")]));
         AssertErrorActivities(activities);
@@ -205,7 +205,7 @@ public class DocumentPipelineTests
 
     private static Tokenizer CreateTokenizer() => TiktokenTokenizer.CreateForModel("gpt-4");
 
-    private static List<IngestionChunker> CreateChunkers() => [
+    private static List<IngestionChunker<string>> CreateChunkers() => [
         // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
         new HeaderChunker(CreateTokenizer()),
         new SectionChunker(CreateTokenizer())
