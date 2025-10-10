@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public abstract class IngestionChunkProcessor
+public abstract class IngestionChunkProcessor<T>
 {
-    public abstract IAsyncEnumerable<IngestionChunk> ProcessAsync(IAsyncEnumerable<IngestionChunk> chunks, CancellationToken cancellationToken = default);
+    public abstract IAsyncEnumerable<IngestionChunk<T>> ProcessAsync(IAsyncEnumerable<IngestionChunk<T>> chunks, CancellationToken cancellationToken = default);
 }
