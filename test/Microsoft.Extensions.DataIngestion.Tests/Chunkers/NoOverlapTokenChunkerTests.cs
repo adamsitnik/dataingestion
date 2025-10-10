@@ -30,7 +30,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
             IngestionChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 512);
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Equal(2, chunks.Count);
             Assert.True(chunks[0].Content.Split(' ').Length <= 512);
             Assert.True(chunks[1].Content.Split(' ').Length <= 512);

@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -16,15 +17,15 @@ public class SummaryEnricherTests : ChatClientTestBase
     {
         SummaryEnricher sut = new(ChatClient);
 
-        List<IngestionChunk> chunks = new()
-        {
-            new("I love programming! It's so much fun and rewarding.", document),
-            new("I hate bugs. They are so frustrating and time-consuming.", document)
-        };
-
-        await sut.ProcessAsync(chunks);
+        var chunks = await sut.ProcessAsync(CreateChunks().ToAsyncEnumerable()).ToListAsync();
 
         Assert.Equal(2, chunks.Count);
         Assert.All(chunks, chunk => Assert.NotEmpty((string)chunk.Metadata[SummaryEnricher.MetadataKey]!));
     }
+
+    private static List<IngestionChunk> CreateChunks() =>
+    [
+        new("I love programming! It's so much fun and rewarding.", document),
+        new("I hate bugs. They are so frustrating and time-consuming.", document)
+    ];
 }

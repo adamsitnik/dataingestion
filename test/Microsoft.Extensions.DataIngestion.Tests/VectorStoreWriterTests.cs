@@ -58,7 +58,7 @@ public class VectorStoreWriterTests
         };
 
         Assert.False(testEmbeddingGenerator.WasCalled);
-        await writer.WriteAsync(chunks);
+        await writer.WriteAsync(chunks.ToAsyncEnumerable());
 
         Dictionary<string, object?> record = await writer.VectorStoreCollection
             .GetAsync(filter: record => (string)record["documentid"]! == documentId, top: 1)
@@ -103,7 +103,7 @@ public class VectorStoreWriterTests
             new IngestionChunk("second chunk", document)
         };
 
-        await writer.WriteAsync(chunks);
+        await writer.WriteAsync(chunks.ToAsyncEnumerable());
 
         int recordCount = await writer.VectorStoreCollection
             .GetAsync(filter: record => (string)record["documentid"]! == documentId, top: 100)
@@ -122,7 +122,7 @@ public class VectorStoreWriterTests
             }
         };
 
-        await writer.WriteAsync(updatedChunks);
+        await writer.WriteAsync(updatedChunks.ToAsyncEnumerable());
 
         // We ask for 100 records, but we expect only 1 as the previous 2 should have been deleted.
         Dictionary<string, object?> record = await writer.VectorStoreCollection

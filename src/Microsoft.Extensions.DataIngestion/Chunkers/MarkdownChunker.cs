@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
@@ -27,14 +26,17 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _stripHeaders = stripHeaders;
         }
 
-        public override Task<List<IngestionChunk>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+        public override IAsyncEnumerable<IngestionChunk> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
         {
-            if (document is null) throw new ArgumentNullException(nameof(document));
+            if (document is null)
+            {
+                throw new ArgumentNullException(nameof(document));
+            }
 
             IEnumerable<IngestionDocumentElement> elements = document.EnumerateContent().Reverse();
             var sectionStack = new Stack<IngestionDocumentElement>(elements);
 
-            return Task.FromResult(ParseLevel(document, sectionStack, 1));
+            return ParseLevel(document, sectionStack, 1).ToAsyncEnumerable();
         }
 
         private List<IngestionChunk> ParseLevel(IngestionDocument document, Stack<IngestionDocumentElement> lines, int markdownHeaderLevel, string? context = null, string? lastHeader = null)

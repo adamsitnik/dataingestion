@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -15,15 +16,13 @@ public class ClassificationEnricherTests : ChatClientTestBase
     public async Task CanClassify()
     {
         ClassificationEnricher sut = new(ChatClient, ["AI", "Animals", "Sports"], fallbackClass: "UFO");
-        List<IngestionChunk> chunks = CreateChunks();
 
-        List<IngestionChunk> got = await sut.ProcessAsync(chunks);
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(CreateChunks().ToAsyncEnumerable()).ToListAsync();
 
-        Assert.Same(chunks, got);
-        Assert.Equal(3, chunks.Count);
-        Assert.Equal("AI", chunks[0].Metadata[ClassificationEnricher.MetadataKey]);
-        Assert.Equal("Animals", chunks[1].Metadata[ClassificationEnricher.MetadataKey]);
-        Assert.Equal("UFO", chunks[2].Metadata[ClassificationEnricher.MetadataKey]);
+        Assert.Equal(3, got.Count);
+        Assert.Equal("AI", got[0].Metadata[ClassificationEnricher.MetadataKey]);
+        Assert.Equal("Animals", got[1].Metadata[ClassificationEnricher.MetadataKey]);
+        Assert.Equal("UFO", got[2].Metadata[ClassificationEnricher.MetadataKey]);
     }
 
     private static List<IngestionChunk> CreateChunks() =>

@@ -4,6 +4,7 @@
 using Microsoft.Extensions.AI;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +40,8 @@ public sealed class KeywordEnricher : IngestionChunkProcessor
 
     public static string MetadataKey => "keywords";
 
-    public override async Task<List<IngestionChunk>> ProcessAsync(List<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IAsyncEnumerable<IngestionChunk> chunks,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -48,7 +50,7 @@ public sealed class KeywordEnricher : IngestionChunkProcessor
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        foreach (IngestionChunk chunk in chunks)
+        await foreach (IngestionChunk chunk in chunks.WithCancellation(cancellationToken))
         {
             ChatResponse<string[]> response = await _chatClient.GetResponseAsync<string[]>(
             [
@@ -60,9 +62,9 @@ public sealed class KeywordEnricher : IngestionChunkProcessor
             ], _chatOptions, cancellationToken: cancellationToken);
 
             chunk.Metadata[MetadataKey] = response.Result;
-        }
 
-        return chunks;
+            yield return chunk;
+        }
     }
 
     private static TextContent CreateLlmRequest(int maxKeywords, string[]? predefinedKeywords, double confidenceThreshold)

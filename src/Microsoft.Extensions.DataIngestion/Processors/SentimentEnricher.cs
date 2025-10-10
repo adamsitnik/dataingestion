@@ -4,6 +4,7 @@
 using Microsoft.Extensions.AI;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,7 +36,8 @@ public sealed class SentimentEnricher : IngestionChunkProcessor
 
     public static string MetadataKey => "sentiment";
 
-    public override async Task<List<IngestionChunk>> ProcessAsync(List<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IAsyncEnumerable<IngestionChunk> chunks,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -44,7 +46,7 @@ public sealed class SentimentEnricher : IngestionChunkProcessor
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        foreach (IngestionChunk chunk in chunks)
+        await foreach (IngestionChunk chunk in chunks.WithCancellation(cancellationToken))
         {
             var response = await _chatClient.GetResponseAsync(
             [
@@ -56,8 +58,8 @@ public sealed class SentimentEnricher : IngestionChunkProcessor
             ], _chatOptions, cancellationToken: cancellationToken);
 
             chunk.Metadata[MetadataKey] = response.Text;
-        }
 
-        return chunks;
+            yield return chunk;
+        }
     }
 }

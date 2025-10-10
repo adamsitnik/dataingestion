@@ -30,7 +30,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
             IngestionChunker chunker = CreateDocumentChunker();
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Single(chunks);
             string expectedResult = "This is a paragraph.\nThis is another paragraph.";
             Assert.Equal(expectedResult, chunks[0].Content, ignoreLineEndingDifferences: true);
@@ -63,7 +63,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             };
 
             IngestionChunker chunker = CreateDocumentChunker();
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
 
             Assert.Equal(2, chunks.Count);
             string expectedResult1 = "This is a paragraph.\nThis is another paragraph.";
@@ -81,7 +81,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 Elements = { }
             });
             IngestionChunker chunker = CreateDocumentChunker();
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Empty(chunks);
         }
 
@@ -105,7 +105,17 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                                 {
                                     new IngestionDocumentHeader("## Subsection title"),
                                     new IngestionDocumentParagraph("This is a paragraph in subsection 1.1."),
-                                    new IngestionDocumentParagraph("This is another paragraph in subsection 1.1.")
+                                    new IngestionDocumentParagraph("This is another paragraph in subsection 1.1."),
+                                    new IngestionDocumentSection
+                                    {
+                                        Elements =
+                                        {
+                                            new IngestionDocumentHeader("### Subsubsection title"),
+                                            new IngestionDocumentParagraph("This is a paragraph in subsubsection 1.1.1."),
+                                            new IngestionDocumentParagraph("This is another paragraph in subsubsection 1.1.1.")
+                                        }
+                                    },
+                                    new IngestionDocumentParagraph("This is last paragraph in subsection 1.2."),
                                 }
                             }
                         }
@@ -114,13 +124,19 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             };
 
             IngestionChunker chunker = CreateDocumentChunker();
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
 
-            Assert.Equal(2, chunks.Count);
+            Assert.Equal(4, chunks.Count);
             Assert.Equal("# Section title", chunks[0].Context);
-            Assert.Equal("# Section title\nThis is a paragraph in section 1.\nThis is another paragraph in section 1.", chunks[0].Content, ignoreLineEndingDifferences: true);
+            Assert.Equal("# Section title\nThis is a paragraph in section 1.\nThis is another paragraph in section 1.",
+                chunks[0].Content, ignoreLineEndingDifferences: true);
             Assert.Equal("# Section title ## Subsection title", chunks[1].Context);
-            Assert.Equal("# Section title ## Subsection title\nThis is a paragraph in subsection 1.1.\nThis is another paragraph in subsection 1.1.", chunks[1].Content, ignoreLineEndingDifferences: true);
+            Assert.Equal("# Section title ## Subsection title\nThis is a paragraph in subsection 1.1.\nThis is another paragraph in subsection 1.1.",
+                chunks[1].Content, ignoreLineEndingDifferences: true);
+            Assert.Equal("# Section title ## Subsection title ### Subsubsection title", chunks[2].Context);
+            Assert.Equal("# Section title ## Subsection title ### Subsubsection title\nThis is a paragraph in subsubsection 1.1.1.\nThis is another paragraph in subsubsection 1.1.1.", chunks[2].Content, ignoreLineEndingDifferences: true);
+            Assert.Equal("# Section title ## Subsection title", chunks[3].Context);
+            Assert.Equal("# Section title ## Subsection title\nThis is last paragraph in subsection 1.2.", chunks[3].Content, ignoreLineEndingDifferences: true);
         }
 
         [Fact]
@@ -136,7 +152,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
             IngestionChunker chunker = CreateDocumentChunker(maxTokensPerChunk: 512);
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Equal(2, chunks.Count);
             Assert.True(chunks[0].Content.Split(' ').Length <= 512);
             Assert.True(chunks[1].Content.Split(' ').Length <= 512);
@@ -157,7 +173,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                 }
             });
             IngestionChunker chunker = CreateDocumentChunker();
-            List<IngestionChunk> chunks = await chunker.ProcessAsync(doc);
+            IReadOnlyList<IngestionChunk> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             IngestionChunk chunk = Assert.Single(chunks);
             string expectedResult = "Section 1\nThis is a paragraph in section 1.\nThis is another paragraph in section 1.";
             Assert.Equal(expectedResult, chunk.Content, ignoreLineEndingDifferences: true);

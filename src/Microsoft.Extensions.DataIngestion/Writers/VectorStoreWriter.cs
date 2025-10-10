@@ -54,7 +54,7 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
         _vectorStoreCollection?.Dispose();
     }
 
-    public override async Task WriteAsync(IReadOnlyList<IngestionChunk> chunks, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(IAsyncEnumerable<IngestionChunk> chunks, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -63,26 +63,23 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        if (chunks.Count == 0)
+        List<object>? preExistingKeys = null;
+        await foreach (IngestionChunk chunk in chunks.WithCancellation(cancellationToken))
         {
-            return;
-        }
+            if (_vectorStoreCollection is null)
+            {
+                _vectorStoreCollection = _vectorStore.GetDynamicCollection(_options.CollectionName, GetVectorStoreRecordDefinition(chunk));
 
-        // We assume that every chunk has the same metadata schema so we use the first chunk as representative.
-        IngestionChunk representativeChunk = chunks[0];
+                await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken).ConfigureAwait(false);
+            }
 
-        if (_vectorStoreCollection is null)
-        {
-            _vectorStoreCollection = _vectorStore.GetDynamicCollection(_options.CollectionName, GetVectorStoreRecordDefinition(representativeChunk));
-
-            await _vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        await DeletePreExistingChunksForGivenDocument(representativeChunk.Document, cancellationToken).ConfigureAwait(false);
-
-        foreach (IngestionChunk chunk in chunks)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
+            if (preExistingKeys is null)
+            {
+                // We obtain the IDs of the pre-existing chunks for given document,
+                // and delete them after we finish inserting the new chunks.
+                // To avoid a situation where we delete the chunks and then fail to insert the new ones.
+                preExistingKeys = await GetPreExistingChunksIds(chunk.Document, cancellationToken).ConfigureAwait(false);
+            }
 
             Guid key = Guid.NewGuid();
             Dictionary<string, object?> record = new()
@@ -103,6 +100,11 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
             }
 
             await _vectorStoreCollection.UpsertAsync(record, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (preExistingKeys?.Count > 0)
+        {
+            await _vectorStoreCollection!.DeleteAsync(preExistingKeys, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -146,21 +148,17 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
         return definition;
     }
 
-    /// <summary>
-    /// We are about to insert new chunks for the given document, so we need to delete the existing ones first.
-    /// By doing that, we ensure that there are no duplicates and that the chunks are up-to-date.
-    /// </summary>
-    private async Task DeletePreExistingChunksForGivenDocument(IngestionDocument document, CancellationToken cancellationToken)
+    private async Task<List<object>> GetPreExistingChunksIds(IngestionDocument document, CancellationToken cancellationToken)
     {
         if (!_options.IncrementalIngestion)
         {
-            return;
+            return [];
         }
 
         // Each Vector Store has a different max top count limit, so we use low value and loop.
         const int MaxTopCount = 1_000;
 
-        List<object>? keys = null;
+        List<object>? keys = [];
         int insertedCount;
         do
         {
@@ -171,14 +169,11 @@ public sealed class VectorStoreWriter : IngestionChunkWriter
                 top: MaxTopCount,
                 cancellationToken: cancellationToken))
             {
-                (keys ??= new()).Add(record[KeyName]!);
+                keys.Add(record[KeyName]!);
                 insertedCount++;
             }
         } while (insertedCount == MaxTopCount);
 
-        if (keys is not null)
-        {
-            await _vectorStoreCollection.DeleteAsync(keys, cancellationToken).ConfigureAwait(false);
-        }
+        return keys;
     }
 }

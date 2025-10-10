@@ -45,22 +45,4 @@ internal static class DiagnosticsConstants
         internal const string ActivityName = "ProcessDocument";
         internal const string ProcessorTagName = "di.processor.name";
     }
-
-    internal static class ChunkDocument
-    {
-        internal const string ActivityName = "ChunkDocument";
-        internal const string ChunkerTagName = "di.chunker.name";
-    }
-
-    internal static class ProcessChunk
-    {
-        internal const string ActivityName = "ProcessChunk";
-        internal const string ProcessorTagName = "di.processor.name";
-    }
-
-    internal static class WriteDocument
-    {
-        internal const string ActivityName = "WriteDocument";
-        internal const string WriterTagName = "di.writer.name";
-    }
 }

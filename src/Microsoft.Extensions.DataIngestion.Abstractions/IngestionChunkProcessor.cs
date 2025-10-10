@@ -3,11 +3,10 @@
 
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion;
 
 public abstract class IngestionChunkProcessor
 {
-    public abstract Task<List<IngestionChunk>> ProcessAsync(List<IngestionChunk> chunks, CancellationToken cancellationToken = default);
+    public abstract IAsyncEnumerable<IngestionChunk> ProcessAsync(IAsyncEnumerable<IngestionChunk> chunks, CancellationToken cancellationToken = default);
 }

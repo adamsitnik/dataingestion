@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -15,12 +16,11 @@ public class KeywordEnricherTests : ChatClientTestBase
     public async Task CanExtractKeywordsWithoutPredefinedList()
     {
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: null, confidenceThreshold: 0.5);
-        List<IngestionChunk> chunks = CreateChunks();
+        var chunks = CreateChunks().ToAsyncEnumerable();
 
-        List<IngestionChunk> got = await sut.ProcessAsync(chunks);
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
 
-        Assert.Same(chunks, got);
-        IngestionChunk chunk = Assert.Single(chunks);
+        IngestionChunk chunk = Assert.Single(got);
         Assert.NotEmpty((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
         Assert.Contains((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!, keyword => keyword.Contains("artificial intelligence") || keyword.Contains("AI"));
     }
@@ -29,12 +29,11 @@ public class KeywordEnricherTests : ChatClientTestBase
     public async Task CanExtractKeywordsWithPredefinedList()
     {
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: ["AI", ".NET", "Animals", "Rabbits"], confidenceThreshold: 0.6);
-        List<IngestionChunk> chunks = CreateChunks();
+        var chunks = CreateChunks().ToAsyncEnumerable();
 
-        List<IngestionChunk> got = await sut.ProcessAsync(chunks);
+        IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
 
-        Assert.Same(chunks, got);
-        IngestionChunk chunk = Assert.Single(chunks);
+        IngestionChunk chunk = Assert.Single(got);
         Assert.NotEmpty((string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
         Assert.Contains("AI", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
         Assert.Contains(".NET", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
@@ -44,6 +43,6 @@ public class KeywordEnricherTests : ChatClientTestBase
 
     private static List<IngestionChunk> CreateChunks() =>
     [
-        new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document),
+        new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document)
     ];
 }

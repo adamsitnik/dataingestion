@@ -178,6 +178,7 @@ public class DocumentPipelineTests
             new MarkItDownReader(),
         };
 
+#if RELEASE // running these takes a lot of time (and costs money), so only do it in release builds as using the 2 above is usually sufficient to detect bugs.
         if (Environment.GetEnvironmentVariable("LLAMACLOUD_API_KEY") is string llamaKey && !string.IsNullOrEmpty(llamaKey))
         {
             LlamaParse.Configuration configuration = new()
@@ -197,6 +198,7 @@ public class DocumentPipelineTests
 
             readers.Add(new DocumentIntelligenceReader(client));
         }
+#endif
 
         return readers;
     }
@@ -224,8 +226,6 @@ public class DocumentPipelineTests
         Assert.Contains(activities, a => a.OperationName == "ProcessFile");
         Assert.Contains(activities, a => a.OperationName == "ReadDocument");
         Assert.Contains(activities, a => a.OperationName == "ProcessDocument");
-        Assert.Contains(activities, a => a.OperationName == "ChunkDocument");
-        Assert.Contains(activities, a => a.OperationName == "WriteDocument");
     }
 
     private static void AssertErrorActivities(List<Activity> activities)
