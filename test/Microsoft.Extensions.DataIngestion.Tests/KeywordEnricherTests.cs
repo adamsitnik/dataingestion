@@ -16,7 +16,7 @@ public class KeywordEnricherTests : ChatClientTestBase
     public async Task CanExtractKeywordsWithoutPredefinedList()
     {
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: null, confidenceThreshold: 0.5);
-        var chunks = CreateChunks();
+        var chunks = CreateChunks().ToAsyncEnumerable();
 
         IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
 
@@ -29,7 +29,7 @@ public class KeywordEnricherTests : ChatClientTestBase
     public async Task CanExtractKeywordsWithPredefinedList()
     {
         KeywordEnricher sut = new(ChatClient, predefinedKeywords: ["AI", ".NET", "Animals", "Rabbits"], confidenceThreshold: 0.6);
-        var chunks = CreateChunks();
+        var chunks = CreateChunks().ToAsyncEnumerable();
 
         IReadOnlyList<IngestionChunk> got = await sut.ProcessAsync(chunks).ToListAsync();
 
@@ -41,8 +41,8 @@ public class KeywordEnricherTests : ChatClientTestBase
         Assert.DoesNotContain("Rabbits", (string[])chunk.Metadata[KeywordEnricher.MetadataKey]!);
     }
 
-    private static async IAsyncEnumerable<IngestionChunk> CreateChunks()
-    {
-        yield return new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document);
-    }
+    private static List<IngestionChunk> CreateChunks() =>
+    [
+        new(".NET developers need to integrate and interact with a growing variety of artificial intelligence (AI) services in their apps. The Microsoft.Extensions.AI libraries provide a unified approach for representing generative AI components, and enable seamless integration and interoperability with various AI services.", document)
+    ];
 }

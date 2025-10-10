@@ -17,15 +17,15 @@ public class SummaryEnricherTests : ChatClientTestBase
     {
         SummaryEnricher sut = new(ChatClient);
 
-        var chunks = await sut.ProcessAsync(CreateChunks()).ToListAsync();
+        var chunks = await sut.ProcessAsync(CreateChunks().ToAsyncEnumerable()).ToListAsync();
 
         Assert.Equal(2, chunks.Count);
         Assert.All(chunks, chunk => Assert.NotEmpty((string)chunk.Metadata[SummaryEnricher.MetadataKey]!));
     }
 
-    private static async IAsyncEnumerable<IngestionChunk> CreateChunks()
-    {
-        yield return new("I love programming! It's so much fun and rewarding.", document);
-        yield return new("I hate bugs. They are so frustrating and time-consuming.", document);
-    }
+    private static List<IngestionChunk> CreateChunks() =>
+    [
+        new("I love programming! It's so much fun and rewarding.", document),
+        new("I hate bugs. They are so frustrating and time-consuming.", document)
+    ];
 }

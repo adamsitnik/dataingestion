@@ -4,9 +4,8 @@
 using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers;
 
@@ -20,8 +19,7 @@ public sealed class SectionChunker : IngestionChunker
     public SectionChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
-    public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IngestionDocument document,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public override IAsyncEnumerable<IngestionChunk> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {
         if (document is null)
         {
@@ -36,10 +34,7 @@ public sealed class SectionChunker : IngestionChunker
             Process(document, section, chunks);
         }
 
-        foreach (var chunk in chunks)
-        {
-            yield return chunk;
-        }
+        return chunks.ToAsyncEnumerable();
     }
 
     private void Process(IngestionDocument document, IngestionDocumentSection section, List<IngestionChunk> chunks, string? parentContext = null)

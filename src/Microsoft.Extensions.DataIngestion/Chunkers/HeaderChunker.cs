@@ -22,7 +22,9 @@ public sealed class HeaderChunker : IngestionChunker
     public HeaderChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
         => _elementsChunker = new(tokenizer, options ?? new());
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public override async IAsyncEnumerable<IngestionChunk> ProcessAsync(IngestionDocument document,
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         List<IngestionDocumentElement> elements = new(20);

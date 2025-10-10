@@ -161,7 +161,7 @@ public sealed class DocumentPipeline : IngestionPipeline
             }
         }
 
-        IAsyncEnumerable<IngestionChunk>? chunks = _chunker.ProcessAsync(document, cancellationToken);
+        IAsyncEnumerable<IngestionChunk> chunks = _chunker.ProcessAsync(document, cancellationToken);
         foreach (IngestionChunkProcessor processor in _chunkProcessors)
         {
             chunks = processor.ProcessAsync(chunks, cancellationToken);
