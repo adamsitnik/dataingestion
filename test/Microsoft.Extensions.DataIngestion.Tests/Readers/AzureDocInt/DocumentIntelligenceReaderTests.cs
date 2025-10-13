@@ -6,7 +6,7 @@ using Azure;
 using Azure.AI.DocumentIntelligence;
 using System;
 
-namespace Microsoft.Extensions.DataIngestion.Tests;
+namespace Microsoft.Extensions.DataIngestion.Readers.Tests;
 
 public class DocumentIntelligenceReaderTests : DocumentReaderConformanceTests
 {

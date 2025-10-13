@@ -36,12 +36,11 @@
 
   <ItemGroup>
     <!-- Do not run the tests when AZURE_DOC_INT_KEY environment variable is not set -->
-    <Compile Remove="AzureDocInt\**\*ReaderTests.cs" Condition="'$(AZURE_DOCUMENT_INT_KEY)' == ''" />
+    <Compile Remove="Readers\AzureDocInt\**\*ReaderTests.cs" Condition="'$(AZURE_DOCUMENT_INT_KEY)' == ''" />
     <!-- Do not run the tests when LLAMACLOUD_API_KEY environment variable is not set -->
-    <Compile Remove="LlamaParse\**\*ReaderTests.cs" Condition="'$(LLAMACLOUD_API_KEY)' == ''" />
+    <Compile Remove="Readers\LlamaParse\**\*ReaderTests.cs" Condition="'$(LLAMACLOUD_API_KEY)' == ''" />
     <!-- Do not run the tests when AZURE_OPENAI_ENDPOINT environment variable is not set -->
     <Compile Remove="**\*EnricherTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
-    <Compile Remove="PiiRemovalProcessorTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == ''" />
     <Compile Remove="Chunkers\SemanticSimilarityChunkerTests.cs" Condition="'$(AZURE_OPENAI_ENDPOINT)' == '' Or '$(AZURE_OPENAI_API_KEY)' == ''" />
   </ItemGroup>
 
