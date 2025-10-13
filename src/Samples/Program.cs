@@ -7,7 +7,6 @@ using Azure.AI.OpenAI;
 using LlamaParse;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion;
-using Microsoft.Extensions.DataIngestion.Tests;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.Tokenizers;
 using Microsoft.SemanticKernel.Connectors.SqlServer;
