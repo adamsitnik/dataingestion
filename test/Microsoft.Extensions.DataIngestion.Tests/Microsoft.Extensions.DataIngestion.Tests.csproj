@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
     <PackageReference Include="Azure.AI.OpenAI" Version="2.3.0-beta.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
@@ -29,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Azure.AI.DocumentIntelligence.DocumentReader\Azure.AI.DocumentIntelligence.DocumentReader.csproj" />
     <ProjectReference Include="..\..\src\LlamaParse.DocumentReader\LlamaParse.DocumentReader.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.Extensions.DataIngestion.Markdown\Microsoft.Extensions.DataIngestion.Markdown.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.Extensions.DataIngestion.MarkItDown\Microsoft.Extensions.DataIngestion.MarkItDown.csproj" />
