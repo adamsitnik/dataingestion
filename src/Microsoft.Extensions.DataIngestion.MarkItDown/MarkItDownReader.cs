@@ -8,17 +8,19 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DataIngestion.Tests;
+namespace Microsoft.Extensions.DataIngestion;
 
 public class MarkItDownReader : IngestionDocumentReader
 {
     private readonly string _exePath;
     private readonly bool _extractImages;
+    private readonly MarkdownReader _markdownReader;
 
     public MarkItDownReader(string exePath = "markitdown", bool extractImages = false)
     {
         _exePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
         _extractImages = extractImages;
+        _markdownReader = new();
     }
 
     public override async Task<IngestionDocument> ReadAsync(FileInfo source, string identifier, string? mediaType = null, CancellationToken cancellationToken = default)
@@ -52,12 +54,15 @@ public class MarkItDownReader : IngestionDocumentReader
         startInfo.Environment["LC_ALL"] = "C.UTF-8";
         startInfo.Environment["LANG"] = "C.UTF-8";
 
+#if NET
         startInfo.ArgumentList.Add(source.FullName);
-
         if (_extractImages)
         {
             startInfo.ArgumentList.Add("--keep-data-uris");
         }
+#else
+        startInfo.Arguments = $"\"{source.FullName}\"" + (_extractImages ? " --keep-data-uris" : "");
+#endif
 
         string outputContent = "";
         using (Process process = new() { StartInfo = startInfo })
@@ -65,9 +70,17 @@ public class MarkItDownReader : IngestionDocumentReader
             process.Start();
 
             // Read standard output asynchronously
-            outputContent = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+            outputContent = await process.StandardOutput.ReadToEndAsync(
+#if NET
+                cancellationToken
+#endif
+            );
 
+#if NET
             await process.WaitForExitAsync(cancellationToken);
+#else
+            process.WaitForExit();
+#endif
 
             if (process.ExitCode != 0)
             {
@@ -75,7 +88,7 @@ public class MarkItDownReader : IngestionDocumentReader
             }
         }
 
-        return MarkdownReader.Parse(outputContent, identifier);
+        return _markdownReader.Read(outputContent, identifier);
     }
 
     public override async Task<IngestionDocument> ReadAsync(Stream source, string identifier, string mediaType, CancellationToken cancellationToken = default)
@@ -98,7 +111,11 @@ public class MarkItDownReader : IngestionDocumentReader
         string inputFilePath = Path.GetTempFileName();
         using (FileStream inputFile = new(inputFilePath, FileMode.Open, FileAccess.Write, FileShare.None, bufferSize: 1, FileOptions.Asynchronous))
         {
-            await source.CopyToAsync(inputFile, cancellationToken);
+            await source.CopyToAsync(inputFile
+#if NET
+                , cancellationToken
+#endif
+            );
         }
 
         try

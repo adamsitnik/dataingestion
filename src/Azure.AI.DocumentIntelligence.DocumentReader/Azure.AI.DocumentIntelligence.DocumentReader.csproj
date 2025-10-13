@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net9.0;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Microsoft.Extensions.DataIngestion.Abstractions\Microsoft.Extensions.DataIngestion.Abstractions.csproj" />
+    <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
+    <!-- We need BinaryData.MediaType -->
+    <PackageReference Include="System.Memory.Data" Version="9.0.9" />
+  </ItemGroup>
+
+</Project>

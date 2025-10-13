@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DataIngestion.Tests;
+namespace Microsoft.Extensions.DataIngestion;
 
 public sealed class DocumentIntelligenceReader : IngestionDocumentReader
 {
@@ -42,8 +42,13 @@ public sealed class DocumentIntelligenceReader : IngestionDocumentReader
             throw new ArgumentNullException(nameof(identifier));
         }
 
+#if NET
         byte[] bytes = await File.ReadAllBytesAsync(source.FullName, cancellationToken);
         BinaryData binaryData = BinaryData.FromBytes(bytes);
+#else
+        using FileStream stream = new(source.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, FileOptions.Asynchronous);
+        BinaryData binaryData = await BinaryData.FromStreamAsync(stream, cancellationToken);
+#endif
         return await ReadAsync(new AnalyzeDocumentOptions(_modelName, binaryData), identifier, cancellationToken);
     }
 
@@ -287,7 +292,7 @@ public sealed class DocumentIntelligenceReader : IngestionDocumentReader
             StringBuilder stringBuilder = new(length);
             foreach (var span in spans)
             {
-                stringBuilder.Append(entireContent.AsSpan(span.Offset, span.Length));
+                stringBuilder.Append(entireContent, span.Offset, span.Length);
             }
             return stringBuilder.ToString();
         }

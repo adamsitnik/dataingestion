@@ -6,7 +6,7 @@ using Azure.AI.OpenAI;
 using Microsoft.Extensions.AI;
 using System;
 
-namespace Microsoft.Extensions.DataIngestion.Tests;
+namespace Microsoft.Extensions.DataIngestion.Processors.Tests;
 
 public class ChatClientTestBase
 {

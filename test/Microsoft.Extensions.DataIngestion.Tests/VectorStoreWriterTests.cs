@@ -15,14 +15,14 @@ namespace Microsoft.Extensions.DataIngestion.Tests;
 
 public class VectorStoreWriterTests
 {
-    public static TheoryData<VectorStore, TestStringEmbeddingGenerator> VectorStoreTestData
+    public static TheoryData<VectorStore, TestEmbeddingGenerator<string>> VectorStoreTestData
     {
         get
         {
-            TestStringEmbeddingGenerator first = new();
-            TestStringEmbeddingGenerator second = new();
+            TestEmbeddingGenerator<string> first = new();
+            TestEmbeddingGenerator<string> second = new();
 
-            return new TheoryData<VectorStore, TestStringEmbeddingGenerator>
+            return new TheoryData<VectorStore, TestEmbeddingGenerator<string>>
             {
                 { new SqliteVectorStore($"Data Source={Path.GetTempFileName()};Pooling=false",
                     new() { EmbeddingGenerator = first }), first },
@@ -34,13 +34,13 @@ public class VectorStoreWriterTests
 
     [Theory]
     [MemberData(nameof(VectorStoreTestData))]
-    public async Task CanGenerateDynamicSchema(VectorStore vectorStore, TestStringEmbeddingGenerator testEmbeddingGenerator)
+    public async Task CanGenerateDynamicSchema(VectorStore vectorStore, TestEmbeddingGenerator<string> testEmbeddingGenerator)
     {
         string documentId = Guid.NewGuid().ToString();
 
         using VectorStoreWriter<string> writer = new(
             vectorStore,
-            dimensionCount: TestStringEmbeddingGenerator.DimensionCount);
+            dimensionCount: TestEmbeddingGenerator<string>.DimensionCount);
 
         IngestionDocument document = new(documentId);
         List<IngestionChunk<string>> chunks =
@@ -78,13 +78,13 @@ public class VectorStoreWriterTests
 
     [Theory]
     [MemberData(nameof(VectorStoreTestData))]
-    public async Task DoesSupportIncrementalIngestion(VectorStore vectorStore, TestStringEmbeddingGenerator _)
+    public async Task DoesSupportIncrementalIngestion(VectorStore vectorStore, TestEmbeddingGenerator<string> _)
     {
         string documentId = Guid.NewGuid().ToString();
 
         using VectorStoreWriter<string> writer = new(
             vectorStore,
-            dimensionCount: TestStringEmbeddingGenerator.DimensionCount,
+            dimensionCount: TestEmbeddingGenerator<string>.DimensionCount,
             options: new()
             {
                 IncrementalIngestion = true,

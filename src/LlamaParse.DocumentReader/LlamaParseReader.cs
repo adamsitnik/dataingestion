@@ -11,7 +11,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Extensions.DataIngestion.Tests;
+namespace Microsoft.Extensions.DataIngestion;
 
 public class LlamaParseReader : IngestionDocumentReader
 {
@@ -69,7 +69,11 @@ public class LlamaParseReader : IngestionDocumentReader
             ? new((int)(stream.Length - stream.Position))
             : new MemoryStream();
 
-        await stream.CopyToAsync(copy, cancellationToken);
+        await stream.CopyToAsync(copy
+#if NET
+            , cancellationToken
+#endif
+        );
 
         Memory<byte> content = copy.GetBuffer().AsMemory(0, (int)copy.Length);
         // When mimeType is not provided, the LlamaParseClient will try to guess it based on the file extension.

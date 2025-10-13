@@ -4,9 +4,9 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Extensions.DataIngestion.Tests;
+namespace Microsoft.Extensions.DataIngestion;
 
-public class BoundingBox
+internal class BoundingBox
 {
     [JsonPropertyName("x")]
     public double X { get; set; }
@@ -25,7 +25,7 @@ public class BoundingBox
 [JsonDerivedType(typeof(TextPageItem), "text")]
 [JsonDerivedType(typeof(HeadingPageItem), "heading")]
 [JsonDerivedType(typeof(TablePageItem), "table")]
-public abstract class PageItem
+internal abstract class PageItem
 {
     [JsonPropertyName("bBox")]
     public BoundingBox? BoundingBox { get; set; }
@@ -34,13 +34,13 @@ public abstract class PageItem
     public string Markdown { get; set; } = string.Empty;
 }
 
-public class TextPageItem : PageItem
+internal class TextPageItem : PageItem
 {
     [JsonPropertyName("value")]
     public string Value { get; set; } = string.Empty;
 }
 
-public class HeadingPageItem : PageItem
+internal class HeadingPageItem : PageItem
 {
     [JsonPropertyName("lvl")]
     public int Level { get; set; }
@@ -49,7 +49,7 @@ public class HeadingPageItem : PageItem
     public string Value { get; set; } = string.Empty;
 }
 
-public class TablePageItem : PageItem
+internal class TablePageItem : PageItem
 {
     [JsonPropertyName("rows")]
     public List<List<string>> Rows { get; set; } = new();
@@ -61,7 +61,7 @@ public class TablePageItem : PageItem
     public string? Csv { get; set; }
 }
 
-public class Page
+internal class Page
 {
     [JsonPropertyName("page")]
     public int PageNumber { get; set; }
@@ -111,7 +111,7 @@ public class Page
     public double Confidence { get; set; }
 }
 
-public class Link
+internal class Link
 {
     [JsonPropertyName("url")]
     public string? Url { get; set; }
@@ -123,7 +123,7 @@ public class Link
     public string Text { get; set; } = string.Empty;
 }
 
-public class LlamaParseDocument
+internal class LlamaParseDocument
 {
     [JsonPropertyName("pages")]
     public List<Page> Pages { get; set; } = new();

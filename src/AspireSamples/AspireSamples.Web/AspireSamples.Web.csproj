@@ -14,12 +14,14 @@
     <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.63.0" />
     <PackageReference Include="Aspire.Qdrant.Client" Version="9.4.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.63.0-preview" />
-    <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="2.0.0-preview.25373.1" />
-    <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="2.0.0-preview.25373.1" />
+    <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="2.0.0-preview.25503.2" />
+    <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="2.0.0-preview.25503.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\test\Microsoft.Extensions.DataIngestion.Tests\Microsoft.Extensions.DataIngestion.Tests.csproj" />
+    <ProjectReference Include="..\..\Azure.AI.DocumentIntelligence.DocumentReader\Azure.AI.DocumentIntelligence.DocumentReader.csproj" />
+    <ProjectReference Include="..\..\LlamaParse.DocumentReader\LlamaParse.DocumentReader.csproj" />
+    <ProjectReference Include="..\..\Microsoft.Extensions.DataIngestion.MarkItDown\Microsoft.Extensions.DataIngestion.MarkItDown.csproj" />
     <ProjectReference Include="..\..\Microsoft.Extensions.DataIngestion\Microsoft.Extensions.DataIngestion.csproj" />
     <ProjectReference Include="..\AspireSamples.ServiceDefaults\AspireSamples.ServiceDefaults.csproj" />
   </ItemGroup>
