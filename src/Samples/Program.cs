@@ -42,7 +42,7 @@ namespace Samples
                 });
             using VectorStoreWriter<string> writer = new(sqlServerVectorStore, 1536 /* text-embedding-3-small */);
 
-            using DocumentPipeline<string> pipeline = new(reader, processors, chunker, chunkProcessors, writer, loggerFactory);
+            using DocumentPipeline<string> pipeline = new(reader, chunker, writer, processors, chunkProcessors, loggerFactory);
 
             await pipeline.ProcessAsync(files, cancellationToken);
 
@@ -79,7 +79,7 @@ namespace Samples
 
             using QAWriter writer = new(collection, openAIClient.GetChatClient("gpt-4.1").AsIChatClient());
 
-            using DocumentPipeline<string> pipeline = new(reader, processors, chunker, [], writer, loggerFactory);
+            using DocumentPipeline<string> pipeline = new(reader, chunker, writer, processors, loggerFactory: loggerFactory);
 
             await pipeline.ProcessAsync(files, cancellationToken);
 

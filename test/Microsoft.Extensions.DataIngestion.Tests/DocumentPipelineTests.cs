@@ -79,7 +79,7 @@ public class DocumentPipelineTests
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator<string>.DimensionCount);
 
-        using DocumentPipeline<string> pipeline = new(reader, documentProcessors, chunker, [], vectorStoreWriter);
+        using DocumentPipeline<string> pipeline = new(reader, chunker, vectorStoreWriter, documentProcessors);
         await pipeline.ProcessAsync(files);
 
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
@@ -118,7 +118,7 @@ public class DocumentPipelineTests
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator<string>.DimensionCount);
 
-        using DocumentPipeline<string> pipeline = new(reader, documentProcessors, documentChunker, [], vectorStoreWriter);
+        using DocumentPipeline<string> pipeline = new(reader, documentChunker, vectorStoreWriter, documentProcessors);
 
         DirectoryInfo directory = new("TestFiles");
         string searchPattern = reader switch
@@ -157,7 +157,7 @@ public class DocumentPipelineTests
         };
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter<DataContent> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator<DataContent>.DimensionCount);
-        using DocumentPipeline<DataContent> pipeline = new(reader, [], imageChunker, [], vectorStoreWriter);
+        using DocumentPipeline<DataContent> pipeline = new(reader, imageChunker, vectorStoreWriter);
 
         Assert.False(embeddingGenerator.WasCalled);
         await pipeline.ProcessAsync([new FileInfo(Path.Combine("TestFiles", "SampleWithImage.md"))]);
@@ -204,7 +204,7 @@ public class DocumentPipelineTests
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator<string>.DimensionCount);
 
-        using DocumentPipeline<string> pipeline = new(new ThrowingReader(), documentProcessors, documentChunker, [], vectorStoreWriter);
+        using DocumentPipeline<string> pipeline = new(new ThrowingReader(), documentChunker, vectorStoreWriter, documentProcessors);
 
         await Assert.ThrowsAsync<ExpectedException>(() => pipeline.ProcessAsync([new FileInfo("ReaderWillThrowAnyway.cs")]));
         AssertErrorActivities(activities);

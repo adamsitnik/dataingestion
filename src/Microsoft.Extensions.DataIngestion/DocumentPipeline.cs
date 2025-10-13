@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static Microsoft.Extensions.DataIngestion.DiagnosticsConstants;
@@ -25,18 +24,18 @@ public sealed class DocumentPipeline<T> : IngestionPipeline
 
     public DocumentPipeline(
         IngestionDocumentReader reader,
-        IReadOnlyList<IngestionDocumentProcessor> documentProcessors,
         IngestionChunker<T> chunker,
-        IReadOnlyList<IngestionChunkProcessor<T>> chunkProcessors,
         IngestionChunkWriter<T> writer,
+        IReadOnlyList<IngestionDocumentProcessor>? documentProcessors = default,
+        IReadOnlyList<IngestionChunkProcessor<T>>? chunkProcessors = default,
         ILoggerFactory? loggerFactory = default,
         string? sourceName = default)
     {
         _reader = reader ?? throw new ArgumentNullException(nameof(reader));
-        _processors = documentProcessors ?? throw new ArgumentNullException(nameof(documentProcessors));
         _chunker = chunker ?? throw new ArgumentNullException(nameof(chunker));
-        _chunkProcessors = chunkProcessors ?? throw new ArgumentNullException(nameof(chunkProcessors));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _processors = documentProcessors ?? [];
+        _chunkProcessors = chunkProcessors ?? [];
         _logger = loggerFactory?.CreateLogger<DocumentPipeline<T>>();
         _activitySource = new ActivitySource(sourceName ?? ActivitySourceName);
     }
