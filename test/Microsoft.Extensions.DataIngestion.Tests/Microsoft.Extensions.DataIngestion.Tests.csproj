@@ -14,7 +14,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="LlamaParse" Version="0.1.2" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.8.0-preview.1.25412.6" />
     <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="2.0.0-preview.25373.1" />
     <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="2.0.0-preview.25373.1" />
@@ -30,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\LlamaParse.DocumentReader\LlamaParse.DocumentReader.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.Extensions.DataIngestion.Markdown\Microsoft.Extensions.DataIngestion.Markdown.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.Extensions.DataIngestion.MarkItDown\Microsoft.Extensions.DataIngestion.MarkItDown.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.Extensions.DataIngestion\Microsoft.Extensions.DataIngestion.csproj" />
