@@ -31,6 +31,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Microsoft.Extensions.DataIngestion.Markdown\Microsoft.Extensions.DataIngestion.Markdown.csproj" />
+    <ProjectReference Include="..\..\src\Microsoft.Extensions.DataIngestion.MarkItDown\Microsoft.Extensions.DataIngestion.MarkItDown.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.Extensions.DataIngestion\Microsoft.Extensions.DataIngestion.csproj" />
   </ItemGroup>
 

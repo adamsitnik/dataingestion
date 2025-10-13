@@ -54,12 +54,15 @@ public class MarkItDownReader : IngestionDocumentReader
         startInfo.Environment["LC_ALL"] = "C.UTF-8";
         startInfo.Environment["LANG"] = "C.UTF-8";
 
+#if NET
         startInfo.ArgumentList.Add(source.FullName);
-
         if (_extractImages)
         {
             startInfo.ArgumentList.Add("--keep-data-uris");
         }
+#else
+        startInfo.Arguments = $"\"{source.FullName}\"" + (_extractImages ? " --keep-data-uris" : "");
+#endif
 
         string outputContent = "";
         using (Process process = new() { StartInfo = startInfo })
@@ -67,9 +70,17 @@ public class MarkItDownReader : IngestionDocumentReader
             process.Start();
 
             // Read standard output asynchronously
-            outputContent = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+            outputContent = await process.StandardOutput.ReadToEndAsync(
+#if NET
+                cancellationToken
+#endif
+            );
 
+#if NET
             await process.WaitForExitAsync(cancellationToken);
+#else
+            process.WaitForExit();
+#endif
 
             if (process.ExitCode != 0)
             {
@@ -100,7 +111,11 @@ public class MarkItDownReader : IngestionDocumentReader
         string inputFilePath = Path.GetTempFileName();
         using (FileStream inputFile = new(inputFilePath, FileMode.Open, FileAccess.Write, FileShare.None, bufferSize: 1, FileOptions.Asynchronous))
         {
-            await source.CopyToAsync(inputFile, cancellationToken);
+            await source.CopyToAsync(inputFile
+#if NET
+                , cancellationToken
+#endif
+            );
         }
 
         try
