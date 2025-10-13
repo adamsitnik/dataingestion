@@ -70,7 +70,6 @@ public class DocumentPipelineTests
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
         TestEmbeddingGenerator<string> embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -79,7 +78,10 @@ public class DocumentPipelineTests
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator<string>.DimensionCount);
 
-        using DocumentPipeline<string> pipeline = new(reader, chunker, vectorStoreWriter, documentProcessors);
+        using DocumentPipeline<string> pipeline = new(reader, chunker, vectorStoreWriter)
+        {
+            DocumentProcessors = { RemovalProcessor.Footers, RemovalProcessor.EmptySections }
+        };
         await pipeline.ProcessAsync(files);
 
         Assert.True(embeddingGenerator.WasCalled, "Embedding generator should have been called.");
@@ -108,7 +110,6 @@ public class DocumentPipelineTests
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
         IngestionChunker<string> documentChunker = new HeaderChunker(CreateTokenizer());
         TestEmbeddingGenerator<string> embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
@@ -118,7 +119,10 @@ public class DocumentPipelineTests
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator<string>.DimensionCount);
 
-        using DocumentPipeline<string> pipeline = new(reader, documentChunker, vectorStoreWriter, documentProcessors);
+        using DocumentPipeline<string> pipeline = new(reader, documentChunker, vectorStoreWriter)
+        {
+            DocumentProcessors = { RemovalProcessor.Footers, RemovalProcessor.EmptySections }
+        };
 
         DirectoryInfo directory = new("TestFiles");
         string searchPattern = reader switch
@@ -194,7 +198,6 @@ public class DocumentPipelineTests
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IngestionDocumentProcessor[] documentProcessors = [RemovalProcessor.Footers];
         IngestionChunker<string> documentChunker = new SectionChunker(CreateTokenizer());
         TestEmbeddingGenerator<string> embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
@@ -204,7 +207,7 @@ public class DocumentPipelineTests
         using InMemoryVectorStore testVectorStore = new(options);
         using VectorStoreWriter<string> vectorStoreWriter = new(testVectorStore, dimensionCount: TestEmbeddingGenerator<string>.DimensionCount);
 
-        using DocumentPipeline<string> pipeline = new(new ThrowingReader(), documentChunker, vectorStoreWriter, documentProcessors);
+        using DocumentPipeline<string> pipeline = new(new ThrowingReader(), documentChunker, vectorStoreWriter);
 
         await Assert.ThrowsAsync<ExpectedException>(() => pipeline.ProcessAsync([new FileInfo("ReaderWillThrowAnyway.cs")]));
         AssertErrorActivities(activities);
