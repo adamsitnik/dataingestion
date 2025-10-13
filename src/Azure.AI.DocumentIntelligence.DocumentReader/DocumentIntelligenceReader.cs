@@ -292,11 +292,7 @@ public sealed class DocumentIntelligenceReader : IngestionDocumentReader
             StringBuilder stringBuilder = new(length);
             foreach (var span in spans)
             {
-                stringBuilder.Append(entireContent.AsSpan(span.Offset, span.Length)
-#if !NET
-                    .ToString()
-#endif
-                );
+                stringBuilder.Append(entireContent, span.Offset, span.Length);
             }
             return stringBuilder.ToString();
         }

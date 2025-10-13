@@ -58,6 +58,15 @@ public sealed class MarkdownReader : IngestionDocumentReader
 
     public IngestionDocument Read(string fileContent, string identifier)
     {
+        if (string.IsNullOrEmpty(fileContent))
+        {
+            throw new ArgumentNullException(nameof(fileContent));
+        }
+        else if (string.IsNullOrEmpty(identifier))
+        {
+            throw new ArgumentNullException(nameof(identifier));
+        }
+
         // Markdig's "UseAdvancedExtensions" option includes many common extensions beyond
         // CommonMark, such as citations, figures, footnotes, grid tables, mathematics
         // task lists, diagrams, and more.
