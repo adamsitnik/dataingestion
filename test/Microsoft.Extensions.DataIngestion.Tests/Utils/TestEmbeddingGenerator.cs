@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Tests;
 
-public class TestStringEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
+public class TestEmbeddingGenerator<T> : IEmbeddingGenerator<T, Embedding<float>>
 {
     public const int DimensionCount = 4;
 
@@ -17,7 +17,7 @@ public class TestStringEmbeddingGenerator : IEmbeddingGenerator<string, Embeddin
 
     public void Dispose() { }
 
-    public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default)
+    public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(IEnumerable<T> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default)
     {
         WasCalled = true;
 
