@@ -14,11 +14,13 @@ public class MarkItDownReader : IngestionDocumentReader
 {
     private readonly string _exePath;
     private readonly bool _extractImages;
+    private readonly MarkdownReader _markdownReader;
 
     public MarkItDownReader(string exePath = "markitdown", bool extractImages = false)
     {
         _exePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
         _extractImages = extractImages;
+        _markdownReader = new();
     }
 
     public override async Task<IngestionDocument> ReadAsync(FileInfo source, string identifier, string? mediaType = null, CancellationToken cancellationToken = default)
@@ -75,7 +77,7 @@ public class MarkItDownReader : IngestionDocumentReader
             }
         }
 
-        return MarkdownReader.Parse(outputContent, identifier);
+        return _markdownReader.Read(outputContent, identifier);
     }
 
     public override async Task<IngestionDocument> ReadAsync(Stream source, string identifier, string mediaType, CancellationToken cancellationToken = default)

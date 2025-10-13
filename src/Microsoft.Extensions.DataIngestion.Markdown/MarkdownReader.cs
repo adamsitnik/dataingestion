@@ -30,8 +30,13 @@ public sealed class MarkdownReader : IngestionDocumentReader
             throw new ArgumentNullException(nameof(identifier));
         }
 
+#if NET
         string fileContent = await File.ReadAllTextAsync(source.FullName, cancellationToken);
-        return Parse(fileContent, identifier);
+#else
+        using FileStream stream = new(source.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, FileOptions.Asynchronous);
+        string fileContent = await ReadToEndAsync(stream, cancellationToken);
+#endif
+        return Read(fileContent, identifier);
     }
 
     public override async Task<IngestionDocument> ReadAsync(Stream source, string identifier, string mediaType, CancellationToken cancellationToken = default)
@@ -47,12 +52,11 @@ public sealed class MarkdownReader : IngestionDocumentReader
             throw new ArgumentNullException(nameof(identifier));
         }
 
-        using StreamReader reader = new(source, leaveOpen: true);
-        string fileContent = await reader.ReadToEndAsync(cancellationToken);
-        return Parse(fileContent, identifier);
+        string fileContent = await ReadToEndAsync(source, cancellationToken);
+        return Read(fileContent, identifier);
     }
 
-    internal static IngestionDocument Parse(string fileContent, string identifier)
+    public IngestionDocument Read(string fileContent, string identifier)
     {
         // Markdig's "UseAdvancedExtensions" option includes many common extensions beyond
         // CommonMark, such as citations, figures, footnotes, grid tables, mathematics
@@ -63,6 +67,16 @@ public sealed class MarkdownReader : IngestionDocumentReader
 
         MarkdownDocument markdownDocument = Markdown.Parse(fileContent, pipeline);
         return Map(markdownDocument, fileContent, identifier);
+    }
+
+    private static async Task<string> ReadToEndAsync(Stream source, CancellationToken cancellationToken)
+    {
+        using StreamReader reader = new(source, encoding: null, detectEncodingFromByteOrderMarks: true, bufferSize: -1, leaveOpen: true);
+        return await reader.ReadToEndAsync(
+#if NET
+            cancellationToken
+#endif
+        );
     }
 
     private static IngestionDocument Map(MarkdownDocument markdownDocument, string outputContent, string identifier)
