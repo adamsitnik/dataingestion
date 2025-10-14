@@ -10,7 +10,7 @@ using System.Threading;
 namespace Microsoft.Extensions.DataIngestion.Chunkers;
 
 /// <summary>
-/// Treats each section in a <see cref="IngestionDocument"/> as a separate entity.
+/// Treats each <see cref="IngestionDocumentSection" /> in a <see cref="IngestionDocument.Sections"/> as a separate entity.
 /// </summary>
 public sealed class SectionChunker : IngestionChunker<string>
 {

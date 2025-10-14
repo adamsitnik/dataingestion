@@ -6,39 +6,32 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static Microsoft.Extensions.DataIngestion.DiagnosticsConstants;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public sealed class DocumentPipeline<T> : IngestionPipeline
+public sealed class IngestionPipeline<T> : IDisposable
 {
+    private readonly IngestionDocumentReader _reader;
+    private readonly IngestionChunker<T> _chunker;
+    private readonly IngestionChunkWriter<T> _writer;
     private readonly ActivitySource _activitySource;
     private readonly ILogger? _logger;
-    private readonly IngestionDocumentReader _reader;
-    private readonly IReadOnlyList<IngestionDocumentProcessor> _processors;
-    private readonly IngestionChunker<T> _chunker;
-    private readonly IReadOnlyList<IngestionChunkProcessor<T>> _chunkProcessors;
-    private readonly IngestionChunkWriter<T> _writer;
 
-    public DocumentPipeline(
+    public IngestionPipeline(
         IngestionDocumentReader reader,
-        IReadOnlyList<IngestionDocumentProcessor> documentProcessors,
         IngestionChunker<T> chunker,
-        IReadOnlyList<IngestionChunkProcessor<T>> chunkProcessors,
         IngestionChunkWriter<T> writer,
-        ILoggerFactory? loggerFactory = default,
-        string? sourceName = default)
+        IngestionPipelineOptions? options = default,
+        ILoggerFactory? loggerFactory = default)
     {
         _reader = reader ?? throw new ArgumentNullException(nameof(reader));
-        _processors = documentProcessors ?? throw new ArgumentNullException(nameof(documentProcessors));
         _chunker = chunker ?? throw new ArgumentNullException(nameof(chunker));
-        _chunkProcessors = chunkProcessors ?? throw new ArgumentNullException(nameof(chunkProcessors));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
-        _logger = loggerFactory?.CreateLogger<DocumentPipeline<T>>();
-        _activitySource = new ActivitySource(sourceName ?? ActivitySourceName);
+        _activitySource = new((options ?? new()).ActivitySourceName);
+        _logger = loggerFactory?.CreateLogger<IngestionPipeline<T>>();
     }
 
     public void Dispose()
@@ -46,6 +39,10 @@ public sealed class DocumentPipeline<T> : IngestionPipeline
         _writer.Dispose();
         _activitySource.Dispose();
     }
+
+    public IList<IngestionDocumentProcessor> DocumentProcessors { get; } = [];
+
+    public IList<IngestionChunkProcessor<T>> ChunkProcessors { get; } = [];
 
     public async Task ProcessAsync(DirectoryInfo directory, string searchPattern = "*.*", SearchOption searchOption = SearchOption.TopDirectoryOnly, CancellationToken cancellationToken = default)
     {
@@ -146,7 +143,7 @@ public sealed class DocumentPipeline<T> : IngestionPipeline
 
     private async Task ProcessAsync(IngestionDocument document, Activity? parentActivity, CancellationToken cancellationToken)
     {
-        foreach (IngestionDocumentProcessor processor in _processors)
+        foreach (IngestionDocumentProcessor processor in DocumentProcessors)
         {
             using (Activity? processorActivity = StartActivity(ProcessDocument.ActivityName, parent: parentActivity))
             {
@@ -162,7 +159,7 @@ public sealed class DocumentPipeline<T> : IngestionPipeline
         }
 
         IAsyncEnumerable<IngestionChunk<T>> chunks = _chunker.ProcessAsync(document, cancellationToken);
-        foreach (var processor in _chunkProcessors)
+        foreach (var processor in ChunkProcessors)
         {
             chunks = processor.ProcessAsync(chunks, cancellationToken);
         }

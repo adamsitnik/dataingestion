@@ -24,13 +24,12 @@ public class DataIngestor(
             IncrementalIngestion = true
         });
 
-        using DocumentPipeline<string> pipeline = new(
+        using IngestionPipeline<string> pipeline = new(
             new MarkItDownReader(), // requires MarkItDown to be installed and in PATH
-            [RemovalProcessor.Footers, RemovalProcessor.EmptySections],
             new SemanticSimilarityChunker(embeddingGenerator, TiktokenTokenizer.CreateForModel("gpt-4o")),
-            [], // [new SummaryEnricher(chatClient)], takes too much time for samples
             writer,
-            loggerFactory);
+            // [new SummaryEnricher(chatClient)], takes too much time for samples
+            loggerFactory: loggerFactory);
 
         await pipeline.ProcessAsync(directory, searchPattern);
     }

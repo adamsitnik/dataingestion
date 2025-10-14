@@ -29,9 +29,6 @@ namespace Samples
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
             IngestionDocumentReader reader = CreateReader(readerId, extractImages);
-            List<IngestionDocumentProcessor> processors = CreateDocumentProcessors(extractImages);
-            IngestionChunkProcessor<string>[] chunkProcessors = CreateChunkProcessors();
-
             IngestionChunker<string> chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
 
             using SqlServerVectorStore sqlServerVectorStore = new(
@@ -42,7 +39,9 @@ namespace Samples
                 });
             using VectorStoreWriter<string> writer = new(sqlServerVectorStore, 1536 /* text-embedding-3-small */);
 
-            using DocumentPipeline<string> pipeline = new(reader, processors, chunker, chunkProcessors, writer, loggerFactory);
+            using IngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory: loggerFactory);
+            AddDocumentProcessors(pipeline, extractImages);
+            AddChunkProcessors(pipeline);
 
             await pipeline.ProcessAsync(files, cancellationToken);
 
@@ -63,7 +62,6 @@ namespace Samples
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
             IngestionDocumentReader reader = CreateReader(readerId, extractImages: false);
-            List<IngestionDocumentProcessor> processors = CreateDocumentProcessors(extractImages: false);
 
             IngestionChunker<string> chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
 
@@ -79,7 +77,8 @@ namespace Samples
 
             using QAWriter writer = new(collection, openAIClient.GetChatClient("gpt-4.1").AsIChatClient());
 
-            using DocumentPipeline<string> pipeline = new(reader, processors, chunker, [], writer, loggerFactory);
+            using IngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory: loggerFactory);
+            AddDocumentProcessors(pipeline, extractImages: false);
 
             await pipeline.ProcessAsync(files, cancellationToken);
 
@@ -121,23 +120,22 @@ namespace Samples
                 _ => throw new NotSupportedException($"The specified reader '{readerId}' is not supported.")
             };
 
-        private static List<IngestionDocumentProcessor> CreateDocumentProcessors(bool extractImages)
+        private static void AddDocumentProcessors<T>(IngestionPipeline<T> pipeline, bool extractImages)
         {
-            List<IngestionDocumentProcessor> processors = [RemovalProcessor.Footers, RemovalProcessor.EmptySections];
+            pipeline.DocumentProcessors.Add(RemovalProcessor.Footers);
+            pipeline.DocumentProcessors.Add(RemovalProcessor.EmptySections);
 
             if (extractImages)
             {
                 AzureOpenAIClient openAIClient = CreateOpenAiClient();
-                processors.Add(new ImageAlternativeTextEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient()));
+                pipeline.DocumentProcessors.Add(new ImageAlternativeTextEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient()));
             }
-
-            return processors;
         }
 
-        private static IngestionChunkProcessor<string>[] CreateChunkProcessors()
+        private static void AddChunkProcessors(IngestionPipeline<string> pipeline)
         {
             AzureOpenAIClient openAIClient = CreateOpenAiClient();
-            return [new SummaryEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient())];
+            pipeline.ChunkProcessors.Add(new SummaryEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient()));
         }
 
         private static IEmbeddingGenerator<string, Embedding<float>> CreateEmbeddingGenerator()

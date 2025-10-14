@@ -63,7 +63,7 @@ public sealed class VectorStoreWriter<T> : IngestionChunkWriter<T>
             throw new ArgumentNullException(nameof(chunks));
         }
 
-        List<object>? preExistingKeys = null;
+        IReadOnlyList<object>? preExistingKeys = null;
         await foreach (IngestionChunk<T> chunk in chunks.WithCancellation(cancellationToken))
         {
             if (_vectorStoreCollection is null)
@@ -148,7 +148,7 @@ public sealed class VectorStoreWriter<T> : IngestionChunkWriter<T>
         return definition;
     }
 
-    private async Task<List<object>> GetPreExistingChunksIds(IngestionDocument document, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<object>> GetPreExistingChunksIds(IngestionDocument document, CancellationToken cancellationToken)
     {
         if (!_options.IncrementalIngestion)
         {
@@ -158,7 +158,7 @@ public sealed class VectorStoreWriter<T> : IngestionChunkWriter<T>
         // Each Vector Store has a different max top count limit, so we use low value and loop.
         const int MaxTopCount = 1_000;
 
-        List<object>? keys = [];
+        List<object> keys = [];
         int insertedCount;
         do
         {
