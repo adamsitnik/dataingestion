@@ -39,7 +39,7 @@ namespace Samples
                 });
             using VectorStoreWriter<string> writer = new(sqlServerVectorStore, 1536 /* text-embedding-3-small */);
 
-            using SequentialIngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory);
+            using IngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory: loggerFactory);
             AddDocumentProcessors(pipeline, extractImages);
             AddChunkProcessors(pipeline);
 
@@ -77,7 +77,7 @@ namespace Samples
 
             using QAWriter writer = new(collection, openAIClient.GetChatClient("gpt-4.1").AsIChatClient());
 
-            using SequentialIngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory);
+            using IngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory: loggerFactory);
             AddDocumentProcessors(pipeline, extractImages: false);
 
             await pipeline.ProcessAsync(files, cancellationToken);
@@ -120,7 +120,7 @@ namespace Samples
                 _ => throw new NotSupportedException($"The specified reader '{readerId}' is not supported.")
             };
 
-        private static void AddDocumentProcessors<T>(SequentialIngestionPipeline<T> pipeline, bool extractImages)
+        private static void AddDocumentProcessors<T>(IngestionPipeline<T> pipeline, bool extractImages)
         {
             pipeline.DocumentProcessors.Add(RemovalProcessor.Footers);
             pipeline.DocumentProcessors.Add(RemovalProcessor.EmptySections);
@@ -132,7 +132,7 @@ namespace Samples
             }
         }
 
-        private static void AddChunkProcessors(SequentialIngestionPipeline<string> pipeline)
+        private static void AddChunkProcessors(IngestionPipeline<string> pipeline)
         {
             AzureOpenAIClient openAIClient = CreateOpenAiClient();
             pipeline.ChunkProcessors.Add(new SummaryEnricher(openAIClient.GetChatClient("gpt-4.1").AsIChatClient()));

@@ -12,7 +12,7 @@ using static Microsoft.Extensions.DataIngestion.DiagnosticsConstants;
 
 namespace Microsoft.Extensions.DataIngestion;
 
-public sealed class SequentialIngestionPipeline<T> : IngestionPipeline<T>
+public sealed class IngestionPipeline<T> : IDisposable
 {
     private readonly IngestionDocumentReader _reader;
     private readonly IngestionChunker<T> _chunker;
@@ -20,34 +20,45 @@ public sealed class SequentialIngestionPipeline<T> : IngestionPipeline<T>
     private readonly ActivitySource _activitySource;
     private readonly ILogger? _logger;
 
-    public SequentialIngestionPipeline(
+    public IngestionPipeline(
         IngestionDocumentReader reader,
         IngestionChunker<T> chunker,
         IngestionChunkWriter<T> writer,
-        ILoggerFactory? loggerFactory = default,
-        string? sourceName = default)
+        IngestionPipelineOptions? options = default,
+        ILoggerFactory? loggerFactory = default)
     {
         _reader = reader ?? throw new ArgumentNullException(nameof(reader));
         _chunker = chunker ?? throw new ArgumentNullException(nameof(chunker));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
-        _logger = loggerFactory?.CreateLogger<SequentialIngestionPipeline<T>>();
-        _activitySource = new(sourceName ?? ActivitySourceName);
+        _activitySource = new((options ?? new()).ActivitySourceName);
+        _logger = loggerFactory?.CreateLogger<IngestionPipeline<T>>();
     }
 
-    protected override void Dispose(bool disposing)
+    public void Dispose()
     {
         _writer.Dispose();
         _activitySource.Dispose();
     }
 
-    public override async Task ProcessAsync(DirectoryInfo directory, string searchPattern = "*.*",
-        SearchOption searchOption = SearchOption.TopDirectoryOnly, CancellationToken cancellationToken = default)
+    public IList<IngestionDocumentProcessor> DocumentProcessors { get; } = [];
+
+    public IList<IngestionChunkProcessor<T>> ChunkProcessors { get; } = [];
+
+    public async Task ProcessAsync(DirectoryInfo directory, string searchPattern = "*.*", SearchOption searchOption = SearchOption.TopDirectoryOnly, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         if (directory is null)
         {
             throw new ArgumentNullException(nameof(directory));
+        }
+        else if (string.IsNullOrEmpty(searchPattern))
+        {
+            throw new ArgumentNullException(nameof(searchPattern));
+        }
+        else if (!(searchOption is SearchOption.TopDirectoryOnly or SearchOption.AllDirectories))
+        {
+            throw new ArgumentOutOfRangeException(nameof(searchOption));
         }
 
         using (Activity? rootActivity = StartActivity(ProcessDirectory.ActivityName, ActivityKind.Internal))
@@ -60,7 +71,7 @@ public sealed class SequentialIngestionPipeline<T> : IngestionPipeline<T>
 
             try
             {
-                await base.ProcessAsync(directory, searchPattern, searchOption, cancellationToken);
+                await ProcessAsync(directory.EnumerateFiles(searchPattern, searchOption), cancellationToken, rootActivity);
             }
             catch (Exception ex)
             {
@@ -73,7 +84,7 @@ public sealed class SequentialIngestionPipeline<T> : IngestionPipeline<T>
         }
     }
 
-    public override async Task ProcessAsync(IEnumerable<FileInfo> files, CancellationToken cancellationToken = default)
+    public async Task ProcessAsync(IEnumerable<FileInfo> files, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
