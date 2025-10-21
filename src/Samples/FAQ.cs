@@ -34,7 +34,7 @@ public sealed class QAWriter : IngestionChunkWriter<string>
                 new(ChatRole.User,
                 [
                     new TextContent("Write a FAQ for this text. Make it no longer than 10 questions and answers."),
-                    new TextContent(chunk.Context)
+                    new TextContent(chunk.Content)
                 ])
             ], cancellationToken: cancellationToken);
 
