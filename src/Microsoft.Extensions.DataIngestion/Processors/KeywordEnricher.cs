@@ -25,7 +25,7 @@ public sealed class KeywordEnricher : IngestionChunkProcessor<string>
 
     // API design: predefinedKeywords needs to be provided in explicit way, so the user is encouraged to think about it.
     // And for example provide a closed set, so the results are more predictable.
-    public KeywordEnricher(IChatClient chatClient, string[]? predefinedKeywords,
+    public KeywordEnricher(IChatClient chatClient, ReadOnlySpan<string> predefinedKeywords,
         ChatOptions? chatOptions = null, int maxKeywords = 5, double confidenceThreshold = 0.7)
     {
         if (confidenceThreshold < 0.0 || confidenceThreshold > 1.0)
@@ -67,13 +67,13 @@ public sealed class KeywordEnricher : IngestionChunkProcessor<string>
         }
     }
 
-    private static TextContent CreateLlmRequest(int maxKeywords, string[]? predefinedKeywords, double confidenceThreshold)
+    private static TextContent CreateLlmRequest(int maxKeywords, ReadOnlySpan<string> predefinedKeywords, double confidenceThreshold)
     {
         StringBuilder sb = new($"You are a keyword extraction expert. Analyze the given text and extract up to {maxKeywords} most relevant keywords.");
 
-        if (predefinedKeywords is not null && predefinedKeywords.Length > 0)
+        if (predefinedKeywords.Length > 0)
         {
-            sb.Append($" Focus on extracting keywords from the following predefined list: {string.Join(", ", predefinedKeywords)}.");
+            sb.Append($" Focus on extracting keywords from the following predefined list: {string.Join(", ", predefinedKeywords.ToArray())}.");
         }
 
         sb.Append($" Exclude keywords with confidence score below {confidenceThreshold}.");
