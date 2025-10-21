@@ -23,20 +23,16 @@ public sealed class ClassificationEnricher : IngestionChunkProcessor<string>
     private readonly TextContent _request;
 
     public ClassificationEnricher(IChatClient chatClient, ReadOnlySpan<string> predefinedClasses,
-        ChatOptions? chatOptions = null, string fallbackClass = "Unknown")
+        ChatOptions? chatOptions = null, string? fallbackClass = null)
     {
         if (predefinedClasses.Length == 0)
         {
             throw new ArgumentException("Predefined classes must be provided.", nameof(predefinedClasses));
         }
-        else if (string.IsNullOrEmpty(fallbackClass))
-        {
-            throw new ArgumentException("Fallback class must be provided.", nameof(fallbackClass));
-        }
 
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
         _chatOptions = chatOptions;
-        _request = CreateLlmRequest(predefinedClasses, fallbackClass);
+        _request = CreateLlmRequest(predefinedClasses, string.IsNullOrEmpty(fallbackClass) ? "Unknown" : fallbackClass!);
     }
 
     public static string MetadataKey => "classification";
