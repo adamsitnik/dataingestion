@@ -66,5 +66,12 @@ public sealed class ClassificationEnricher : IngestionChunkProcessor<string>
 
     private static TextContent CreateLlmRequest(ReadOnlySpan<string> predefinedClasses, string fallbackClass)
         => new($"You are a classification expert. Analyze the given text and assign single, most relevant class. " +
-            $"Use only the following predefined classes: {string.Join(", ", predefinedClasses.ToArray())} and return {fallbackClass} when unable to classify.");
+            $"Use only the following predefined classes: {Join(predefinedClasses)} and return {fallbackClass} when unable to classify.");
+
+    private static string Join(ReadOnlySpan<string> predefinedClasses)
+        => string.Join(", ", predefinedClasses!
+#if !NET
+                .ToArray()
+#endif
+        );
 }

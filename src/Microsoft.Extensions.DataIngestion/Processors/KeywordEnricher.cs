@@ -73,7 +73,12 @@ public sealed class KeywordEnricher : IngestionChunkProcessor<string>
 
         if (predefinedKeywords.Length > 0)
         {
-            sb.Append($" Focus on extracting keywords from the following predefined list: {string.Join(", ", predefinedKeywords.ToArray())}.");
+            string joined = string.Join(", ", predefinedKeywords!
+#if !NET
+                .ToArray()
+#endif
+            );
+            sb.Append($" Focus on extracting keywords from the following predefined list: {joined}.");
         }
 
         sb.Append($" Exclude keywords with confidence score below {confidenceThreshold}.");
