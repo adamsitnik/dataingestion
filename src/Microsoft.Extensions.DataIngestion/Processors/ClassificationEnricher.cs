@@ -22,21 +22,17 @@ public sealed class ClassificationEnricher : IngestionChunkProcessor<string>
     private readonly ChatOptions? _chatOptions;
     private readonly TextContent _request;
 
-    public ClassificationEnricher(IChatClient chatClient, string[] predefinedClasses,
-        ChatOptions? chatOptions = null, string fallbackClass = "Unknown")
+    public ClassificationEnricher(IChatClient chatClient, ReadOnlySpan<string> predefinedClasses,
+        ChatOptions? chatOptions = null, string? fallbackClass = null)
     {
-        if (predefinedClasses is null || predefinedClasses.Length == 0)
+        if (predefinedClasses.Length == 0)
         {
             throw new ArgumentException("Predefined classes must be provided.", nameof(predefinedClasses));
-        }
-        else if (string.IsNullOrEmpty(fallbackClass))
-        {
-            throw new ArgumentException("Fallback class must be provided.", nameof(fallbackClass));
         }
 
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
         _chatOptions = chatOptions;
-        _request = CreateLlmRequest(predefinedClasses, fallbackClass);
+        _request = CreateLlmRequest(predefinedClasses, string.IsNullOrEmpty(fallbackClass) ? "Unknown" : fallbackClass!);
     }
 
     public static string MetadataKey => "classification";
@@ -68,7 +64,14 @@ public sealed class ClassificationEnricher : IngestionChunkProcessor<string>
         }
     }
 
-    private static TextContent CreateLlmRequest(string[] predefinedClasses, string fallbackClass)
+    private static TextContent CreateLlmRequest(ReadOnlySpan<string> predefinedClasses, string fallbackClass)
         => new($"You are a classification expert. Analyze the given text and assign single, most relevant class. " +
-            $"Use only the following predefined classes: {string.Join(", ", predefinedClasses)} and return {fallbackClass} when unable to classify.");
+            $"Use only the following predefined classes: {Join(predefinedClasses)} and return {fallbackClass} when unable to classify.");
+
+    private static string Join(ReadOnlySpan<string> predefinedClasses)
+        => string.Join(", ", predefinedClasses!
+#if !NET
+                .ToArray()
+#endif
+        );
 }

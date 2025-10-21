@@ -20,8 +20,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         {
             EmbeddingClient embeddingClient = CreateEmbeddingClient();
             Tokenizer tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
-            return new SemanticSimilarityChunker(embeddingClient.AsIEmbeddingGenerator(), tokenizer,
-                new() { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = overlapTokens });
+            return new SemanticSimilarityChunker(embeddingClient.AsIEmbeddingGenerator(),
+                new(tokenizer) { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = overlapTokens });
         }
 
         private EmbeddingClient CreateEmbeddingClient()

@@ -29,7 +29,7 @@ namespace Samples
             using ILoggerFactory loggerFactory = CreateLoggerFactory(logLevel);
 
             IngestionDocumentReader reader = CreateReader(readerId, extractImages);
-            IngestionChunker<string> chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
+            IngestionChunker<string> chunker = new HeaderChunker(new(TiktokenTokenizer.CreateForModel("gpt-4")));
 
             using SqlServerVectorStore sqlServerVectorStore = new(
                 Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,
@@ -63,7 +63,7 @@ namespace Samples
 
             IngestionDocumentReader reader = CreateReader(readerId, extractImages: false);
 
-            IngestionChunker<string> chunker = new HeaderChunker(TiktokenTokenizer.CreateForModel("gpt-4"));
+            IngestionChunker<string> chunker = new HeaderChunker(new(TiktokenTokenizer.CreateForModel("gpt-4")));
 
             using SqlServerVectorStore sqlServerVectorStore = new(
                 Environment.GetEnvironmentVariable("SQL_SERVER_CONNECTION_STRING")!,

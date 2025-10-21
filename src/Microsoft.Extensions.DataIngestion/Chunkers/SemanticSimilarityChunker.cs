@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using Microsoft.Extensions.AI;
-using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Numerics.Tensors;
@@ -23,14 +22,18 @@ public sealed class SemanticSimilarityChunker : IngestionChunker<string>
 
     public SemanticSimilarityChunker(
         IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-        Tokenizer tokenizer, IngestionChunkerOptions? options = default,
-        float thresholdPercentile = 95.0f)
+        IngestionChunkerOptions options,
+        float? thresholdPercentile = null)
     {
         _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
-        _elementsChunker = new(tokenizer, options ?? new());
-        _thresholdPercentile = thresholdPercentile < 0f || thresholdPercentile > 100f
-            ? throw new ArgumentOutOfRangeException(nameof(thresholdPercentile))
-            : thresholdPercentile ;
+        _elementsChunker = new(options);
+
+        if (thresholdPercentile.HasValue && (thresholdPercentile < 0f || thresholdPercentile > 100f))
+        {
+            throw new ArgumentOutOfRangeException(nameof(thresholdPercentile), "Threshold percentile must be between 0 and 100.");
+        }
+
+        _thresholdPercentile = thresholdPercentile ?? 95.0f;
     }
 
     public override async IAsyncEnumerable<IngestionChunk<string>> ProcessAsync(IngestionDocument document,

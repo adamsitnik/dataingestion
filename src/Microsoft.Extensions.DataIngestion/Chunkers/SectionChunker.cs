@@ -1,7 +1,6 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +15,8 @@ public sealed class SectionChunker : IngestionChunker<string>
 {
     private readonly ElementsChunker _elementsChunker;
 
-    public SectionChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
-        => _elementsChunker = new(tokenizer, options ?? new());
+    public SectionChunker(IngestionChunkerOptions options)
+        => _elementsChunker = new(options);
 
     public override IAsyncEnumerable<IngestionChunk<string>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
     {

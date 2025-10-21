@@ -22,11 +22,17 @@ public sealed class SummaryEnricher : IngestionChunkProcessor<string>
     private readonly ChatOptions? _chatOptions;
     private readonly int _maxWordCount;
 
-    public SummaryEnricher(IChatClient chatClient, ChatOptions? chatOptions = null, int maxWordCount = 100)
+    public SummaryEnricher(IChatClient chatClient, ChatOptions? chatOptions = null, int? maxWordCount = null)
     {
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
         _chatOptions = chatOptions;
-        _maxWordCount = maxWordCount > 0 ? maxWordCount : throw new ArgumentOutOfRangeException(nameof(maxWordCount));
+
+        if (maxWordCount.HasValue && maxWordCount.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxWordCount), "Max word count must be greater than zero.");
+        }
+
+        _maxWordCount = maxWordCount ?? 100;
     }
 
     public static string MetadataKey => "summary";

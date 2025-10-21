@@ -16,15 +16,13 @@ public sealed class IngestionChunk<T>
 
     public IngestionDocument Document { get; }
 
-    public int? TokenCount { get; }
-
     public string? Context { get; }
 
     public bool HasMetadata => _metadata?.Count > 0;
 
-    public Dictionary<string, object> Metadata => _metadata ??= new();
+    public IDictionary<string, object> Metadata => _metadata ??= [];
 
-    public IngestionChunk(T content, IngestionDocument document, int? tokenCount = null, string? context = null)
+    public IngestionChunk(T content, IngestionDocument document, string? context = null)
     {
         if (content is null)
         {
@@ -37,14 +35,9 @@ public sealed class IngestionChunk<T>
                 throw new ArgumentException("Content cannot be null or whitespace.", nameof(content));
             }
         }
-        if (tokenCount.HasValue && tokenCount.Value <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(tokenCount), "Token count must be greater than zero.");
-        }
 
         Content = content;
         Document = document ?? throw new ArgumentNullException(nameof(document));
-        TokenCount = tokenCount;
         Context = context;
     }
 }

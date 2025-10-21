@@ -22,16 +22,16 @@ public sealed class SentimentEnricher : IngestionChunkProcessor<string>
     private readonly ChatOptions? _chatOptions;
     private readonly double _confidenceThreshold;
 
-    public SentimentEnricher(IChatClient chatClient, ChatOptions? chatOptions = null, double confidenceThreshold = 0.7)
+    public SentimentEnricher(IChatClient chatClient, ChatOptions? chatOptions = null, double? confidenceThreshold = 0.7)
     {
-        if (confidenceThreshold < 0.0 || confidenceThreshold > 1.0)
+        if (confidenceThreshold.HasValue && (confidenceThreshold < 0.0 || confidenceThreshold > 1.0))
         {
             throw new ArgumentOutOfRangeException(nameof(confidenceThreshold), "The confidence threshold must be between 0.0 and 1.0.");
         }
 
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
         _chatOptions = chatOptions;
-        _confidenceThreshold = confidenceThreshold;
+        _confidenceThreshold = confidenceThreshold ?? 0.7;
     }
 
     public static string MetadataKey => "sentiment";

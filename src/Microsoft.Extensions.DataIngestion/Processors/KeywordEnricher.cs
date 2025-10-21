@@ -25,17 +25,17 @@ public sealed class KeywordEnricher : IngestionChunkProcessor<string>
 
     // API design: predefinedKeywords needs to be provided in explicit way, so the user is encouraged to think about it.
     // And for example provide a closed set, so the results are more predictable.
-    public KeywordEnricher(IChatClient chatClient, string[]? predefinedKeywords,
-        ChatOptions? chatOptions = null, int maxKeywords = 5, double confidenceThreshold = 0.7)
+    public KeywordEnricher(IChatClient chatClient, ReadOnlySpan<string> predefinedKeywords,
+        ChatOptions? chatOptions = null, int? maxKeywords = null, double? confidenceThreshold = null)
     {
-        if (confidenceThreshold < 0.0 || confidenceThreshold > 1.0)
+        if (confidenceThreshold.HasValue && (confidenceThreshold < 0.0 || confidenceThreshold > 1.0))
         {
             throw new ArgumentOutOfRangeException(nameof(confidenceThreshold), "The confidence threshold must be between 0.0 and 1.0.");
         }
 
         _chatClient = chatClient ?? throw new ArgumentNullException(nameof(chatClient));
         _chatOptions = chatOptions;
-        _request = CreateLlmRequest(maxKeywords, predefinedKeywords, confidenceThreshold);
+        _request = CreateLlmRequest(maxKeywords ?? 5, predefinedKeywords, confidenceThreshold ?? 0.7);
     }
 
     public static string MetadataKey => "keywords";
@@ -67,13 +67,18 @@ public sealed class KeywordEnricher : IngestionChunkProcessor<string>
         }
     }
 
-    private static TextContent CreateLlmRequest(int maxKeywords, string[]? predefinedKeywords, double confidenceThreshold)
+    private static TextContent CreateLlmRequest(int maxKeywords, ReadOnlySpan<string> predefinedKeywords, double confidenceThreshold)
     {
         StringBuilder sb = new($"You are a keyword extraction expert. Analyze the given text and extract up to {maxKeywords} most relevant keywords.");
 
-        if (predefinedKeywords is not null && predefinedKeywords.Length > 0)
+        if (predefinedKeywords.Length > 0)
         {
-            sb.Append($" Focus on extracting keywords from the following predefined list: {string.Join(", ", predefinedKeywords)}.");
+            string joined = string.Join(", ", predefinedKeywords!
+#if !NET
+                .ToArray()
+#endif
+            );
+            sb.Append($" Focus on extracting keywords from the following predefined list: {joined}.");
         }
 
         sb.Append($" Exclude keywords with confidence score below {confidenceThreshold}.");

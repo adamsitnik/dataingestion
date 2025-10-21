@@ -78,7 +78,7 @@ public abstract class IngestionDocumentElement
 
     public bool HasMetadata => _metadata?.Count > 0;
 
-    public Dictionary<string, object?> Metadata => _metadata ??= [];
+    public IDictionary<string, object?> Metadata => _metadata ??= [];
 }
 
 /// <summary>
