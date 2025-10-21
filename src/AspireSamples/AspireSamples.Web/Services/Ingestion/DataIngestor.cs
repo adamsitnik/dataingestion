@@ -26,7 +26,7 @@ public class DataIngestor(
 
         using IngestionPipeline<string> pipeline = new(
             new MarkItDownReader(), // requires MarkItDown to be installed and in PATH
-            new SemanticSimilarityChunker(embeddingGenerator, TiktokenTokenizer.CreateForModel("gpt-4o")),
+            new SemanticSimilarityChunker(embeddingGenerator, new(TiktokenTokenizer.CreateForModel("gpt-4o"))),
             writer,
             // [new SummaryEnricher(chatClient)], takes too much time for samples
             loggerFactory: loggerFactory);

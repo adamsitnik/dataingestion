@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using Microsoft.Extensions.DataIngestion.Chunkers;
-using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,8 +18,8 @@ public sealed class HeaderChunker : IngestionChunker<string>
     private const int MaxHeaderLevel = 10;
     private readonly ElementsChunker _elementsChunker;
 
-    public HeaderChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
-        => _elementsChunker = new(tokenizer, options ?? new());
+    public HeaderChunker(IngestionChunkerOptions options)
+        => _elementsChunker = new(options);
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public override async IAsyncEnumerable<IngestionChunk<string>> ProcessAsync(IngestionDocument document,

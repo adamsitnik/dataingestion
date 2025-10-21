@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         protected override IngestionChunker<string> CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
             var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4o");
-            return new DocumentTokenChunker(tokenizer, new() { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = 0 });
+            return new DocumentTokenChunker(new(tokenizer) { MaxTokensPerChunk = maxTokensPerChunk, OverlapTokens = 0 });
         }
 
         [Fact]

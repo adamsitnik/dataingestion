@@ -22,10 +22,14 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         private readonly int _maxTokensPerChunk;
         private readonly int _chunkOverlap;
 
-        public DocumentTokenChunker(Tokenizer tokenizer, IngestionChunkerOptions? options = default)
+        public DocumentTokenChunker(IngestionChunkerOptions options)
         {
-            _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
-            options ??= new();
+            if (options is null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
+            _tokenizer = options.Tokenizer;
             _maxTokensPerChunk = options.MaxTokensPerChunk;
             _chunkOverlap = options.OverlapTokens;
         }

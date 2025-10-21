@@ -23,11 +23,11 @@ public sealed class SemanticSimilarityChunker : IngestionChunker<string>
 
     public SemanticSimilarityChunker(
         IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-        Tokenizer tokenizer, IngestionChunkerOptions? options = default,
+        IngestionChunkerOptions options,
         float thresholdPercentile = 95.0f)
     {
         _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
-        _elementsChunker = new(tokenizer, options ?? new());
+        _elementsChunker = new(options);
         _thresholdPercentile = thresholdPercentile < 0f || thresholdPercentile > 100f
             ? throw new ArgumentOutOfRangeException(nameof(thresholdPercentile))
             : thresholdPercentile ;

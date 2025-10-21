@@ -16,9 +16,14 @@ internal sealed class ElementsChunker
     private readonly bool _considerNormalization;
     private StringBuilder? _currentChunk;
 
-    internal ElementsChunker(Tokenizer tokenizer, IngestionChunkerOptions options)
+    internal ElementsChunker(IngestionChunkerOptions options)
     {
-        _tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        _tokenizer = options.Tokenizer;
         _maxTokensPerChunk = options.MaxTokensPerChunk;
         _overlapTokens = options.OverlapTokens;
         _considerNormalization = options.ConsiderNormalization;

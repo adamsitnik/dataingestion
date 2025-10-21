@@ -110,7 +110,7 @@ public class DocumentPipelineTests
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IngestionChunker<string> documentChunker = new HeaderChunker(CreateTokenizer());
+        IngestionChunker<string> documentChunker = new HeaderChunker(new(CreateTokenizer()));
         TestEmbeddingGenerator<string> embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -198,7 +198,7 @@ public class DocumentPipelineTests
         List<Activity> activities = [];
         using TracerProvider tracerProvider = CreateTraceProvider(activities);
 
-        IngestionChunker<string> documentChunker = new SectionChunker(CreateTokenizer());
+        IngestionChunker<string> documentChunker = new SectionChunker(new(CreateTokenizer()));
         TestEmbeddingGenerator<string> embeddingGenerator = new();
         InMemoryVectorStoreOptions options = new()
         {
@@ -255,8 +255,8 @@ public class DocumentPipelineTests
 
     private static List<IngestionChunker<string>> CreateChunkers() => [
         // Chunk size comes from https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents#text-split-skill-example
-        new HeaderChunker(CreateTokenizer()),
-        new SectionChunker(CreateTokenizer())
+        new HeaderChunker(new(CreateTokenizer())),
+        new SectionChunker(new(CreateTokenizer()))
     ];
 
     private static TracerProvider CreateTraceProvider(List<Activity> activities)

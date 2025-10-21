@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Microsoft.ML.Tokenizers;
 using System;
 
 namespace Microsoft.Extensions.DataIngestion;
@@ -11,6 +12,13 @@ public class IngestionChunkerOptions
     private int _maxTokensPerChunk = 2_000;
     private const int DefaultOverlapTokens = 500;
     private int? _overlapTokens;
+
+    public IngestionChunkerOptions(Tokenizer tokenizer)
+    {
+        Tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
+    }
+
+    public Tokenizer Tokenizer { get; }
 
     /// <summary>
     /// The maximum number of tokens allowed in each chunk. Default is 2000.
