@@ -42,7 +42,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             ChunkAssertions.ContentEquals("fox jumps over the", chunks[1]);
             ChunkAssertions.ContentEquals("the lazy dog", chunks[2]);
 
-            Assert.True(chunks.Last().TokenCount <= chunkSize);
+            Assert.True(tokenizer.CountTokens(chunks.Last().Content) <= chunkSize);
 
             for (int i = 0; i < chunks.Count - 1; i++)
             {

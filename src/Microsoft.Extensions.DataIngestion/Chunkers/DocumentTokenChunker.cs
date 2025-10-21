@@ -58,7 +58,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         private IngestionChunk<string> GroupToChunk(IngestionDocument document, ArraySegment<int> tokenGroup)
         {
             string text = _tokenizer.Decode(tokenGroup);
-            return new(text, document, tokenGroup.Count);
+            return new(text, document);
         }
 
         private static string GetDocumentMarkdown(IngestionDocument document)

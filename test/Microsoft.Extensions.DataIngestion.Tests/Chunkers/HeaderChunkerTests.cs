@@ -172,12 +172,13 @@ And some follow up.", chunks[1].Content, ignoreLineEndingDifferences: true);
     {
         IngestionDocument document = CreateDocumentWithLargeTable();
 
-        HeaderChunker chunker = new(TiktokenTokenizer.CreateForModel("gpt-4"), new() { MaxTokensPerChunk = 50 });
+        Tokenizer tokenizer = TiktokenTokenizer.CreateForModel("gpt-4");
+        HeaderChunker chunker = new(tokenizer, new() { MaxTokensPerChunk = 50 });
         IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(document).ToListAsync();
 
         Assert.Equal(6, chunks.Count);
         Assert.All(chunks, chunk => Assert.Equal("Header A", chunk.Context));
-        Assert.All(chunks, chunk => Assert.InRange(chunk.TokenCount.GetValueOrDefault(), 1, 50));
+        Assert.All(chunks, chunk => Assert.InRange(tokenizer.CountTokens(chunk.Content), 1, 50));
 
         Assert.Equal(
 @"Header A
