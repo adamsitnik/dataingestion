@@ -20,7 +20,7 @@ public sealed class IngestionChunk<T>
 
     public bool HasMetadata => _metadata?.Count > 0;
 
-    public Dictionary<string, object> Metadata => _metadata ??= new();
+    public IDictionary<string, object> Metadata => _metadata ??= [];
 
     public IngestionChunk(T content, IngestionDocument document, string? context = null)
     {
