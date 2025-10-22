@@ -13,13 +13,24 @@ namespace Microsoft.Extensions.DataIngestion;
 /// </summary>
 public sealed class IngestionDocument
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IngestionDocument"/> class.
+    /// </summary>
+    /// <param name="identifier">The unique identifier for the document.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="identifier"/> is <see langword="null"/>.</exception>
     public IngestionDocument(string identifier)
     {
         Identifier = identifier ?? throw new ArgumentNullException(nameof(identifier));
     }
 
+    /// <summary>
+    /// Gets the unique identifier for the document.
+    /// </summary>
     public string Identifier { get; }
 
+    /// <summary>
+    /// Gets the sections of the document.
+    /// </summary>
     public List<IngestionDocumentSection> Sections { get; } = [];
 
     /// <summary>
@@ -56,11 +67,19 @@ public sealed class IngestionDocument
     }
 }
 
+/// <summary>
+/// Represents an element within an <see cref="IngestionDocument"/>.
+/// </summary>
 [DebuggerDisplay("{GetType().Name}: {GetMarkdown()}")]
 public abstract class IngestionDocumentElement
 {
     protected string _markdown;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IngestionDocumentElement"/> class.
+    /// </summary>
+    /// <param name="markdown">The markdown representation of the element.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="markdown"/> is <see langword="null"/> or empty.</exception>
     protected internal IngestionDocumentElement(string markdown)
     {
         _markdown = string.IsNullOrEmpty(markdown) ? throw new ArgumentNullException(nameof(markdown)) : markdown;
@@ -70,14 +89,30 @@ public abstract class IngestionDocumentElement
 
     private Dictionary<string, object?>? _metadata;
 
+    /// <summary>
+    /// Gets or sets the textual content of the element.
+    /// </summary>
     public string? Text { get; set; }
 
+    /// <summary>
+    /// Gets the markdown representation of the element.
+    /// </summary>
+    /// <returns>The markdown representation.</returns>
     public virtual string GetMarkdown() => _markdown;
 
+    /// <summary>
+    /// Gets or sets the page number where this element appears.
+    /// </summary>
     public int? PageNumber { get; set; }
 
+    /// <summary>
+    /// Gets a value indicating whether this element has metadata.
+    /// </summary>
     public bool HasMetadata => _metadata?.Count > 0;
 
+    /// <summary>
+    /// Gets the metadata associated with this element.
+    /// </summary>
     public IDictionary<string, object?> Metadata => _metadata ??= [];
 }
 
@@ -86,15 +121,24 @@ public abstract class IngestionDocumentElement
 /// </summary>
 public sealed class IngestionDocumentSection : IngestionDocumentElement
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IngestionDocumentSection"/> class.
+    /// </summary>
+    /// <param name="markdown">The markdown representation of the section.</param>
     public IngestionDocumentSection(string markdown) : base(markdown)
     {
     }
 
-    // the user is not providing the Markdown, we will compute it from the elements
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IngestionDocumentSection"/> class.
+    /// </summary>
     public IngestionDocumentSection() : base()
     {
     }
 
+    /// <summary>
+    /// Gets the elements within this section.
+    /// </summary>
     public List<IngestionDocumentElement> Elements { get; } = [];
 
     // The result is not being cached, as elements can be added, removed or modified.
@@ -102,31 +146,64 @@ public sealed class IngestionDocumentSection : IngestionDocumentElement
         => string.Join(Environment.NewLine, Elements.Select(e => e.GetMarkdown()));
 }
 
+/// <summary>
+/// Represents a paragraph in a document.
+/// </summary>
 public sealed class IngestionDocumentParagraph : IngestionDocumentElement
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IngestionDocumentParagraph"/> class.
+    /// </summary>
+    /// <param name="markdown">The markdown representation of the paragraph.</param>
     public IngestionDocumentParagraph(string markdown) : base(markdown)
     {
     }
 }
 
+/// <summary>
+/// Represents a header in a document.
+/// </summary>
 public sealed class IngestionDocumentHeader : IngestionDocumentElement
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IngestionDocumentHeader"/> class.
+    /// </summary>
+    /// <param name="markdown">The markdown representation of the header.</param>
     public IngestionDocumentHeader(string markdown) : base(markdown)
     {
     }
 
+    /// <summary>
+    /// Gets or sets the level of the header.
+    /// </summary>
     public int? Level { get; set; }
 }
 
+/// <summary>
+/// Represents a footer in a document.
+/// </summary>
 public sealed class IngestionDocumentFooter : IngestionDocumentElement
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IngestionDocumentFooter"/> class.
+    /// </summary>
+    /// <param name="markdown">The markdown representation of the footer.</param>
     public IngestionDocumentFooter(string markdown) : base(markdown)
     {
     }
 }
 
+/// <summary>
+/// Represents a table in a document.
+/// </summary>
 public sealed class IngestionDocumentTable : IngestionDocumentElement
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IngestionDocumentTable"/> class.
+    /// </summary>
+    /// <param name="markdown">The markdown representation of the table.</param>
+    /// <param name="cells">The cells of the table.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="cells"/> is <see langword="null"/>.</exception>
     public IngestionDocumentTable(string markdown, IngestionDocumentElement?[,] cells) : base(markdown)
     {
         Cells = cells ?? throw new ArgumentNullException(nameof(cells));
@@ -142,14 +219,27 @@ public sealed class IngestionDocumentTable : IngestionDocumentElement
     public IngestionDocumentElement?[,] Cells { get; }
 }
 
+/// <summary>
+/// Represents an image in a document.
+/// </summary>
 public sealed class IngestionDocumentImage : IngestionDocumentElement
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IngestionDocumentImage"/> class.
+    /// </summary>
+    /// <param name="markdown">The markdown representation of the image.</param>
     public IngestionDocumentImage(string markdown) : base(markdown)
     {
     }
 
+    /// <summary>
+    /// Gets or sets the binary content of the image.
+    /// </summary>
     public ReadOnlyMemory<byte>? Content { get; set; }
 
+    /// <summary>
+    /// Gets or sets the media type of the image.
+    /// </summary>
     public string? MediaType { get; set; }
 
     /// <summary>
