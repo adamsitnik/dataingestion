@@ -5,8 +5,8 @@ using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
+using static Microsoft.Extensions.DataIngestion.Chunkers.ChunkingHelpers;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
@@ -63,20 +63,6 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         {
             string text = _tokenizer.Decode(tokenGroup);
             return new(text, document);
-        }
-
-        private static string GetDocumentMarkdown(IngestionDocument document)
-        {
-            StringBuilder sb = new();
-            for (int i = 0; i < document.Sections.Count; i++)
-            {
-                sb.Append(document.Sections[i].GetMarkdown());
-                if (i != document.Sections.Count - 1)
-                {
-                    sb.AppendLine();
-                }
-            }
-            return sb.ToString();
         }
     }
 }

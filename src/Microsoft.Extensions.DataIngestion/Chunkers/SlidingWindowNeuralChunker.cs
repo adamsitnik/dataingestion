@@ -7,54 +7,44 @@ using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
-    public class SlidingWindowNeuralChunker : IngestionChunker<string>
+    public class SlidingWindowNeuralChunker : TextSplittingStrategy
     {
         private readonly InferenceSession _inferenceSession;
         private readonly Tokenizer _tokenizer;
         private readonly double _logitsThreshold;
-        private readonly int _maxTokensPerChunk;
         private const int WindowSlideContextLength = 255; // Could be dynamic relative to max tokens per chunk
 
-        public SlidingWindowNeuralChunker(double probabilityThreshold = 0.5, int maxTokensPerChunk = 512)
+        public SlidingWindowNeuralChunker(string tokenizerVocalbularyPath, string modelPath, double probabilityThreshold = 0.5)
         {
             _logitsThreshold = Math.Log(1.0 / probabilityThreshold - 1.0);
-            _maxTokensPerChunk = maxTokensPerChunk;
-            _tokenizer = BertTokenizer.Create("path_to_tokenizer");
-            _inferenceSession = new InferenceSession("path_to_onnx_model");
+            _tokenizer = BertTokenizer.Create(tokenizerVocalbularyPath);
+            _inferenceSession = new InferenceSession(modelPath);
         }
 
-        public override IAsyncEnumerable<IngestionChunk<string>> ProcessAsync(IngestionDocument document, CancellationToken cancellationToken = default)
+        public override List<int> GetSplitIndices(ReadOnlySpan<char> text, int maxTokenCount)
         {
-            throw new NotImplementedException();
-        }
-
-        public List<string> ChunkText(string text)
-        {
-            var tokenData = PrepareTokens(text, out var encodedTokens);
-
-            var context = new ChunkingContext
+            TokenData tokenData = PrepareTokens(text, out IReadOnlyList<EncodedToken>? encodedTokens);
+            ChunkingContext context = new()
             {
                 SplitCharPositions = new List<int>(),
                 TokenPositions = new List<int>(),
                 WindowStart = 0,
                 UnchunkTokens = 0,
                 BackupPos = null,
-                BestLogit = float.NegativeInfinity
+                BestLogit = float.NegativeInfinity,
+                MaxTokensPerChunk = maxTokenCount
             };
-
             while (context.WindowStart < tokenData.CoreLength)
             {
                 ProcessWindow(tokenData, encodedTokens, context);
             }
-
-            return BuildChunksFromPositions(text, context.SplitCharPositions);
+            return context.TokenPositions;
         }
 
-        private TokenData PrepareTokens(string text, out IReadOnlyList<EncodedToken> encodedTokens)
+        private TokenData PrepareTokens(ReadOnlySpan<char> text, out IReadOnlyList<EncodedToken> encodedTokens)
         {
             encodedTokens = _tokenizer.EncodeToTokens(text, out string? _);
             long[] allIds = encodedTokens.Select(t => (long)t.Id).ToArray();
@@ -164,14 +154,14 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             int innerTokenCount = diffs.Length;
             int unchunkThisWindow = CalculateUnchunkThisWindow(aboveIndicesThreshold, innerTokenCount);
 
-            if (_maxTokensPerChunk > 0 && (context.UnchunkTokens + unchunkThisWindow) > _maxTokensPerChunk)
+            if (context.MaxTokensPerChunk > 0 && (context.UnchunkTokens + unchunkThisWindow) > context.MaxTokensPerChunk)
             {
-                UpdateBackupPositionInRange(diffs, context.WindowStart, 0, _maxTokensPerChunk - context.UnchunkTokens, context);
+                UpdateBackupPositionInRange(diffs, context.WindowStart, 0, context.MaxTokensPerChunk - context.UnchunkTokens, context);
                 ForceSplitAtBackup(encodedTokens, context);
                 return;
             }
 
-            int[] filteredIndices = FilterIndicesByMaxTokens(aboveIndicesThreshold);
+            int[] filteredIndices = FilterIndicesByMaxTokens(aboveIndicesThreshold, context);
             RecordSplitPositions(filteredIndices, context.WindowStart, encodedTokens, context);
 
             int lastIndex = filteredIndices[filteredIndices.Length - 1];
@@ -186,14 +176,14 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 : (aboveIndicesThreshold.Length > 1 ? aboveIndicesThreshold[1] : innerTokenCount);
         }
 
-        private int[] FilterIndicesByMaxTokens(int[] aboveIndicesThreshold)
+        private int[] FilterIndicesByMaxTokens(int[] aboveIndicesThreshold, ChunkingContext context)
         {
-            if (aboveIndicesThreshold.Length < 2 || _maxTokensPerChunk <= 0)
+            if (aboveIndicesThreshold.Length < 2 || context.MaxTokensPerChunk <= 0)
                 return aboveIndicesThreshold;
 
             for (int i = 0; i < aboveIndicesThreshold.Length - 1; i++)
             {
-                if (aboveIndicesThreshold[i + 1] - aboveIndicesThreshold[i] > _maxTokensPerChunk)
+                if (aboveIndicesThreshold[i + 1] - aboveIndicesThreshold[i] > context.MaxTokensPerChunk)
                 {
                     return aboveIndicesThreshold.Take(i + 1).ToArray();
                 }
@@ -227,9 +217,9 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         {
             int stepThis = Math.Min(context.WindowStart + step, coreLength) - context.WindowStart;
 
-            if (_maxTokensPerChunk > 0 && (context.UnchunkTokens + stepThis) > _maxTokensPerChunk)
+            if (context.MaxTokensPerChunk > 0 && (context.UnchunkTokens + stepThis) > context.MaxTokensPerChunk)
             {
-                UpdateBackupPositionInRange(diffs, context.WindowStart, 0, _maxTokensPerChunk - context.UnchunkTokens, context);
+                UpdateBackupPositionInRange(diffs, context.WindowStart, 0, context.MaxTokensPerChunk - context.UnchunkTokens, context);
                 ForceSplitAtBackup(encodedTokens, context);
             }
             else
@@ -296,12 +286,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         private static List<string> BuildChunksFromPositions(string text, List<int> splitCharPositions)
         {
             List<string> chunks = new List<string>();
-            List<int> starts = new List<int> { 0 };
-            starts.AddRange(splitCharPositions);
-            List<int> ends = new List<int>(splitCharPositions);
-            ends.Add(text.Length);
+            int[] starts = [0, .. splitCharPositions];
+            int[] ends = [.. splitCharPositions, text.Length];
 
-            for (int i = 0; i < starts.Count; i++)
+            for (int i = 0; i < starts.Length; i++)
             {
                 int s = starts[i];
                 int e = ends[i];
@@ -316,7 +304,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
         private struct ChunkingContext
         {
-            public ChunkingContext(List<int> splitCharPositions, List<int> tokenPositions, int windowStart, int unchunkTokens, int? backupPos, float bestLogit)
+            public ChunkingContext(List<int> splitCharPositions, List<int> tokenPositions, int windowStart, int unchunkTokens, int? backupPos, float bestLogit, int maxTokensPerChunk)
             {
                 SplitCharPositions = splitCharPositions;
                 TokenPositions = tokenPositions;
@@ -324,6 +312,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 UnchunkTokens = unchunkTokens;
                 BackupPos = backupPos;
                 BestLogit = bestLogit;
+                MaxTokensPerChunk = maxTokensPerChunk;
             }
 
             public List<int> SplitCharPositions { get; set; }
@@ -332,6 +321,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             public int UnchunkTokens { get; set; }
             public int? BackupPos { get; set; }
             public float BestLogit { get; set; }
+            public int MaxTokensPerChunk { get; set; }
         }
 
         private readonly struct TokenData

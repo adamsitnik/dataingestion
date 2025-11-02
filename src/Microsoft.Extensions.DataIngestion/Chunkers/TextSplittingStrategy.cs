@@ -7,6 +7,13 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     public abstract class TextSplittingStrategy
     {
-        public abstract IEnumerable<int> GetSplitIndices(ReadOnlySpan<char> text, int maxTokenCount);
+
+        /// <summary>
+        /// Indices in the text where splits should occur based on the maxTokenCount.
+        /// </summary>
+        /// <param name="text">Text to be split</param>
+        /// <param name="maxTokenCount">Maximum tokens per chunk.</param>
+        /// <returns></returns>
+        public abstract List<int> GetSplitIndices(ReadOnlySpan<char> text, int maxTokenCount);
     }
 }

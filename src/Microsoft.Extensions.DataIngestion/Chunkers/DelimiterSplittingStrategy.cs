@@ -4,9 +4,6 @@
 using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static Microsoft.Extensions.DataIngestion.Chunkers.ChunkingHelpers;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
@@ -21,7 +18,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             _delimiter = delimiter;
             _tokenizer = tokenizer;
         }
-        public override IEnumerable<int> GetSplitIndices(ReadOnlySpan<char> text, int maxTokenCount)
+
+        public override List<int> GetSplitIndices(ReadOnlySpan<char> text, int maxTokenCount)
         {
             List<int> indices = new();
             int currentOffset = 0;
@@ -42,7 +40,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                     // We could try to split by sentences or other delimiters, but it's complicated.
                     // For simplicity, we will just split at the last new line that fits.
                     // Our promise is not to go over the max token count, not to create perfect chunks.
-                    int newLineIndex = remainingText.Slice(0, index).LastIndexOf('\n');
+                    int newLineIndex = remainingText.Slice(0, index).LastIndexOf(_delimiter);
                     if (newLineIndex > 0)
                     {
                         index = newLineIndex + 1; // We want to include the new line character (works for "\r\n" as well).
@@ -57,6 +55,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 }
             }
 
+            indices.RemoveAt(indices.Count - 1); // the last split point will ba alwyys be the end of the text.
             return indices;
         }
     }
