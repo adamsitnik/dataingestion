@@ -8,7 +8,7 @@ using static Microsoft.Extensions.DataIngestion.Chunkers.ChunkingHelpers;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
-    internal class DelimiterSplittingStrategy : TextSplittingStrategy
+    public class DelimiterSplittingStrategy : TextSplittingStrategy
     {
         private readonly char _delimiter;
         private readonly Tokenizer _tokenizer;
@@ -22,6 +22,11 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         public override List<int> GetSplitIndices(ReadOnlySpan<char> text, int maxTokenCount)
         {
             List<int> indices = new();
+            if (text.IsEmpty)
+            {
+                return indices;
+            }
+
             int currentOffset = 0;
             
             while (currentOffset < text.Length)

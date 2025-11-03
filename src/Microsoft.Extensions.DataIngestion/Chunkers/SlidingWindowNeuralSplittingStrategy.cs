@@ -10,14 +10,14 @@ using System.Linq;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
-    public class SlidingWindowNeuralChunker : TextSplittingStrategy
+    public class SlidingWindowNeuralSplittingStrategy : TextSplittingStrategy
     {
         private readonly InferenceSession _inferenceSession;
         private readonly Tokenizer _tokenizer;
         private readonly double _logitsThreshold;
         private const int WindowSlideContextLength = 255; // Could be dynamic relative to max tokens per chunk
 
-        public SlidingWindowNeuralChunker(string tokenizerVocalbularyPath, string modelPath, double probabilityThreshold = 0.5)
+        public SlidingWindowNeuralSplittingStrategy(string tokenizerVocalbularyPath, string modelPath, double probabilityThreshold = 0.5)
         {
             _logitsThreshold = Math.Log(1.0 / probabilityThreshold - 1.0);
             _tokenizer = BertTokenizer.Create(tokenizerVocalbularyPath);

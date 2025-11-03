@@ -25,7 +25,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             string markdown = ChunkingHelpers.GetDocumentMarkdown(document);
+            if (string.IsNullOrEmpty(markdown))
+            {
+                yield break;
+            }
             List<int> splitIndices = _strategy.GetSplitIndices(markdown.AsSpan(), _maxTokenCount);
+
             splitIndices.Insert(0, 0);
             splitIndices.Add(markdown.Length);
 
@@ -38,8 +43,6 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 string chunkContent = markdown.Substring(start, end - start);
                 yield return new IngestionChunk<string>(chunkContent, document);
             }
-
-            yield break;
         }
 
     }

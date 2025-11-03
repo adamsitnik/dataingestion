@@ -149,8 +149,9 @@ internal sealed class ElementsChunker
                 List<int> splitIndices = splittingStrategy.GetSplitIndices(
                     text: remainingContent,
                     maxTokenCount: _maxTokensPerChunk - contextTokenCount).ToList();
-                int chunkCount = splitIndices.Count;
+                int chunkCount = splitIndices.Count + 1;
                 splitIndices.Insert(0, 0); // to handle the first chunk
+                splitIndices.Add(remainingContent.Length); // to handle the last chunk
 
                 for (int i = 0; i < chunkCount; i++)
                 {
