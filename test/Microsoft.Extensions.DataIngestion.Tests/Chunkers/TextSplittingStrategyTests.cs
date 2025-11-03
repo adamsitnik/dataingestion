@@ -37,7 +37,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
         }
 
         [Fact]
-        public async Task EmptyString()
+        public void EmptyString()
         {
             TextSplittingStrategy textSplittingStrategy = GetTextSplittingStrategy();
             List<int> indices = textSplittingStrategy.GetSplitIndices(string.Empty, 50);
