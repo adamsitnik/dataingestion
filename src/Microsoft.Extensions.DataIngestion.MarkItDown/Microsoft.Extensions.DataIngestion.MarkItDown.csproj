@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="0.4.0-preview.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Microsoft.Extensions.DataIngestion.Markdown\Microsoft.Extensions.DataIngestion.Markdown.csproj" />
   </ItemGroup>
 

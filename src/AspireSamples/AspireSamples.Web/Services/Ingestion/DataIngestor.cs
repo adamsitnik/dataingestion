@@ -24,8 +24,10 @@ public class DataIngestor(
             IncrementalIngestion = true
         });
 
+        string url = $"{Environment.GetEnvironmentVariable("MARKITDOWN_MCP_URL")}/mcp";
+
         using IngestionPipeline<string> pipeline = new(
-            new MarkItDownReader(), // requires MarkItDown to be installed and in PATH
+            new MarkItDownMcpReader(new Uri(url)),
             new SemanticSimilarityChunker(embeddingGenerator, new(TiktokenTokenizer.CreateForModel("gpt-4o"))),
             writer,
             // [new SummaryEnricher(chatClient)], takes too much time for samples
