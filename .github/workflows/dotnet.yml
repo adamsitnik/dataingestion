@@ -32,6 +32,10 @@ jobs:
           python-version: '3.x'
       - name: Install markitdown
         run: pip install 'markitdown[all]'
+      - name: Install optimum exporters and onnxruntime
+        run: pip install 'optimum[exporters]' 'optimum[onnxruntime]'
+      - name: Export model to ONNX
+        run: optimum-cli export onnx --model tim1900/bert-chunker-3 ./bert-chunker-3
       - name: Restore dependencies
         run: dotnet restore
       - name: BuildLibs

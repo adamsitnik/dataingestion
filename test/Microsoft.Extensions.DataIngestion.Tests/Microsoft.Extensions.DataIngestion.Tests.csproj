@@ -48,6 +48,7 @@
   <ItemGroup>
     <!-- Workaround https://github.com/dotnet/project-system/issues/935 -->
     <None Include="**/*.cs" />
+    <None Remove="Chunkers\SlidingWindowNeuralSplittingStrategyTests.cs" />
     <None Update="TestFiles\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

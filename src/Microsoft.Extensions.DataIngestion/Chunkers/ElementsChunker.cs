@@ -4,7 +4,9 @@
 using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using static Microsoft.Extensions.DataIngestion.Chunkers.ChunkingHelpers;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers;
 
@@ -14,6 +16,7 @@ internal sealed class ElementsChunker
     private readonly int _maxTokensPerChunk;
     private readonly int _overlapTokens;
     private readonly bool _considerNormalization;
+    private readonly TextSplittingStrategy _textSplittingStrategy;
     private StringBuilder? _currentChunk;
 
     internal ElementsChunker(IngestionChunkerOptions options)
@@ -27,6 +30,7 @@ internal sealed class ElementsChunker
         _maxTokensPerChunk = options.MaxTokensPerChunk;
         _overlapTokens = options.OverlapTokens;
         _considerNormalization = options.ConsiderNormalization;
+        _textSplittingStrategy = options.SplittingStrategy;
     }
 
     // Goals:
@@ -143,42 +147,27 @@ internal sealed class ElementsChunker
             {
                 ReadOnlySpan<char> remainingContent = semanticContent.AsSpan();
 
-                while (!remainingContent.IsEmpty)
+                List<int> splitIndices = _textSplittingStrategy.GetSplitIndices(
+                    text: remainingContent,
+                    maxTokenCount: _maxTokensPerChunk - contextTokenCount).ToList();
+                int chunkCount = splitIndices.Count + 1;
+                splitIndices.Insert(0, 0); // to handle the first chunk
+                splitIndices.Add(remainingContent.Length); // to handle the last chunk
+
+                for (int i = 0; i < chunkCount; i++)
                 {
-                    int index = _tokenizer.GetIndexByTokenCount(
-                        text: remainingContent,
-                        maxTokenCount: _maxTokensPerChunk - totalTokenCount,
-                        out string? normalizedText,
-                        out int tokenCount,
-                        considerNormalization: false); // We don't normalize, just append as-is to keep original content.
-
-                    if (index > 0) // some tokens fit
-                    {
-                        // We could try to split by sentences or other delimiters, but it's complicated.
-                        // For simplicity, we will just split at the last new line that fits.
-                        // Our promise is not to go over the max token count, not to create perfect chunks.
-                        int newLineIndex = remainingContent.Slice(0, index).LastIndexOf('\n');
-                        if (newLineIndex > 0)
-                        {
-                            index = newLineIndex + 1; // We want to include the new line character (works for "\r\n" as well).
-                            tokenCount = CountTokens(remainingContent.Slice(0, index));
-                        }
-
-                        totalTokenCount += tokenCount;
-                        ReadOnlySpan<char> spanToAppend = remainingContent.Slice(0, index);
-                        AppendNewLineAndSpan(_currentChunk, spanToAppend);
-                        remainingContent = remainingContent.Slice(index);
-                    }
-                    else if (totalTokenCount == contextTokenCount)
-                    {
-                        // We are at the beginning of a chunk, and even a single token does not fit.
-                        ThrowTokenCountExceeded();
-                    }
-
-                    if (!remainingContent.IsEmpty)
+                    ReadOnlySpan<char> spanToAppend = remainingContent.Slice(splitIndices[i], splitIndices[i+1] - splitIndices[i]);
+                    int spanTokenCount = CountTokens(spanToAppend);
+                    if (totalTokenCount + spanTokenCount > _maxTokensPerChunk)
                     {
                         Commit();
                     }
+                    totalTokenCount += spanTokenCount;
+                    AppendNewLineAndSpan(_currentChunk, spanToAppend);
+                }
+                if(remainingContent.Length != splitIndices[^1])
+                {
+                    Commit();
                 }
             }
 
@@ -207,10 +196,8 @@ internal sealed class ElementsChunker
             totalTokenCount = contextTokenCount;
         }
 
-        static void ThrowTokenCountExceeded()
-            => throw new InvalidOperationException("Can't fit in the current chunk. Consider increasing max tokens per chunk.");
+        
     }
-
     private int CountTokens(ReadOnlySpan<char> input)
         => _tokenizer.CountTokens(input, considerNormalization: _considerNormalization);
 
