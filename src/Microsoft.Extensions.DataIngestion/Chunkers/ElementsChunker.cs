@@ -16,6 +16,7 @@ internal sealed class ElementsChunker
     private readonly int _maxTokensPerChunk;
     private readonly int _overlapTokens;
     private readonly bool _considerNormalization;
+    private readonly TextSplittingStrategy _textSplittingStrategy;
     private StringBuilder? _currentChunk;
 
     internal ElementsChunker(IngestionChunkerOptions options)
@@ -29,6 +30,7 @@ internal sealed class ElementsChunker
         _maxTokensPerChunk = options.MaxTokensPerChunk;
         _overlapTokens = options.OverlapTokens;
         _considerNormalization = options.ConsiderNormalization;
+        _textSplittingStrategy = options.SplittingStrategy;
     }
 
     // Goals:
@@ -145,8 +147,7 @@ internal sealed class ElementsChunker
             {
                 ReadOnlySpan<char> remainingContent = semanticContent.AsSpan();
 
-                TextSplittingStrategy splittingStrategy = new DelimiterSplittingStrategy(_tokenizer, delimiter: '\n');
-                List<int> splitIndices = splittingStrategy.GetSplitIndices(
+                List<int> splitIndices = _textSplittingStrategy.GetSplitIndices(
                     text: remainingContent,
                     maxTokenCount: _maxTokensPerChunk - contextTokenCount).ToList();
                 int chunkCount = splitIndices.Count + 1;

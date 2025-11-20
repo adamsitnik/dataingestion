@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Microsoft.Extensions.DataIngestion.Chunkers;
 using Microsoft.ML.Tokenizers;
 using System;
 
@@ -12,10 +13,12 @@ public class IngestionChunkerOptions
     private int _maxTokensPerChunk = 2_000;
     private const int DefaultOverlapTokens = 500;
     private int? _overlapTokens;
+    private TextSplittingStrategy? _splittingStrategy;
 
     public IngestionChunkerOptions(Tokenizer tokenizer)
     {
         Tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
+        _splittingStrategy = new DelimiterSplittingStrategy(tokenizer, '\n');
     }
 
     public Tokenizer Tokenizer { get; }
@@ -65,6 +68,12 @@ public class IngestionChunkerOptions
             : value >= _maxTokensPerChunk
                 ? throw new ArgumentOutOfRangeException(nameof(value), "Chunk overlap must be less than chunk size.")
                 : value;
+    }
+
+    public TextSplittingStrategy SplittingStrategy
+    {
+        get => _splittingStrategy ?? throw new InvalidOperationException("Splitting strategy is not set.");
+        set => _splittingStrategy = value ?? throw new ArgumentNullException(nameof(value));
     }
 
     /// <summary>
