@@ -26,6 +26,11 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
         public override List<int> GetSplitIndices(ReadOnlySpan<char> text, int maxTokenCount)
         {
+            if (text.Length == 0)
+            {
+                return new List<int>();
+            }
+
             TokenData tokenData = PrepareTokens(text, out IReadOnlyList<EncodedToken>? encodedTokens);
             ChunkingContext context = new()
             {
@@ -302,21 +307,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return chunks;
         }
 
-        private struct ChunkingContext
+        private class ChunkingContext
         {
-            public ChunkingContext(List<int> splitCharPositions, List<int> tokenPositions, int windowStart, int unchunkTokens, int? backupPos, float bestLogit, int maxTokensPerChunk)
-            {
-                SplitCharPositions = splitCharPositions;
-                TokenPositions = tokenPositions;
-                WindowStart = windowStart;
-                UnchunkTokens = unchunkTokens;
-                BackupPos = backupPos;
-                BestLogit = bestLogit;
-                MaxTokensPerChunk = maxTokensPerChunk;
-            }
-
-            public List<int> SplitCharPositions { get; set; }
-            public List<int> TokenPositions { get; set; }
+            public List<int> SplitCharPositions { get; set; } = new List<int>();
+            public List<int> TokenPositions { get; set; } = new List<int>();
             public int WindowStart { get; set; }
             public int UnchunkTokens { get; set; }
             public int? BackupPos { get; set; }

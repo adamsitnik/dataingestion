@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
     public abstract class TextSplittingStrategyTests
     {
-        protected  StrategyChunker GetDelimiterStrategyChunker(int maxTokenCount = 50)
+        protected  StrategyChunker GetStrategyChunker(int maxTokenCount = 50)
         {
             TextSplittingStrategy strategy = GetTextSplittingStrategy();
             return new StrategyChunker(strategy, maxTokenCount);
@@ -30,7 +30,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
                     new IngestionDocumentParagraph("This is a short paragraph.")
                 }
             });
-            IngestionChunker<string> chunker = GetDelimiterStrategyChunker();
+            IngestionChunker<string> chunker = GetStrategyChunker();
             IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
             Assert.Single(chunks);
             Assert.Equal("This is a short paragraph.", chunks[0].Content);
