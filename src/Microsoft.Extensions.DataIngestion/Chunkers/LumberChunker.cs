@@ -5,11 +5,9 @@ using Microsoft.Extensions.AI;
 using Microsoft.ML.Tokenizers;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
@@ -132,7 +130,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             return _elementsChunker.Process(document, string.Empty, [element]);
         }
 
-        private int GetSplitPoint(CancellationToken cancellationToken,  List<PreChunk> currentChunkElements)
+        private int GetSplitPoint(CancellationToken cancellationToken, List<PreChunk> currentChunkElements)
         {
             string query = BuildQuery(currentChunkElements);
             IEnumerable<ChatMessage> messages = [
@@ -170,6 +168,10 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 if (digits.Success)
                 {
                     _ = int.TryParse(digits.Value, out match);
+                }
+                else
+                {
+                    throw new FormatException($"Could not parse ID from response: {response}");
                 }
             }
 
