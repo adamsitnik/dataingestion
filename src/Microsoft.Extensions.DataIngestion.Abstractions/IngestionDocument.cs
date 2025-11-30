@@ -115,6 +115,9 @@ public abstract class IngestionDocumentElement
     /// </summary>
     public IDictionary<string, object?> Metadata => _metadata ??= [];
 
+    /// <summary>
+    /// Gets the semantic content of the element if available.
+    /// </summary>
     public string? SemanticContent => this switch
     {
         IngestionDocumentImage image => image.AlternativeText ?? image.Text,

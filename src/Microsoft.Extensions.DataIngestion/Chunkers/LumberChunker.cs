@@ -13,9 +13,13 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
+    /// <summary>
+    /// Splits an <see cref="IngestionDocument"/> into chunks using an LLM to identify topic changes.
+    /// Based on the "Lumber" chunking method from https://arxiv.org/abs/2406.17526.
+    /// </summary>
     public class LumberChunker : IngestionChunker<string>
     {
-        private const string system_prompt = """
+        private const string SystemPrompt = """
         You will receive as input an english document with paragraphs identified by 'ID XXXX: <text>'.
 
         Task: Find the first paragraph (not the first one) where the content clearly changes compared to the previous paragraphs.
@@ -27,7 +31,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
         If there is no clear content shift, return 'Answer: ID -1'.
         """;
-        private readonly ChatMessage _systemMessage = new ChatMessage(ChatRole.System, system_prompt);
+        private readonly ChatMessage _systemMessage = new ChatMessage(ChatRole.System, SystemPrompt);
         private readonly ChatOptions _chatOptions = new ChatOptions
         {
             Temperature = 0.1f
@@ -83,7 +87,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
                 if (elementTokenCount > _maxTokensPerChunk)
                 {
-                    var split_chunks = _elementsChunker.Process(document, String.Empty, [element]);
+                    var split_chunks = _elementsChunker.Process(document, string.Empty, [element]);
                     chunks.AddRange(split_chunks);
                 }
                 else
@@ -120,12 +124,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
         private IEnumerable<IngestionChunk<string>> CreateChunks(IEnumerable<PreChunk> preChunks, IngestionDocument document)
         {
             List<IngestionDocumentElement> elements = preChunks.Select(pc => pc.Element).ToList();
-            return _elementsChunker.Process(document, String.Empty, elements);
+            return _elementsChunker.Process(document, string.Empty, elements);
         }
 
         private IEnumerable<IngestionChunk<string>> CreateChunks(IngestionDocumentElement element, IngestionDocument document)
         {
-            return _elementsChunker.Process(document, String.Empty, [element]);
+            return _elementsChunker.Process(document, string.Empty, [element]);
         }
 
         private int GetSplitPoint(CancellationToken cancellationToken,  List<PreChunk> currentChunkElements)

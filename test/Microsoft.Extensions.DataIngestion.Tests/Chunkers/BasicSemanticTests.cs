@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
     public abstract class BasicSemanticTests : DocumentChunkerTests
     {
         [Fact]
-        public async Task SingleParagph()
+        public async Task SingleParagraph()
         {
             string text = ".NET is a free, cross-platform, open-source developer platform for building many kinds of applications. It can run programs written in multiple languages, with C# being the most popular. It relies on a high-performance runtime that is used in production by many high-scale apps.";
             IngestionDocument doc = new IngestionDocument("doc");
