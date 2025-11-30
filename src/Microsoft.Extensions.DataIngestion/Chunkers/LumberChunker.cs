@@ -29,14 +29,14 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
         If there is no clear content shift, return 'Answer: ID -1'.
         """;
-        private readonly ChatMessage _systemMessage = new ChatMessage(ChatRole.System, SystemPrompt);
-        private readonly ChatOptions _chatOptions = new ChatOptions
+        private const string IdRegex = """Answer: ID \w+""";
+        private static readonly ChatMessage _systemMessage = new(ChatRole.System, SystemPrompt);
+        private static readonly ChatOptions _chatOptions = new()
         {
             Temperature = 0.1f
         };
 
 
-        private const string IdRegex = """Answer: ID \w+""";
         private readonly IChatClient _chatClient;
         private readonly Tokenizer _tokenizer;
         private readonly ElementsChunker _elementsChunker;
