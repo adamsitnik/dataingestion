@@ -85,8 +85,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
                 if (elementTokenCount > _maxTokensPerChunk)
                 {
-                    var split_chunks = _elementsChunker.Process(document, string.Empty, [element]);
-                    chunks.AddRange(split_chunks);
+                    var splitChunks = _elementsChunker.Process(document, string.Empty, [element]);
+                    chunks.AddRange(splitChunks);
                 }
                 else
                 {
