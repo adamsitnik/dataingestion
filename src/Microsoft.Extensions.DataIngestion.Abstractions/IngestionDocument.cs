@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace Microsoft.Extensions.DataIngestion;
 
@@ -114,6 +115,12 @@ public abstract class IngestionDocumentElement
     /// Gets the metadata associated with this element.
     /// </summary>
     public IDictionary<string, object?> Metadata => _metadata ??= [];
+
+    public string? SemanticContent => this switch
+    {
+        IngestionDocumentImage image => image.AlternativeText ?? image.Text,
+        _ => GetMarkdown()
+    };
 }
 
 /// <summary>

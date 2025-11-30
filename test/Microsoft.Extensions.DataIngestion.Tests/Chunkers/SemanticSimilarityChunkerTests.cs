@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
 {
-    public class SemanticSimilarityChunkerTests : DocumentChunkerTests
+    public class SemanticSimilarityChunkerTests : BasicSemanticTests
     {
         protected override IngestionChunker<string> CreateDocumentChunker(int maxTokensPerChunk = 2_000, int overlapTokens = 500)
         {
@@ -32,48 +32,6 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers.Tests
             AzureOpenAIClient openAIClient = new(new Uri(endpoint), new AzureKeyCredential(key));
 
             return openAIClient.GetEmbeddingClient("text-embedding-3-small");
-        }
-
-        [Fact]
-        public async Task SingleParagph()
-        {
-            string text = ".NET is a free, cross-platform, open-source developer platform for building many kinds of applications. It can run programs written in multiple languages, with C# being the most popular. It relies on a high-performance runtime that is used in production by many high-scale apps.";
-            IngestionDocument doc = new IngestionDocument("doc");
-            doc.Sections.Add(new IngestionDocumentSection
-            {
-                Elements =
-                {
-                    new IngestionDocumentParagraph(text)
-                }
-            });
-            IngestionChunker<string> chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
-            Assert.Single(chunks);
-            Assert.Equal(text, chunks[0].Content);
-        }
-
-        [Fact]
-        public async Task TwoTopicsParagraphs()
-        {
-            IngestionDocument doc = new IngestionDocument("doc");
-            string text1 = ".NET is a free, cross-platform, open-source developer platform for building many kinds of applications. It can run programs written in multiple languages, with C# being the most popular.";
-            string text2 = "It relies on a high-performance runtime that is used in production by many high-scale apps.";
-            string text3 = "Zeus is the chief deity of the Greek pantheon. He is a sky and thunder god in ancient Greek religion and mythology.";
-            doc.Sections.Add(new IngestionDocumentSection
-            {
-                Elements =
-                {
-                    new IngestionDocumentParagraph(text1),
-                    new IngestionDocumentParagraph(text2),
-                    new IngestionDocumentParagraph(text3)
-                }
-            });
-
-            IngestionChunker<string> chunker = CreateDocumentChunker();
-            IReadOnlyList<IngestionChunk<string>> chunks = await chunker.ProcessAsync(doc).ToListAsync();
-            Assert.Equal(2, chunks.Count);
-            Assert.Equal(text1 + Environment.NewLine + text2, chunks[0].Content);
-            Assert.Equal(text3, chunks[1].Content);
         }
 
         [Fact]
