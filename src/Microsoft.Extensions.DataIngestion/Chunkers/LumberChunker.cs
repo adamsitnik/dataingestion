@@ -13,7 +13,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     /// <summary>
     /// Splits an <see cref="IngestionDocument"/> into chunks using an LLM to identify topic changes.
-    /// Based on the "Lumber" chunking method from https://arxiv.org/abs/2406.17526.
+    /// ased on the Lumber chunking method described in the <see href="https://arxiv.org/abs/2406.17526">original paper on arXiv</see>.
     /// </summary>
     public class LumberChunker : IngestionChunker<string>
     {
