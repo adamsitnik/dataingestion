@@ -19,7 +19,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
     public class LumberChunker : IngestionChunker<string>
     {
         private const string SystemPrompt = """
-        You will receive as input an english document with paragraphs identified by 'ID XXXX: <text>'.
+        You will receive as input an english document with paragraphs identified by preceding 'ID XXXX:'
 
         Task: Find the first paragraph (not the first one) where the content clearly changes compared to the previous paragraphs.
 
@@ -134,24 +134,20 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
         private int GetSplitPoint(CancellationToken cancellationToken, List<PreChunk> currentChunkElements)
         {
-            string query = BuildQuery(currentChunkElements);
+            TextContent[] contents = [.. currentChunkElements
+               .SelectMany((element, index) => {
+                   var identifier = new TextContent($"ID {index}:");
+                   var content = new TextContent(element.Element.GetSemanticContent());
+
+                   return new[] { identifier, content };
+               })];
             IEnumerable<ChatMessage> messages = [
                 _systemMessage,
-                new ChatMessage(ChatRole.User, query)
+                new ChatMessage(ChatRole.User, contents)
             ];
 
             SplitPointResponse response = _chatClient.GetResponseAsync<SplitPointResponse>(messages, _chatOptions, true, cancellationToken).Result.Result;
             return response.Id;
-        }
-
-        private string BuildQuery(List<PreChunk> currentChunkElements)
-        {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < currentChunkElements.Count; i++)
-            {
-                sb.AppendLine($"ID {i}: {currentChunkElements[i].Element.GetSemanticContent()}");
-            }
-            return sb.ToString();
         }
 
         private int CountTokens(ReadOnlySpan<char> input)
