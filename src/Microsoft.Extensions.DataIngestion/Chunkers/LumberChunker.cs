@@ -7,13 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading;
 
 namespace Microsoft.Extensions.DataIngestion.Chunkers
 {
     /// <summary>
     /// Splits an <see cref="IngestionDocument"/> into chunks using an LLM to identify topic changes.
-    /// ased on the Lumber chunking method described in the <see href="https://arxiv.org/abs/2406.17526">original paper on arXiv</see>.
+    /// Based on the Lumber chunking method described in the <see href="https://arxiv.org/abs/2406.17526">original paper on arXiv</see>.
     /// </summary>
     public class LumberChunker : IngestionChunker<string>
     {
@@ -22,18 +23,19 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
 
         Task: Find the first paragraph (not the first one) where the content clearly changes compared to the previous paragraphs.
 
-        Output: Return the ID of the paragraph with the content shift as in the exemplified format: 'Answer: ID XXXX'.
+        Output: Return the ID of the paragraph with the content shift.
 
         Additional Considerations: Avoid very long groups of paragraphs. Aim for a good balance between 
         identifying content shifts and keeping groups manageable.
 
-        If there is no clear content shift, return 'Answer: ID -1'.
+        If there is no clear content shift, return ID -1.
         """;
-        private const string IdRegex = """Answer: ID \w+""";
+
         private static readonly ChatMessage _systemMessage = new(ChatRole.System, SystemPrompt);
         private static readonly ChatOptions _chatOptions = new()
         {
-            Temperature = 0.1f
+            Temperature = 0.1f,
+            ResponseFormat = ChatResponseFormat.Json
         };
 
 
@@ -65,7 +67,7 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             List<PreChunk> currentPreChunkElements = [];
             foreach (IngestionDocumentElement element in document.EnumerateContent())
             {
-                string? semanticContent = element.SemanticContent;
+                string? semanticContent = element.GetSemanticContent();
 
                 if (string.IsNullOrEmpty(semanticContent))
                 {
@@ -138,9 +140,8 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 new ChatMessage(ChatRole.User, query)
             ];
 
-            string response = _chatClient.GetResponseAsync(messages, _chatOptions, cancellationToken).Result.Text;
-            int match = ParseResponse(response);
-            return match;
+            SplitPointResponse response = _chatClient.GetResponseAsync<SplitPointResponse>(messages, _chatOptions, true, cancellationToken).Result.Result;
+            return response.Id;
         }
 
         private string BuildQuery(List<PreChunk> currentChunkElements)
@@ -148,34 +149,9 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < currentChunkElements.Count; i++)
             {
-                sb.AppendLine($"ID {i}: {currentChunkElements[i].Element.SemanticContent}");
+                sb.AppendLine($"ID {i}: {currentChunkElements[i].Element.GetSemanticContent()}");
             }
             return sb.ToString();
-        }
-
-        private static int ParseResponse(string response)
-        {
-            if (response.Equals("Answer: ID -1", StringComparison.OrdinalIgnoreCase))
-            {
-                return -1;
-            }
-
-            var idMatch = System.Text.RegularExpressions.Regex.Match(response, IdRegex);
-            int match = 0;
-            if (idMatch.Success)
-            {
-                var digits = System.Text.RegularExpressions.Regex.Match(idMatch.Value, @"\d+");
-                if (digits.Success)
-                {
-                    _ = int.TryParse(digits.Value, out match);
-                }
-                else
-                {
-                    throw new FormatException($"Could not parse ID from response: {response}");
-                }
-            }
-
-            return match;
         }
 
         private int CountTokens(ReadOnlySpan<char> input)
@@ -206,6 +182,12 @@ namespace Microsoft.Extensions.DataIngestion.Chunkers
                 element = Element;
                 tokenCount = TokenCount;
             }
+        }
+
+        private sealed class SplitPointResponse
+        {
+            [JsonPropertyName("id")]
+            public int Id { get; set; }
         }
     }
 }
